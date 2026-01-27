@@ -1,0 +1,59 @@
+{
+  "id": "validation-v1",
+  "version": "1.0.0",
+  "name": "Image Validation Prompt",
+  "type": "validation",
+  "description": "Prompt template for validating bathroom images and detecting shower shape",
+  "sections": [
+    {
+      "id": "task",
+      "type": "header",
+      "content": [
+        "Analyze this image. Does it show ANY part of a bathroom, shower area, bathtub, or shower enclosure?"
+      ]
+    },
+    {
+      "id": "guidelines",
+      "type": "instructions",
+      "content": [
+        "",
+        "VALIDATION GUIDELINES:",
+        "Be VERY LENIENT - if you see tiles, shower fixtures, bathroom walls, a tub, or any bathroom space where a shower door could be installed, answer YES (isValid: true).",
+        "",
+        "Only reject if it's clearly NOT a bathroom at all (like outdoors, kitchen, living room, etc)."
+      ]
+    },
+    {
+      "id": "shape_detection",
+      "type": "specifications",
+      "content": [
+        "",
+        "SHAPE DETECTION:",
+        "If valid, determine the shower layout shape:",
+        "- 'neo_angle': Corner shower with angled glass panels forming a diamond/pentagon shape",
+        "- 'tub': Bathtub with or without existing shower",
+        "- 'standard': Straight wall alcove, inline, or 90-degree return"
+      ]
+    },
+    {
+      "id": "response_format",
+      "type": "custom",
+      "content": [
+        "",
+        "RESPONSE FORMAT:",
+        "Return JSON with:",
+        "- isValid (boolean)",
+        "- reason (string, only if invalid)",
+        "- shape (string: 'standard', 'neo_angle', or 'tub')"
+      ]
+    }
+  ],
+  "variables": [],
+  "metadata": {
+    "createdAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "author": "Gatsby Glass Team",
+    "tags": ["validation", "image-analysis", "shape-detection"],
+    "notes": "Used to validate uploaded images and detect shower configuration"
+  }
+}

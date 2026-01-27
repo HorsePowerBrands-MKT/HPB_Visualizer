@@ -1,0 +1,205 @@
+{
+  "id": "visualization-v1",
+  "version": "1.0.0",
+  "name": "Shower Visualization Prompt",
+  "type": "visualization",
+  "description": "Main prompt template for generating photorealistic shower glass visualizations",
+  "sections": [
+    {
+      "id": "header",
+      "type": "header",
+      "content": [
+        "Create a photorealistic visualization of a custom shower glass installation with the following specifications:"
+      ]
+    },
+    {
+      "id": "specifications",
+      "type": "specifications",
+      "content": [
+        "",
+        "SHOWER TYPE: {{shower_shape}} shower",
+        "DOOR TYPE: {{enclosure_type_name}}",
+        "GLASS: {{glass_style_name}}",
+        "HARDWARE FINISH: {{hardware_finish_name}}",
+        "HANDLE STYLE: {{handle_style_name}}",
+        "FRAMING: {{track_preference_name}}",
+        ""
+      ]
+    },
+    {
+      "id": "hinged_config",
+      "type": "configuration",
+      "condition": {
+        "variable": "enclosure_type",
+        "operator": "equals",
+        "value": "hinged"
+      },
+      "content": [
+        "HINGED CONFIGURATION:",
+        "- Extends to ceiling: {{hinged_to_ceiling}}",
+        "- Direction: {{hinged_direction}}"
+      ]
+    },
+    {
+      "id": "pivot_config",
+      "type": "configuration",
+      "condition": {
+        "variable": "enclosure_type",
+        "operator": "equals",
+        "value": "pivot"
+      },
+      "content": [
+        "PIVOT CONFIGURATION:",
+        "- Direction: {{pivot_direction}}"
+      ]
+    },
+    {
+      "id": "sliding_config",
+      "type": "configuration",
+      "condition": {
+        "variable": "enclosure_type",
+        "operator": "equals",
+        "value": "sliding"
+      },
+      "content": [
+        "SLIDING CONFIGURATION:",
+        "- Type: {{sliding_type}}",
+        "- Direction: {{sliding_direction}}"
+      ]
+    },
+    {
+      "id": "instructions",
+      "type": "instructions",
+      "content": [
+        "",
+        "CRITICAL RENDERING INSTRUCTIONS:",
+        "1. Maintain the exact lighting, color temperature, and ambiance of the original bathroom",
+        "2. Preserve all architectural details, tile work, fixtures, and decor",
+        "3. The shower glass must appear crystal clear and premium quality",
+        "4. Hardware (hinges, handles, tracks) must be precisely rendered in {{hardware_finish_name}}",
+        "5. Handle style should be clearly visible as {{handle_style_name}}",
+        "6. The installation must look professionally done and seamlessly integrated",
+        "7. Only modify the shower enclosure - all other elements remain unchanged",
+        "8. The result should be indistinguishable from a professional installation photograph",
+        "",
+        "Generate the image maintaining photorealistic quality with accurate material properties and lighting."
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "shower_shape",
+      "type": "string",
+      "required": true,
+      "description": "The detected shower shape (standard, neo_angle, tub)"
+    },
+    {
+      "name": "enclosure_type",
+      "type": "string",
+      "required": true,
+      "description": "The enclosure type ID (hinged, pivot, sliding)"
+    },
+    {
+      "name": "enclosure_type_name",
+      "type": "catalog_lookup",
+      "catalog": "enclosureTypes",
+      "catalogProperty": "name",
+      "required": true,
+      "description": "Human-readable enclosure type name"
+    },
+    {
+      "name": "glass_style",
+      "type": "string",
+      "required": true,
+      "description": "The glass style ID"
+    },
+    {
+      "name": "glass_style_name",
+      "type": "catalog_lookup",
+      "catalog": "glassStyles",
+      "catalogProperty": "name",
+      "required": true,
+      "description": "Human-readable glass style name"
+    },
+    {
+      "name": "hardware_finish",
+      "type": "string",
+      "required": true,
+      "description": "The hardware finish ID"
+    },
+    {
+      "name": "hardware_finish_name",
+      "type": "catalog_lookup",
+      "catalog": "hardwareFinishes",
+      "catalogProperty": "name",
+      "required": true,
+      "description": "Human-readable hardware finish name"
+    },
+    {
+      "name": "handle_style",
+      "type": "string",
+      "required": true,
+      "description": "The handle style ID"
+    },
+    {
+      "name": "handle_style_name",
+      "type": "catalog_lookup",
+      "catalog": "handleStyles",
+      "catalogProperty": "name",
+      "required": true,
+      "description": "Human-readable handle style name"
+    },
+    {
+      "name": "track_preference",
+      "type": "string",
+      "required": true,
+      "description": "The framing preference ID"
+    },
+    {
+      "name": "track_preference_name",
+      "type": "catalog_lookup",
+      "catalog": "trackPreferences",
+      "catalogProperty": "name",
+      "required": true,
+      "description": "Human-readable framing preference name"
+    },
+    {
+      "name": "hinged_to_ceiling",
+      "type": "string",
+      "required": false,
+      "default": "No",
+      "description": "Whether hinged door extends to ceiling (Yes/No)"
+    },
+    {
+      "name": "hinged_direction",
+      "type": "string",
+      "required": false,
+      "description": "Hinged door swing direction"
+    },
+    {
+      "name": "pivot_direction",
+      "type": "string",
+      "required": false,
+      "description": "Pivot door swing direction"
+    },
+    {
+      "name": "sliding_type",
+      "type": "string",
+      "required": false,
+      "description": "Sliding door type (single/double)"
+    },
+    {
+      "name": "sliding_direction",
+      "type": "string",
+      "required": false,
+      "description": "Sliding door direction"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "author": "Gatsby Glass Team",
+    "tags": ["visualization", "shower", "photorealistic"],
+    "notes": "Initial JSON template version migrated from string-based prompt"
+  }
+}

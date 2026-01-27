@@ -1,0 +1,55 @@
+{
+  "id": "inspiration-v1",
+  "version": "1.0.0",
+  "name": "Inspiration Matching Prompt",
+  "type": "inspiration",
+  "description": "Prompt template for matching an inspiration image style to a target bathroom",
+  "sections": [
+    {
+      "id": "header",
+      "type": "header",
+      "content": [
+        "Analyze the inspiration image and recreate the shower glass style in the target bathroom photo."
+      ]
+    },
+    {
+      "id": "target_info",
+      "type": "specifications",
+      "content": [
+        "",
+        "TARGET SHOWER TYPE: {{shower_shape}}"
+      ]
+    },
+    {
+      "id": "instructions",
+      "type": "instructions",
+      "content": [
+        "",
+        "INSTRUCTIONS:",
+        "1. Identify the door type, glass style, hardware finish, and overall aesthetic from the inspiration photo",
+        "2. Apply the same style, finishes, and design elements to the target bathroom",
+        "3. Adapt the design to fit the target bathroom's specific layout and dimensions",
+        "4. Maintain the lighting and ambiance of the target bathroom",
+        "5. Ensure the result looks professionally installed and matches the inspiration's premium quality",
+        "6. Only modify the shower enclosure in the target photo - preserve everything else",
+        "",
+        "The goal is to show the customer how the inspiration design would look in their actual bathroom."
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "name": "shower_shape",
+      "type": "string",
+      "required": true,
+      "description": "The detected shower shape of the target bathroom"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "author": "Gatsby Glass Team",
+    "tags": ["inspiration", "style-matching"],
+    "notes": "Initial JSON template version migrated from string-based prompt"
+  }
+}

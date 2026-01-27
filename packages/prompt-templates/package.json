@@ -1,0 +1,17 @@
+{
+  "name": "@repo/prompt-templates",
+  "version": "1.0.0",
+  "description": "JSON-based prompt templates and processor for AI visualization",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/types": "workspace:*",
+    "@repo/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

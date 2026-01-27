@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-01-27T00:00:00.000Z",
+  "activeTemplates": {
+    "visualization": "visualization-v1",
+    "inspiration": "inspiration-v1",
+    "system": "system-v1",
+    "validation": "validation-v1"
+  },
+  "templates": {
+    "visualization-v1": {
+      "path": "./visualization-v1.json",
+      "version": "1.0.0",
+      "active": true
+    },
+    "inspiration-v1": {
+      "path": "./inspiration-v1.json",
+      "version": "1.0.0",
+      "active": true
+    },
+    "system-v1": {
+      "path": "./system-v1.json",
+      "version": "1.0.0",
+      "active": true
+    },
+    "validation-v1": {
+      "path": "./validation-v1.json",
+      "version": "1.0.0",
+      "active": true
+    }
+  }
+}
