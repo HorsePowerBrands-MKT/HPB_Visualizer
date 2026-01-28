@@ -9,5 +9,10 @@
     "./visualizer": "./src/visualizer.ts",
     "./leads": "./src/leads.ts",
     "./api": "./src/api.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules",
+    "typecheck": "tsc --noEmit"
   }
 }

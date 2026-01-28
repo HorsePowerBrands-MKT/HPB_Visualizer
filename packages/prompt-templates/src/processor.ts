@@ -5,7 +5,6 @@
  * Supports variable interpolation, catalog lookups, and conditional sections.
  */
 
-import { CATALOG } from '@repo/constants';
 import type {
   PromptTemplate,
   PromptTemplateType,
@@ -85,15 +84,20 @@ function hashVariables(variables: Record<string, unknown>): string {
 function catalogLookup(
   catalogName: string,
   key: string,
-  property: string = 'name'
+  property: string = 'name',
+  catalogData?: Record<string, any>
 ): string {
-  const catalog = CATALOG[catalogName as keyof typeof CATALOG];
+  if (!catalogData) {
+    return key; // Return raw key if no catalog provided
+  }
+  
+  const catalog = catalogData[catalogName];
   
   if (!catalog) {
     return key; // Return raw key if catalog not found
   }
   
-  const entry = catalog[key as keyof typeof catalog];
+  const entry = catalog[key];
   
   if (!entry) {
     return key; // Return raw key if entry not found
@@ -177,7 +181,8 @@ function resolveVariables(
         resolved[varDef.name] = catalogLookup(
           varDef.catalog,
           String(baseValue),
-          varDef.catalogProperty || 'name'
+          varDef.catalogProperty || 'name',
+          options.catalog
         );
       } else if (varDef.default !== undefined) {
         resolved[varDef.name] = String(varDef.default);

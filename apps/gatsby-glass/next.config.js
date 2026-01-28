@@ -2,7 +2,6 @@
 const nextConfig = {
   transpilePackages: [
     '@repo/types',
-    '@repo/constants',
     '@repo/api-handlers',
     '@repo/visualizer-core',
     '@repo/prompt-templates'
@@ -10,13 +9,43 @@ const nextConfig = {
   images: {
     domains: ['22404821.fs1.hubspotusercontent-na1.net'],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
   typescript: {
-    // Temporarily ignore build errors to get app running
+    // Temporarily ignore build errors while we fix type issues incrementally
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Temporarily ignore eslint warnings during build
+    // Allow warnings during build
     ignoreDuringBuilds: true,
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '3mb',
+    },
   },
 };
 

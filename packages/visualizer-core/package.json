@@ -9,11 +9,15 @@
     "./hooks/*": "./src/hooks/*",
     "./utils/*": "./src/utils/*"
   },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
-    "react": "^18.2.79",
+    "react": "^18.2.0",
     "uuid": "^9.0.1",
     "@repo/types": "workspace:*",
-    "@repo/constants": "workspace:*",
     "@repo/prompt-templates": "workspace:*"
   },
   "devDependencies": {

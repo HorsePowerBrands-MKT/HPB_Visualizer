@@ -10,6 +10,11 @@
     "./supabase": "./src/supabase.ts",
     "./validation": "./src/validation.ts"
   },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist node_modules",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "@google/genai": "^1.38.0",
     "@supabase/supabase-js": "^2.39.0",
