@@ -37,7 +37,12 @@
       "content": [
         "HINGED CONFIGURATION:",
         "- Extends to ceiling: {{hinged_to_ceiling}}",
-        "- Direction: {{hinged_direction}}"
+        "- Direction: {{hinged_direction}}",
+        "- IMPORTANT: Hinged door must be sized to fully close off the shower entrance",
+        "- The door panel width must span appropriately for the opening size",
+        "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
+        "- The hinges are mounted on one side, door swings out in the specified direction",
+        "- Handle should be clearly visible on the outer edge of the door panel"
       ]
     },
     {
@@ -50,7 +55,17 @@
       },
       "content": [
         "PIVOT CONFIGURATION:",
-        "- Direction: {{pivot_direction}}"
+        "- Direction: {{pivot_direction}}",
+        "- IMPORTANT: Pivot door must be sized to fully close off the shower entrance",
+        "- The door panel width must span appropriately for the opening size",
+        "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
+        "- PIVOT MECHANISM EXPLANATION:",
+        "  * Unlike hinged doors, pivot doors rotate on a central pivot point (not edge-mounted hinges)",
+        "  * The pivot point is typically offset from the edge, creating a unique swing pattern",
+        "  * When open, the door creates an angled profile (like -/ shape, not _/ shape)",
+        "  * Part of the door panel extends slightly into the shower space while the other part swings outward",
+        "  * This offset pivot creates a distinctive appearance different from standard hinged doors",
+        "- Hardware should show the pivot mechanism clearly, not standard edge hinges"
       ]
     },
     {
@@ -64,7 +79,14 @@
       "content": [
         "SLIDING CONFIGURATION:",
         "- Type: {{sliding_type}}",
-        "- Direction: {{sliding_direction}}"
+        "- Direction: {{sliding_direction}}",
+        "- IMPORTANT: Sliding doors must completely enclose the shower entrance from wall to wall",
+        "- The track system must span the entire opening width",
+        "- Both door panels (if double slider) must provide complete coverage when closed",
+        "- DOOR POSITION: Show doors in the FULLY CLOSED position so both panels are visible",
+        "- HANDLE PLACEMENT: Handles should be on the OUTER EDGES of each panel, NOT in the center where panels meet",
+        "- When closed, the two panels should meet in the middle with a clean vertical seam",
+        "- Never show vertical handles at the center seam - handles are only on the accessible outer edges"
       ]
     },
     {
@@ -75,12 +97,25 @@
         "CRITICAL RENDERING INSTRUCTIONS:",
         "1. Maintain the exact lighting, color temperature, and ambiance of the original bathroom",
         "2. Preserve all architectural details, tile work, fixtures, and decor",
-        "3. The shower glass must appear crystal clear and premium quality",
-        "4. Hardware (hinges, handles, tracks) must be precisely rendered in {{hardware_finish_name}}",
-        "5. Handle style should be clearly visible as {{handle_style_name}}",
-        "6. The installation must look professionally done and seamlessly integrated",
-        "7. Only modify the shower enclosure - all other elements remain unchanged",
-        "8. The result should be indistinguishable from a professional installation photograph",
+        "3. DOOR REPLACEMENT: Completely remove and replace any existing shower door, enclosure, or walk-in opening",
+        "   - If the original has a walk-in opening (no door), ADD the specified door configuration",
+        "   - If the original has a different door type, COMPLETELY REPLACE it with the specified configuration",
+        "   - The new door MUST span the FULL WIDTH of the shower entrance from edge to edge",
+        "   - Do not be constrained by partial coverage in the original image",
+        "   - Treat this as installing a brand new door system on a completely open shower entrance",
+        "4. DOOR POSITIONING (CRITICAL):",
+        "   - SLIDING DOORS: Always show FULLY CLOSED with both panels visible meeting in the middle",
+        "   - HINGED DOORS: Show SLIGHTLY OPEN (15-20 degrees) swinging outward away from shower",
+        "   - PIVOT DOORS: Show SLIGHTLY OPEN (15-20 degrees) with the distinctive pivot swing pattern",
+        "5. HANDLE PLACEMENT (CRITICAL):",
+        "   - SLIDING DOORS: Handles on outer edges of panels only, NEVER at the center seam where panels meet",
+        "   - HINGED/PIVOT DOORS: Handle on the opening edge, clearly visible",
+        "6. The shower glass must appear crystal clear and premium quality",
+        "7. Hardware (hinges, handles, tracks, pivots) must be precisely rendered in {{hardware_finish_name}}",
+        "8. Handle style should be clearly visible as {{handle_style_name}}",
+        "9. The installation must look professionally done and seamlessly integrated",
+        "10. Only modify the shower enclosure - all other elements remain unchanged",
+        "11. The result should be indistinguishable from a professional installation photograph",
         "",
         "Generate the image maintaining photorealistic quality with accurate material properties and lighting."
       ]
@@ -197,9 +232,9 @@
   ],
   "metadata": {
     "createdAt": "2026-01-27T00:00:00.000Z",
-    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-01-28T01:00:00.000Z",
     "author": "Gatsby Glass Team",
     "tags": ["visualization", "shower", "photorealistic"],
-    "notes": "Initial JSON template version migrated from string-based prompt"
+    "notes": "v1.1 - Added specific door positioning (sliding closed, hinged/pivot slightly open), handle placement rules (no center handles on sliders), and detailed pivot mechanism explanation"
   }
 }

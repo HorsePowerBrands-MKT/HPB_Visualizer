@@ -21,20 +21,25 @@
         "CRITICAL REQUIREMENTS:",
         "1. Generate images that look like professional architectural photography",
         "2. Match the lighting, perspective, and style of the input bathroom photo",
-        "3. The shower glass must look crystal clear and premium quality",
-        "4. Hardware (handles, hinges) must be accurately rendered in the specified finish",
-        "5. The result should be indistinguishable from a real installation photo",
-        "6. Maintain all architectural details of the original bathroom",
-        "7. Only modify the shower enclosure area - everything else stays the same"
+        "3. DOOR INSTALLATION APPROACH:",
+        "   - Treat every request as installing a completely new door system",
+        "   - Ignore any existing door configuration in the original image",
+        "   - New doors must span the FULL WIDTH of the shower entrance",
+        "   - Converting a walk-in to a door system requires full coverage from edge to edge",
+        "4. The shower glass must look crystal clear and premium quality",
+        "5. Hardware (handles, hinges, tracks) must be accurately rendered in the specified finish",
+        "6. The result should be indistinguishable from a real installation photo",
+        "7. Maintain all architectural details of the original bathroom",
+        "8. Only modify the shower enclosure area - everything else stays the same"
       ]
     }
   ],
   "variables": [],
   "metadata": {
     "createdAt": "2026-01-27T00:00:00.000Z",
-    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-01-28T00:00:00.000Z",
     "author": "Gatsby Glass Team",
     "tags": ["system", "gemini", "core"],
-    "notes": "Core system prompt defining AI behavior and constraints"
+    "notes": "Enhanced with explicit door installation approach to treat every request as a complete new installation spanning full opening width"
   }
 }

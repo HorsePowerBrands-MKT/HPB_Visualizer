@@ -147,6 +147,8 @@ export interface ProcessorOptions {
   strictValidation?: boolean;
   /** Custom variable transformers */
   transformers?: Record<string, (value: unknown) => string>;
+  /** Product catalog for lookup variables (brand-specific) */
+  catalog?: Record<string, any>;
 }
 
 /**

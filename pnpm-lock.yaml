@@ -26,9 +26,6 @@ importers:
       '@repo/api-handlers':
         specifier: workspace:*
         version: link:../../packages/api-handlers
-      '@repo/constants':
-        specifier: workspace:*
-        version: link:../../packages/constants
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -59,6 +56,9 @@ importers:
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -106,32 +106,20 @@ importers:
         specifier: ^2.39.0
         version: 2.93.1
 
-  packages/constants:
-    dependencies:
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../types
-
   packages/prompt-templates:
     dependencies:
-      '@repo/constants':
-        specifier: workspace:*
-        version: link:../constants
       '@repo/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.9.3
 
   packages/types: {}
 
   packages/visualizer-core:
     dependencies:
-      '@repo/constants':
-        specifier: workspace:*
-        version: link:../constants
       '@repo/prompt-templates':
         specifier: workspace:*
         version: link:../prompt-templates
@@ -139,7 +127,7 @@ importers:
         specifier: workspace:*
         version: link:../types
       react:
-        specifier: ^18.2.79
+        specifier: ^18.2.0
         version: 18.3.1
       uuid:
         specifier: ^9.0.1
@@ -2067,6 +2055,9 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
@@ -4277,3 +4268,5 @@ snapshots:
   ws@8.19.0: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@4.3.6: {}

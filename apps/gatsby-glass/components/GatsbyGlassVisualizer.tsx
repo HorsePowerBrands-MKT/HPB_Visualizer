@@ -11,7 +11,7 @@ import type {
   HistoryItem,
   Payload
 } from '@repo/types';
-import { CATALOG } from '@repo/constants';
+import { CATALOG } from '../lib/gatsby-constants/src';
 import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt } from '@repo/visualizer-core';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/Card';
 import { Button } from './ui/Button';
@@ -114,7 +114,7 @@ const RichSelect = ({
 }: { 
   label: string; 
   value: string; 
-  onChange: (v: any) => void; 
+  onChange: (v: string) => void; 
   options: RichSelectOption[]; 
   disabled?: boolean; 
   showWarning?: boolean 
@@ -258,6 +258,18 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setForm
   } = useVisualizerState();
 
+  // Cleanup preview URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      if (inspirationPreviewUrl) {
+        URL.revokeObjectURL(inspirationPreviewUrl);
+      }
+    };
+  }, [previewUrl, inspirationPreviewUrl]);
+
   const [contactModalOpen, setContactModalOpen] = useState<boolean>(false);
   const [contactModalMode, setContactModalMode] = useState<'save' | 'quote'>('save');
 
@@ -328,11 +340,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           setResultUrl(null);
           setShowResult(false);
           
-          setForm((prev) => ({
-            ...prev,
+          setForm({
+            ...form,
             shower_shape: result.shape,
             ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
-          }));
+          });
           if (result.shape === 'neo_angle') {
             setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
             setTimeout(() => setInfoMessage(null), 8000);
@@ -404,8 +416,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       addHistoryItem(newHistoryItem);
       setShowResult(true);
 
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
@@ -434,7 +452,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               {previewUrl ? (
                 <>
                   <img src={previewUrl} alt="Uploaded shower" className="object-contain h-full w-full rounded-md" />
-                  <button onClick={() => {setImageFile(null); setPreviewUrl(null);}} className="absolute top-2 right-2 p-1.5 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 z-10">
+                  <button 
+                    onClick={() => {setImageFile(null); setPreviewUrl(null);}} 
+                    className="absolute top-2 right-2 p-1.5 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 z-10"
+                    aria-label="Remove uploaded image"
+                  >
                     <X size={16} />
                   </button>
                 </>
@@ -495,7 +517,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                   <RichSelect 
                     label="Enclosure Type"
                     value={form.enclosure_type} 
-                    onChange={handleEnclosureChange}
+                    onChange={(v) => handleEnclosureChange(v as EnclosureType)}
                     options={enclosureOptions}
                     showWarning={!!infoMessage}
                   />
@@ -617,25 +639,25 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                   <RichSelect
                     label="Glass Style"
                     value={form.glass_style}
-                    onChange={(v) => updateFormField('glass_style', v)}
+                    onChange={(v) => updateFormField('glass_style', v as GlassStyle)}
                     options={glassOptions}
                   />
                   <RichSelect
                     label="Hardware Finish"
                     value={form.hardware_finish}
-                    onChange={(v) => updateFormField('hardware_finish', v)}
+                    onChange={(v) => updateFormField('hardware_finish', v as HardwareFinish)}
                     options={hardwareOptions}
                   />
                   <RichSelect
                     label="Handle Style"
                     value={form.handle_style}
-                    onChange={(v) => updateFormField('handle_style', v)}
+                    onChange={(v) => updateFormField('handle_style', v as HandleStyle)}
                     options={handleOptions}
                   />
                   <RichSelect
                     label="Framing Style"
                     value={form.track_preference}
-                    onChange={(v) => updateFormField('track_preference', v)}
+                    onChange={(v) => updateFormField('track_preference', v as TrackPreference)}
                     options={framingOptions}
                   />
                 </div>
@@ -734,7 +756,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           {resultUrl && (
             <div className="flex justify-center items-center gap-4 bg-brand-black p-2 rounded-lg">
               <span className="text-sm font-medium">Before</span>
-              <div onClick={() => setShowResult(s => !s)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-brand-black"
+              <div onClick={() => setShowResult(!showResult)} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-brand-black"
                 style={{backgroundColor: showResult ? '#a37529' : '#6b7280'}}>
                 <span className="inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                   style={{transform: showResult ? 'translateX(1.25rem)' : 'translateX(0rem)'}}></span>

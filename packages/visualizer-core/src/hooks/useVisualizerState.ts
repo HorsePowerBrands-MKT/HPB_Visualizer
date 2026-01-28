@@ -6,11 +6,26 @@ import type {
   HistoryItem,
   HingedConfig,
   PivotConfig,
-  SlidingConfig
+  SlidingConfig,
+  OptionalConfig
 } from '@repo/types';
-import { CATALOG_VERSION, DEFAULT_OPTIONAL_CONFIG } from '@repo/constants';
 
-const INITIAL_FORM_STATE: Payload = {
+// Default optional configuration
+const DEFAULT_OPTIONAL_CONFIG: OptionalConfig = {
+  glass_height: 'standard',
+  custom_height_in: 0,
+  towel_bar: {
+    enabled: false,
+    style: null
+  }
+};
+
+export interface VisualizerConfig {
+  catalogVersion?: string;
+  defaultOptionalConfig?: OptionalConfig;
+}
+
+const createInitialFormState = (config?: VisualizerConfig): Payload => ({
   mode: "configure",
   image_ref: "",
   enclosure_type: "hinged",
@@ -35,11 +50,11 @@ const INITIAL_FORM_STATE: Payload = {
     direction: "sliding_left"
   },
   track_preference: "frameless",
-  optional: DEFAULT_OPTIONAL_CONFIG,
+  optional: config?.defaultOptionalConfig || DEFAULT_OPTIONAL_CONFIG,
   user_notes: "",
   session_id: "",
-  catalog_version: CATALOG_VERSION,
-};
+  catalog_version: config?.catalogVersion || '2025.10',
+});
 
 export interface VisualizerState {
   form: Payload;
@@ -81,7 +96,8 @@ export interface VisualizerActions {
   createHistoryLabel: (payload: Payload) => string;
 }
 
-export function useVisualizerState(): VisualizerState & VisualizerActions {
+export function useVisualizerState(config?: VisualizerConfig): VisualizerState & VisualizerActions {
+  const INITIAL_FORM_STATE = createInitialFormState(config);
   const [form, setForm] = useState<Payload>(INITIAL_FORM_STATE);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [inspirationFile, setInspirationFile] = useState<File | null>(null);
