@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Gill Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Gatsby FLF', 'serif'],
+      },
       colors: {
         'brand-primary': '#a37529',
         'brand-secondary': '#e4bf6e',

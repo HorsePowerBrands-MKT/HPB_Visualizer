@@ -1,0 +1,84 @@
+@font-face {
+    font-family: "Gill Sans Bold Italic";
+    src:          url("../fonts/Gill Sans Bold Italic.otf") format("opentype");
+    font-weight: 700;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Gill Sans Bold";
+    src:          url("../fonts/Gill Sans Bold.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Gill Sans Italic";
+    src:          url("../fonts/Gill Sans Italic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Gill Sans Light Italic";
+    src:          url("../fonts/Gill Sans Light Italic.otf") format("opentype");
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Gill Sans Light";
+    src:          url("../fonts/Gill Sans Light.otf") format("opentype");
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Gill Sans Medium Italic";
+    src:          url("../fonts/Gill Sans Medium Italic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Gill Sans Medium";
+    src:          url("../fonts/Gill Sans Medium.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Gill Sans";
+    src:          url("../fonts/Gill Sans.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "GatsbyFLF-Bold";
+    src:          url("../fonts/GatsbyFLF-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "GatsbyFLF-BoldItalic";
+    src:          url("../fonts/GatsbyFLF-BoldItalic.ttf") format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "GatsbyFLF-Italic";
+    src:          url("../fonts/GatsbyFLF-Italic.ttf") format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "GatsbyFLF";
+    src:          url("../fonts/GatsbyFLF.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
