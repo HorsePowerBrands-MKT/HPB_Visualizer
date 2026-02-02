@@ -34,9 +34,16 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        'shimmer': {
+          '0%': { transform: 'translateX(-200%)', opacity: '0' },
+          '20%': { opacity: '1' },
+          '80%': { opacity: '1' },
+          '100%': { transform: 'translateX(200%)', opacity: '0' },
+        },
       },
       animation: {
         'in': 'in 0.2s ease-out',
+        'shimmer': 'shimmer 3s ease-in-out infinite',
       },
     },
   },

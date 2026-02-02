@@ -113,7 +113,23 @@ function evaluateCondition(
   condition: TemplateCondition,
   variables: Record<string, unknown>
 ): boolean {
-  const value = variables[condition.variable];
+  // Handle compound conditions
+  if (condition.operator === 'and') {
+    if (!condition.conditions || condition.conditions.length === 0) {
+      return true;
+    }
+    return condition.conditions.every(c => evaluateCondition(c, variables));
+  }
+  
+  if (condition.operator === 'or') {
+    if (!condition.conditions || condition.conditions.length === 0) {
+      return false;
+    }
+    return condition.conditions.some(c => evaluateCondition(c, variables));
+  }
+  
+  // Handle simple conditions
+  const value = variables[condition.variable!];
   
   switch (condition.operator) {
     case 'equals':

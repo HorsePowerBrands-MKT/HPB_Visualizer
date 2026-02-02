@@ -26,21 +26,17 @@ export interface DoorOpening {
   swing: 'in' | 'out' | null;
 }
 
-// Hinged door configuration
+// Simplified configs - details handled automatically by AI
 export interface HingedConfig {
-  to_ceiling: boolean;
-  direction: 'swing_left' | 'swing_right' | 'double_door';
+  // No longer needed - AI determines optimal configuration
 }
 
-// Pivot door configuration
 export interface PivotConfig {
-  direction: 'swing_left' | 'swing_right' | 'double_door';
+  // No longer needed - AI determines optimal configuration
 }
 
-// Sliding door configuration
 export interface SlidingConfig {
-  sub_type: 'single_door' | 'double_door';
-  direction: 'sliding_left' | 'sliding_right' | 'inner_left' | 'inner_right';
+  // No longer needed - AI determines optimal configuration
 }
 
 // Optional configurations

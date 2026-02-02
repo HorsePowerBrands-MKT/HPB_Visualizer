@@ -36,12 +36,12 @@
       },
       "content": [
         "HINGED CONFIGURATION:",
-        "- Extends to ceiling: {{hinged_to_ceiling}}",
-        "- Direction: {{hinged_direction}}",
         "- IMPORTANT: Hinged door must be sized to fully close off the shower entrance",
         "- The door panel width must span appropriately for the opening size",
         "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
-        "- The hinges are mounted on one side, door swings out in the specified direction",
+        "- INTELLIGENT PLACEMENT: Position the door to swing in the most practical direction based on the bathroom layout",
+        "- Ensure the door swing doesn't obstruct fixtures, toilets, vanities, or block the bathroom entry",
+        "- The hinges should be mounted on the side that provides the most natural and unobstructed access",
         "- Handle should be clearly visible on the outer edge of the door panel"
       ]
     },
@@ -55,10 +55,11 @@
       },
       "content": [
         "PIVOT CONFIGURATION:",
-        "- Direction: {{pivot_direction}}",
         "- IMPORTANT: Pivot door must be sized to fully close off the shower entrance",
         "- The door panel width must span appropriately for the opening size",
         "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
+        "- INTELLIGENT PLACEMENT: Position the pivot mechanism optimally based on the bathroom layout",
+        "- Ensure the door swing doesn't obstruct fixtures, toilets, vanities, or block the bathroom entry",
         "- PIVOT MECHANISM EXPLANATION:",
         "  * Unlike hinged doors, pivot doors rotate on a central pivot point (not edge-mounted hinges)",
         "  * The pivot point is typically offset from the edge, creating a unique swing pattern",
@@ -78,10 +79,10 @@
       },
       "content": [
         "SLIDING CONFIGURATION:",
-        "- Type: {{sliding_type}}",
-        "- Direction: {{sliding_direction}}",
         "- IMPORTANT: Sliding doors must completely enclose the shower entrance from wall to wall",
         "- The track system must span the entire opening width",
+        "- Install with appropriate clearance and practical opening direction based on bathroom layout",
+        "- Configure as single or double door system based on the width of the opening (wider openings benefit from double doors)",
         "- Both door panels (if double slider) must provide complete coverage when closed",
         "- DOOR POSITION: Show doors in the FULLY CLOSED position so both panels are visible",
         "- HANDLE PLACEMENT: Handles should be on the OUTER EDGES of each panel, NOT in the center where panels meet",
@@ -90,32 +91,266 @@
       ]
     },
     {
+      "id": "hardware_details",
+      "type": "hardware_specifications",
+      "content": [
+        "",
+        "DETAILED HARDWARE SPECIFICATIONS:",
+        "",
+        "These descriptions provide exact visual details for rendering accurate shower hardware. Use the specification that matches the DOOR TYPE and FRAMING combination:",
+        ""
+      ]
+    },
+    {
+      "id": "hinged_frameless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "hinged"},
+          {"variable": "track_preference", "operator": "equals", "value": "frameless"}
+        ]
+      },
+      "content": [
+        "HINGED + FRAMELESS SPECIFICATIONS:",
+        "- Glass panel swings on 2-3 heavy-duty wall-mounted hinges attached directly to glass",
+        "- Hinges: Rectangular metal plates (approx 2\"×4\") with visible screw holes on wall side",
+        "- Glass-clamp mechanisms on door side of each hinge",
+        "- Glass thickness: 3/8\" to 1/2\" tempered glass",
+        "- ALL edges are polished/beveled and fully exposed - NO metal surrounds ANY glass edge",
+        "- Vertical handle or towel bar mounts through glass via through-glass fittings",
+        "- Door closes against fixed panel using small glass-to-glass clamps OR directly against wall",
+        "- Clear vinyl sweep along bottom edge and magnetic strip on closing edge",
+        "- CRITICAL: No frames, no channels, no metal edging - pure glass with only hinge hardware and handle",
+        ""
+      ]
+    },
+    {
+      "id": "hinged_semiframeless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "hinged"},
+          {"variable": "track_preference", "operator": "equals", "value": "semi_frameless"}
+        ]
+      },
+      "content": [
+        "HINGED + SEMI-FRAMELESS SPECIFICATIONS:",
+        "- Fixed panels ONLY have thin U-channel metal edging (1\" to 1.5\" wide aluminum)",
+        "- Swinging door remains FRAMELESS with exposed glass edges",
+        "- Hinges mount to wall or to metal channel of adjacent fixed panel",
+        "- Fixed panels sit in aluminum channel along wall and base",
+        "- Door swings free with only hinge hardware and handle - no frame around door perimeter",
+        "- Visual distinction: framed stationary sections with floating door panel",
+        "- Bottom of door has drip rail or sweep but no full frame",
+        "- Handle mounts through glass on door",
+        ""
+      ]
+    },
+    {
+      "id": "hinged_framed_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "hinged"},
+          {"variable": "track_preference", "operator": "equals", "value": "framed"}
+        ]
+      },
+      "content": [
+        "HINGED + FRAMED SPECIFICATIONS:",
+        "- Entire glass panel INCLUDING door sits within continuous aluminum frame",
+        "- Frame: 1.5\" to 2\" wide extruded aluminum in {{hardware_finish_name}}",
+        "- Frame surrounds all four edges of every glass piece",
+        "- Traditional barrel hinges or butt hinges mount frame-to-frame (NOT glass-to-glass)",
+        "- Glass: 1/4\" tempered (thinner since frame provides support)",
+        "- Door includes full perimeter frame with visible 45° mitered corner joints",
+        "- Magnetic strips or compression seals inside frame channels",
+        "- Handle attaches to frame rather than through glass",
+        "- All glass edges are hidden within frame channels - no exposed glass edges",
+        ""
+      ]
+    },
+    {
+      "id": "pivot_frameless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "pivot"},
+          {"variable": "track_preference", "operator": "equals", "value": "frameless"}
+        ]
+      },
+      "content": [
+        "PIVOT + FRAMELESS SPECIFICATIONS:",
+        "- Door rotates on vertical axis 4-6 inches from one edge (NOT centered, NOT edge-hinged)",
+        "- Two pivot points: floor-mounted pivot pin/bracket + ceiling/header-mounted pivot clamp",
+        "- NO side hinges - door floats and rotates around two small pivot points",
+        "- Pivot hardware: Small circular/rectangular mechanisms (2\"×2\" footprint) at top and bottom",
+        "- Glass: 3/8\" to 1/2\" thick with all edges exposed and polished",
+        "- Through-glass handle provides grip",
+        "- Non-pivot side swings past plane of adjacent panels (creates offset swing)",
+        "- Bottom pivot sits in small stainless steel cup/plate embedded in floor tile",
+        "- When open, door creates distinctive angled profile with offset pivot visible",
+        ""
+      ]
+    },
+    {
+      "id": "pivot_semiframeless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "pivot"},
+          {"variable": "track_preference", "operator": "equals", "value": "semi_frameless"}
+        ]
+      },
+      "content": [
+        "PIVOT + SEMI-FRAMELESS SPECIFICATIONS:",
+        "- Fixed panels sit in metal U-channels along walls and base",
+        "- Pivot door itself is FRAMELESS with exposed glass edges",
+        "- Pivot hardware mounts to narrow header bar at top (not ceiling) and floor plate at bottom",
+        "- Header bar: Narrow aluminum extrusion spanning shower opening for top pivot mount",
+        "- Door glass remains unframed with polished edges",
+        "- Through-glass handle on door",
+        "- Pivot mechanism visible at offset position from edge",
+        ""
+      ]
+    },
+    {
+      "id": "pivot_framed_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "pivot"},
+          {"variable": "track_preference", "operator": "equals", "value": "framed"}
+        ]
+      },
+      "content": [
+        "PIVOT + FRAMED SPECIFICATIONS:",
+        "- Pivot door has full aluminum frame around all four edges",
+        "- Pivot mechanism integrated into top and bottom frame rails (concealed within frame)",
+        "- Pivot point hidden inside frame profile",
+        "- Floor and ceiling connections are frame-to-surface (not glass-to-surface)",
+        "- Frame pieces meet at 45° mitered corners",
+        "- Glass: 1/4\" thick sitting in frame channels",
+        "- Handle mounts to frame",
+        "- Pivot hardware not externally visible - clean framed appearance",
+        ""
+      ]
+    },
+    {
+      "id": "sliding_frameless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "sliding"},
+          {"variable": "track_preference", "operator": "equals", "value": "frameless"}
+        ]
+      },
+      "content": [
+        "SLIDING + FRAMELESS SPECIFICATIONS:",
+        "- Two or more glass panels slide on exposed top-mounted track/rail system",
+        "- Track: Horizontal metal bar (1\" to 1.5\" diameter) with visible roller hardware",
+        "- Each panel hangs from two roller carriages (small wheel assemblies visible on top)",
+        "- Rollers: Exposed circular wheels in stainless steel or chrome",
+        "- NO bottom track - just small guide pin or floor guide to prevent swinging",
+        "- Glass panels bypass each other (one slides in front of other) or meet in center",
+        "- All glass edges exposed and polished (3/8\" glass typical)",
+        "- Vertical handles mount through-glass on outer edges of panels",
+        "- Track rail is round bar or rectangular profile, mounted to wall at ends via visible wall brackets",
+        "- When closed, panels meet with clean vertical seam in middle",
+        ""
+      ]
+    },
+    {
+      "id": "sliding_semiframeless_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "sliding"},
+          {"variable": "track_preference", "operator": "equals", "value": "semi_frameless"}
+        ]
+      },
+      "content": [
+        "SLIDING + SEMI-FRAMELESS SPECIFICATIONS:",
+        "- Fixed panels sit in metal U-channels along walls and curb",
+        "- Sliding door panels remain FRAMELESS with exposed edges",
+        "- Track system: Metal header spans top with recessed channel (partially enclosed)",
+        "- Rollers mostly hidden within header track (not fully exposed like frameless)",
+        "- Small bottom rail or curb channel guides sliding panels",
+        "- Sliding doors have through-glass handles and no frame around perimeter",
+        "- Fixed sections framed, sliding sections frameless",
+        ""
+      ]
+    },
+    {
+      "id": "sliding_framed_details",
+      "type": "hardware_detail",
+      "condition": {
+        "operator": "and",
+        "conditions": [
+          {"variable": "enclosure_type", "operator": "equals", "value": "sliding"},
+          {"variable": "track_preference", "operator": "equals", "value": "framed"}
+        ]
+      },
+      "content": [
+        "SLIDING + FRAMED SPECIFICATIONS:",
+        "- ALL glass panels (fixed AND sliding) have full aluminum frames around perimeters",
+        "- Frame: 1.5\" to 2\" wide with visible corner joints",
+        "- Sliding panels roll on enclosed track system integrated into full header frame",
+        "- Track mechanism completely hidden within header extrusion",
+        "- Full bottom track/rail runs along curb/floor creating channel for framed doors",
+        "- Rollers completely concealed inside top frame rail",
+        "- Glass: 1/4\" thick within frame channels",
+        "- Handles attach to frame (not through glass)",
+        "- Clean, traditional appearance with all hardware hidden in frame system",
+        ""
+      ]
+    },
+    {
       "id": "instructions",
       "type": "instructions",
       "content": [
         "",
         "CRITICAL RENDERING INSTRUCTIONS:",
-        "1. Maintain the exact lighting, color temperature, and ambiance of the original bathroom",
-        "2. Preserve all architectural details, tile work, fixtures, and decor",
-        "3. DOOR REPLACEMENT: Completely remove and replace any existing shower door, enclosure, or walk-in opening",
-        "   - If the original has a walk-in opening (no door), ADD the specified door configuration",
-        "   - If the original has a different door type, COMPLETELY REPLACE it with the specified configuration",
-        "   - The new door MUST span the FULL WIDTH of the shower entrance from edge to edge",
-        "   - Do not be constrained by partial coverage in the original image",
-        "   - Treat this as installing a brand new door system on a completely open shower entrance",
-        "4. DOOR POSITIONING (CRITICAL):",
+        "1. OUTPUT DIMENSIONS: Generate the output image at EXACTLY the same dimensions as the input bathroom image to ensure perfect before/after alignment",
+        "2. Maintain the exact lighting, color temperature, and ambiance of the original bathroom",
+        "3. Preserve all architectural details, tile work, fixtures, and decor",
+        "4. DOOR REPLACEMENT & FULL-WIDTH COVERAGE (CRITICAL):",
+        "   - FIRST: Identify the COMPLETE WIDTH of the shower entrance (wall-to-wall measurement)",
+        "   - IGNORE any existing partial door, curtain rod, or walk-in opening in the original image",
+        "   - If the original has a walk-in opening (no door), you MUST ADD a FULL-WIDTH door system",
+        "   - If the original has a partial door or curtain, you MUST REPLACE it with a FULL-WIDTH door system",
+        "   - The new door installation MUST span 100% of the shower entrance width from wall edge to wall edge",
+        "   - DO NOT replicate the width of any existing door/opening - ALWAYS install wall-to-wall coverage",
+        "   - Think of this as a brand new professional installation where the door MUST seal the entire entrance",
+        "   - For walk-in showers: The door should cover the entire open area, not just match where a curtain rod might be",
+        "5. DOOR SIZING VERIFICATION:",
+        "   - Verify the door width matches the FULL shower entrance opening (not any existing partial door)",
+        "   - For HINGED/PIVOT: Single panel must be wide enough to fully close the entrance",
+        "   - For SLIDING: Combined panel width must cover wall-to-wall when closed",
+        "   - The door system should look proportional and professional for the full entrance width",
+        "6. DOOR POSITIONING (CRITICAL):",
         "   - SLIDING DOORS: Always show FULLY CLOSED with both panels visible meeting in the middle",
         "   - HINGED DOORS: Show SLIGHTLY OPEN (15-20 degrees) swinging outward away from shower",
         "   - PIVOT DOORS: Show SLIGHTLY OPEN (15-20 degrees) with the distinctive pivot swing pattern",
-        "5. HANDLE PLACEMENT (CRITICAL):",
+        "7. HANDLE PLACEMENT (CRITICAL):",
         "   - SLIDING DOORS: Handles on outer edges of panels only, NEVER at the center seam where panels meet",
         "   - HINGED/PIVOT DOORS: Handle on the opening edge, clearly visible",
-        "6. The shower glass must appear crystal clear and premium quality",
-        "7. Hardware (hinges, handles, tracks, pivots) must be precisely rendered in {{hardware_finish_name}}",
-        "8. Handle style should be clearly visible as {{handle_style_name}}",
-        "9. The installation must look professionally done and seamlessly integrated",
-        "10. Only modify the shower enclosure - all other elements remain unchanged",
-        "11. The result should be indistinguishable from a professional installation photograph",
+        "8. The shower glass must appear crystal clear and premium quality",
+        "9. Hardware (hinges, handles, tracks, pivots) must be precisely rendered in {{hardware_finish_name}}",
+        "10. Handle style should be clearly visible as {{handle_style_name}}",
+        "11. The installation must look professionally done and seamlessly integrated",
+        "12. Only modify the shower enclosure - all other elements remain unchanged",
+        "13. The result should be indistinguishable from a professional installation photograph",
+        "14. FINAL CHECKS:",
+        "    - Confirm output image dimensions match input dimensions exactly",
+        "    - Confirm the door spans the COMPLETE width of the shower entrance, wall-to-wall",
         "",
         "Generate the image maintaining photorealistic quality with accurate material properties and lighting."
       ]
@@ -197,44 +432,13 @@
       "catalogProperty": "name",
       "required": true,
       "description": "Human-readable framing preference name"
-    },
-    {
-      "name": "hinged_to_ceiling",
-      "type": "string",
-      "required": false,
-      "default": "No",
-      "description": "Whether hinged door extends to ceiling (Yes/No)"
-    },
-    {
-      "name": "hinged_direction",
-      "type": "string",
-      "required": false,
-      "description": "Hinged door swing direction"
-    },
-    {
-      "name": "pivot_direction",
-      "type": "string",
-      "required": false,
-      "description": "Pivot door swing direction"
-    },
-    {
-      "name": "sliding_type",
-      "type": "string",
-      "required": false,
-      "description": "Sliding door type (single/double)"
-    },
-    {
-      "name": "sliding_direction",
-      "type": "string",
-      "required": false,
-      "description": "Sliding door direction"
     }
   ],
   "metadata": {
     "createdAt": "2026-01-27T00:00:00.000Z",
-    "updatedAt": "2026-01-28T01:00:00.000Z",
+    "updatedAt": "2026-02-02T18:30:00.000Z",
     "author": "Gatsby Glass Team",
-    "tags": ["visualization", "shower", "photorealistic"],
-    "notes": "v1.1 - Added specific door positioning (sliding closed, hinged/pivot slightly open), handle placement rules (no center handles on sliders), and detailed pivot mechanism explanation"
+    "tags": ["visualization", "shower", "photorealistic", "hardware"],
+    "notes": "v1.5 - Added comprehensive hardware specifications for all enclosure+framing combinations. Includes detailed mechanical descriptions of hinges, pivots, tracks, rollers, glass thickness, frame dimensions, and visual appearance for frameless/semi-frameless/framed variations. Should dramatically improve AI accuracy in rendering shower hardware."
   }
 }

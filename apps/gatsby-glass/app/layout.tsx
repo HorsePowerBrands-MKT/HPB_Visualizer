@@ -35,7 +35,7 @@ export default function RootLayout({
               {children}
             </div>
           </main>
-          <footer className="bg-brand-black-secondary border-t border-gray-800 py-8 mt-12">
+          <footer className="bg-brand-black py-8 mt-8">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto text-center space-y-4">
                 <p className="text-sm text-gray-400 leading-relaxed">

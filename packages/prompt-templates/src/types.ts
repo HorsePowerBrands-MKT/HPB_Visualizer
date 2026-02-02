@@ -35,12 +35,14 @@ export interface TemplateVariable {
  * Condition for conditional sections
  */
 export interface TemplateCondition {
-  /** Variable to check */
-  variable: string;
+  /** Variable to check (not used for and/or operators) */
+  variable?: string;
   /** Operator for comparison */
-  operator: 'equals' | 'not_equals' | 'exists' | 'not_exists' | 'in' | 'not_in';
+  operator: 'equals' | 'not_equals' | 'exists' | 'not_exists' | 'in' | 'not_in' | 'and' | 'or';
   /** Value to compare against (for equals/not_equals/in/not_in) */
   value?: string | number | boolean | (string | number | boolean)[];
+  /** Nested conditions (for and/or operators) */
+  conditions?: TemplateCondition[];
 }
 
 /**
@@ -50,7 +52,7 @@ export interface TemplateSection {
   /** Section identifier */
   id: string;
   /** Type of section */
-  type: 'header' | 'specifications' | 'configuration' | 'instructions' | 'custom';
+  type: 'header' | 'specifications' | 'configuration' | 'instructions' | 'hardware_specifications' | 'hardware_detail' | 'custom';
   /** Optional condition for this section */
   condition?: TemplateCondition;
   /** Content lines (can include {{variable}} placeholders) */
