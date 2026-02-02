@@ -11,15 +11,29 @@ export async function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * Convert a File to base64 data (without data URL prefix)
+ * Convert a File to base64 data (without data URL prefix) and get dimensions
  */
-export async function fileToBase64Data(file: File): Promise<{ data: string; mimeType: string }> {
-  const dataUrl = await fileToBase64(file);
-  const [header, data] = dataUrl.split(',');
-  return {
-    data,
-    mimeType: file.type
-  };
+export async function fileToBase64Data(file: File): Promise<{ data: string; mimeType: string; width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const dataUrl = e.target?.result as string;
+        const [header, data] = dataUrl.split(',');
+        resolve({
+          data,
+          mimeType: file.type,
+          width: img.width,
+          height: img.height
+        });
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
 }
 
 /**

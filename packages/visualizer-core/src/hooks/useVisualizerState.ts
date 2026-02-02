@@ -38,17 +38,9 @@ const createInitialFormState = (config?: VisualizerConfig): Payload => ({
     side: "right",
     swing: null,
   },
-  hinged_config: {
-    to_ceiling: false,
-    direction: "swing_left"
-  },
-  pivot_config: {
-    direction: "swing_left"
-  },
-  sliding_config: {
-    sub_type: "single_door",
-    direction: "sliding_left"
-  },
+  hinged_config: {},
+  pivot_config: {},
+  sliding_config: {},
   track_preference: "frameless",
   optional: config?.defaultOptionalConfig || DEFAULT_OPTIONAL_CONFIG,
   user_notes: "",
@@ -69,6 +61,8 @@ export interface VisualizerState {
   error: string | null;
   showResult: boolean;
   infoMessage: string | null;
+  currentStep: number;
+  maxStepReached: number;
 }
 
 export interface VisualizerActions {
@@ -94,6 +88,11 @@ export interface VisualizerActions {
   handleEnclosureChange: (value: EnclosureType) => void;
   resetAll: () => void;
   createHistoryLabel: (payload: Payload) => string;
+  goToNextStep: () => void;
+  goToPreviousStep: () => void;
+  goToStep: (step: number) => void;
+  canProceedToNextStep: () => boolean;
+  getTotalSteps: () => number;
 }
 
 export function useVisualizerState(config?: VisualizerConfig): VisualizerState & VisualizerActions {
@@ -110,6 +109,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
   const [error, setError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState<boolean>(false);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [maxStepReached, setMaxStepReached] = useState<number>(1);
 
   const updateFormField = useCallback(<K extends keyof Payload>(field: K, value: Payload[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -162,6 +163,63 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     return `${typeName} • ${finishName}`;
   }, []);
 
+  const getTotalSteps = useCallback((): number => {
+    // Step 1: Mode selection
+    // Step 2: Upload bathroom
+    // Step 3: Enclosure type (configure) OR Upload inspiration (inspiration)
+    // Step 4: Glass & Framing (configure only)
+    // Step 5: Hardware & Handles (configure only)
+    // Step 6: Generate/Result
+    return form.mode === 'configure' ? 6 : 4;
+  }, [form.mode]);
+
+  const canProceedToNextStep = useCallback((): boolean => {
+    switch (currentStep) {
+      case 1: // Mode selection
+        return form.mode !== undefined;
+      case 2: // Upload bathroom photo
+        return imageFile !== null && previewUrl !== null;
+      case 3: // Enclosure type OR inspiration upload
+        if (form.mode === 'configure') {
+          return form.enclosure_type !== undefined;
+        } else {
+          return inspirationFile !== null && inspirationPreviewUrl !== null;
+        }
+      case 4: // Glass & Framing (configure only)
+        return form.glass_style !== undefined && form.track_preference !== undefined;
+      case 5: // Hardware & Handles (configure only)
+        return form.hardware_finish !== undefined && form.handle_style !== undefined;
+      default:
+        return false;
+    }
+  }, [currentStep, form, imageFile, previewUrl, inspirationFile, inspirationPreviewUrl]);
+
+  const goToNextStep = useCallback(() => {
+    if (canProceedToNextStep()) {
+      const nextStep = currentStep + 1;
+      const totalSteps = getTotalSteps();
+      if (nextStep <= totalSteps) {
+        setCurrentStep(nextStep);
+        setMaxStepReached(Math.max(maxStepReached, nextStep));
+        setError(null);
+      }
+    }
+  }, [currentStep, canProceedToNextStep, getTotalSteps, maxStepReached]);
+
+  const goToPreviousStep = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      setError(null);
+    }
+  }, [currentStep]);
+
+  const goToStep = useCallback((step: number) => {
+    if (step >= 1 && step <= maxStepReached) {
+      setCurrentStep(step);
+      setError(null);
+    }
+  }, [maxStepReached]);
+
   const resetAll = useCallback(() => {
     setForm(INITIAL_FORM_STATE);
     setImageFile(null);
@@ -174,6 +232,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     setError(null);
     setShowResult(false);
     setInfoMessage(null);
+    setCurrentStep(1);
+    setMaxStepReached(1);
   }, []);
 
   return {
@@ -190,6 +250,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     error,
     showResult,
     infoMessage,
+    currentStep,
+    maxStepReached,
     // Actions
     setForm,
     updateFormField,
@@ -209,5 +271,10 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     handleEnclosureChange,
     resetAll,
     createHistoryLabel,
+    goToNextStep,
+    goToPreviousStep,
+    goToStep,
+    canProceedToNextStep,
+    getTotalSteps,
   };
 }

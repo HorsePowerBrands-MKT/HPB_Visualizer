@@ -11,6 +11,8 @@ export interface ImageValidationResponse {
 export interface ImageData {
   data: string; // base64
   mimeType: string;
+  width?: number;
+  height?: number;
 }
 
 // Visualization generation request
@@ -18,6 +20,8 @@ export interface VisualizationRequest {
   bathroomImage: ImageData;
   inspirationImage?: ImageData;
   prompt: string;
+  targetWidth?: number;
+  targetHeight?: number;
 }
 
 // Visualization generation response
