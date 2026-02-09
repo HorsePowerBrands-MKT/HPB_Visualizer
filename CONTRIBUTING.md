@@ -5,12 +5,14 @@ Thank you for your interest in contributing to the HPB Visualizer project!
 ## Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd HPB_Visualizer
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
@@ -20,6 +22,7 @@ Thank you for your interest in contributing to the HPB Visualizer project!
    - Add your API keys (Gemini, Supabase)
 
 4. **Run development server**
+
    ```bash
    pnpm dev
    ```
@@ -73,6 +76,7 @@ This is a **monorepo** with shared packages and brand-specific apps:
 - `chore/` - Maintenance tasks
 
 Examples:
+
 - `feature/add-rate-limiting`
 - `fix/image-validation-error`
 - `refactor/extract-icon-component`
@@ -123,6 +127,7 @@ Use clear, descriptive commit messages:
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `refactor`: Code refactoring
@@ -132,6 +137,7 @@ Types:
 - `chore`: Maintenance tasks
 
 Examples:
+
 - `feat: add input validation to API routes`
 - `fix: resolve memory leak in image preview`
 - `refactor: extract icon components for reusability`

@@ -34,7 +34,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
       </div>
 
       <div className="mt-6 md:mt-8">
-        <div className="relative flex items-center justify-center w-full h-[400px] md:h-[450px] lg:h-[500px] border-2 border-dashed rounded-2xl border-brand-primary/50 hover:border-brand-secondary transition-all duration-300 bg-black/20 overflow-hidden group">
+        <div className="relative flex items-center justify-center w-full h-[400px] md:h-[450px] lg:h-[500px] max-h-[500px] border-2 border-dashed rounded-2xl border-brand-primary/50 hover:border-brand-secondary transition-all duration-300 bg-black/20 overflow-hidden group">
           {validating && (
             <div className="absolute inset-0 z-20 bg-black/70 flex flex-col items-center justify-center text-brand-secondary animate-in fade-in">
               <Loader2 className="h-12 w-12 animate-spin mb-4" />

@@ -88,7 +88,7 @@ export interface VisualizerActions {
   handleEnclosureChange: (value: EnclosureType) => void;
   resetAll: () => void;
   createHistoryLabel: (payload: Payload) => string;
-  goToNextStep: () => void;
+  goToNextStep: (force?: boolean) => void;
   goToPreviousStep: () => void;
   goToStep: (step: number) => void;
   canProceedToNextStep: () => boolean;
@@ -194,8 +194,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     }
   }, [currentStep, form, imageFile, previewUrl, inspirationFile, inspirationPreviewUrl]);
 
-  const goToNextStep = useCallback(() => {
-    if (canProceedToNextStep()) {
+  const goToNextStep = useCallback((force: boolean = false) => {
+    if (force || canProceedToNextStep()) {
       const nextStep = currentStep + 1;
       const totalSteps = getTotalSteps();
       if (nextStep <= totalSteps) {
