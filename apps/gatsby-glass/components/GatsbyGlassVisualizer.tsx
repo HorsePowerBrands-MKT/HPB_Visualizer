@@ -229,61 +229,82 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'target' | 'inspiration') => {
     const file = e.target.files?.[0] || null;
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError("Image size should be less than 10MB.");
+    console.log('[FILE UPLOAD] File selected:', file?.name, file?.size, file?.type);
+    
+    if (!file) {
+      console.log('[FILE UPLOAD] No file selected');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      console.error('[FILE UPLOAD] File too large:', file.size);
+      setError("Image size should be less than 10MB.");
+      return;
+    }
+
+    setValidating(type);
+    setError(null);
+    console.log('[FILE UPLOAD] Starting validation for:', type);
+
+    try {
+      console.log('[FILE UPLOAD] Converting to base64...');
+      const imageData = await fileToBase64Data(file);
+      console.log('[FILE UPLOAD] Base64 conversion complete, data length:', imageData.data.length);
+
+      console.log('[FILE UPLOAD] Calling validation API...');
+      const response = await fetch('/api/validate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(imageData)
+      });
+
+      console.log('[FILE UPLOAD] API response status:', response.status);
+      const result = await response.json();
+      console.log('[FILE UPLOAD] API result:', result);
+      
+      if (!result.valid) {
+        console.warn('[FILE UPLOAD] Image validation failed:', result.reason);
+        setError(result.reason || "The uploaded image does not appear to be a bathroom or shower. Please upload a valid photo.");
+        e.target.value = '';
+        setValidating(null);
         return;
       }
 
-      setValidating(type);
-      setError(null);
+      console.log('[FILE UPLOAD] Validation successful, shape detected:', result.shape);
 
-      try {
-        const imageData = await fileToBase64Data(file);
-
-        const response = await fetch('/api/validate-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(imageData)
-        });
-
-        const result = await response.json();
+      if (type === 'target') {
+        setImageFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        setResultUrl(null);
+        setShowResult(false);
         
-        if (!result.valid) {
-          setError(result.reason || "The uploaded image does not appear to be a bathroom or shower. Please upload a valid photo.");
-          e.target.value = '';
-          setValidating(null);
-          return;
+        setForm({
+          ...form,
+          shower_shape: result.shape,
+          ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
+        });
+        if (result.shape === 'neo_angle') {
+          setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
+          setTimeout(() => setInfoMessage(null), 8000);
         }
-
-        if (type === 'target') {
-          setImageFile(file);
-          setPreviewUrl(URL.createObjectURL(file));
-          setResultUrl(null);
-          setShowResult(false);
-          
-          setForm({
-            ...form,
-            shower_shape: result.shape,
-            ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
-          });
-          if (result.shape === 'neo_angle') {
-            setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
-            setTimeout(() => setInfoMessage(null), 8000);
-          }
-          // Auto-advance to next step
-          setTimeout(() => goToNextStep(), 500);
-        } else {
-          setInspirationFile(file);
-          setInspirationPreviewUrl(URL.createObjectURL(file));
-          // Auto-advance to next step
-          setTimeout(() => goToNextStep(), 500);
-        }
-      } catch (err) {
-        setError("Unable to verify image. Please try again.");
-      } finally {
-        setValidating(null);
+        // Auto-advance to next step (force=true to bypass stale closure issue)
+        console.log('[FILE UPLOAD] Auto-advancing to next step...');
+        setTimeout(() => goToNextStep(true), 500);
+      } else {
+        setInspirationFile(file);
+        setInspirationPreviewUrl(URL.createObjectURL(file));
+        // Auto-advance to next step (force=true to bypass stale closure issue)
+        console.log('[FILE UPLOAD] Auto-advancing to next step...');
+        setTimeout(() => goToNextStep(true), 500);
       }
+    } catch (err) {
+      console.error('[FILE UPLOAD] Error during validation:', err);
+      const errorMessage = err instanceof Error ? err.message : "Unable to verify image. Please try again.";
+      setError(errorMessage);
+      alert(`Upload Error: ${errorMessage}\n\nPlease check the browser console for more details.`);
+    } finally {
+      setValidating(null);
+      console.log('[FILE UPLOAD] Validation process complete');
     }
   };
 
@@ -380,10 +401,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             file={imageFile}
             previewUrl={previewUrl}
             validating={validating === 'target'}
+            error={error}
             onFileChange={(e) => handleFileChange(e, 'target')}
             onRemove={() => {
               setImageFile(null);
               setPreviewUrl(null);
+              setError(null);
             }}
           />
         );
@@ -407,10 +430,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               file={inspirationFile}
               previewUrl={inspirationPreviewUrl}
               validating={validating === 'inspiration'}
+              error={error}
               onFileChange={(e) => handleFileChange(e, 'inspiration')}
               onRemove={() => {
                 setInspirationFile(null);
                 setInspirationPreviewUrl(null);
+                setError(null);
               }}
             />
           );
@@ -439,6 +464,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               showResult={showResult}
               error={error}
               history={history}
+              form={form}
               onToggleView={() => setShowResult(!showResult)}
               onSelectHistory={(item) => selectHistoryItem(item, false)}
               onSave={() => {
@@ -480,6 +506,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             showResult={showResult}
             error={error}
             history={history}
+            form={form}
             onToggleView={() => setShowResult(!showResult)}
             onSelectHistory={(item) => selectHistoryItem(item, false)}
             onSave={() => {
@@ -493,6 +520,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onTryAgain={() => {
               resetAll();
               goToStep(1);
+            }}
+            onChangeOptions={() => {
+              // Keep the uploaded image, just go back to enclosure type step
+              setResultUrl(null);
+              setShowResult(false);
+              goToStep(3);
             }}
           />
         );

@@ -1,22 +1,22 @@
 import type { GlassStyle, HardwareFinish, EnclosureType, HandleStyle, TrackPreference, ShowerShape } from '@repo/types';
 
-// Glass styles catalog
+// Glass styles catalog (user-facing descriptions)
 export const glassStyles: Record<GlassStyle, { name: string; description: string }> = {
   clear: {
     name: 'Clear Glass',
-    description: 'Standard clear tempered glass with subtle greenish tint'
+    description: 'Classic tempered glass, our most popular option'
   },
   low_iron: {
     name: 'Low Iron',
-    description: 'Ultra-clear glass with minimal color tint for maximum clarity'
+    description: 'Premium ultra-clear glass for maximum transparency'
   },
   p516: {
     name: 'P516 Pattern',
-    description: 'Textured glass with P516 pattern for privacy'
+    description: 'Elegant rain texture for added privacy'
   }
 };
 
-// Hardware finishes catalog
+// Hardware finishes catalog (user-facing descriptions)
 export const hardwareFinishes: Record<HardwareFinish, { name: string; description: string }> = {
   chrome: {
     name: 'Polished Chrome',
@@ -44,19 +44,19 @@ export const hardwareFinishes: Record<HardwareFinish, { name: string; descriptio
 export const enclosureTypes: Record<EnclosureType, { name: string; description: string }> = {
   hinged: {
     name: 'Hinged Door',
-    description: 'Traditional hinged door that swings open'
+    description: 'Classic swing-out door design'
   },
   pivot: {
     name: 'Pivot Door',
-    description: 'Center-pivot door with modern aesthetic'
+    description: 'Sleek floating appearance with top and bottom pivots'
   },
   sliding: {
     name: 'Sliding Door',
-    description: 'Space-saving sliding door system'
+    description: 'Space-saving bypass or barn-style operation'
   }
 };
 
-// Handle styles catalog
+// Handle styles catalog (user-facing descriptions)
 export const handleStyles: Record<HandleStyle, { name: string; description: string }> = {
   ladder: {
     name: 'Ladder Pull',
@@ -68,7 +68,7 @@ export const handleStyles: Record<HandleStyle, { name: string; description: stri
   },
   d_pull: {
     name: 'Crescent (D) Pull',
-    description: 'D-shaped crescent pull handle'
+    description: 'Ergonomic curved D-shaped handle'
   },
   knob: {
     name: 'Knob',
@@ -80,15 +80,15 @@ export const handleStyles: Record<HandleStyle, { name: string; description: stri
 export const trackPreferences: Record<TrackPreference, { name: string; description: string }> = {
   frameless: {
     name: 'Frameless',
-    description: 'Clean frameless design with minimal hardware'
+    description: 'Clean, modern look with minimal hardware'
   },
   semi_frameless: {
     name: 'Semi-Frameless',
-    description: 'Partial framing for added stability'
+    description: 'Streamlined door with structured fixed panels'
   },
   framed: {
     name: 'Framed',
-    description: 'Full frame around glass panels'
+    description: 'Traditional style with full metal detailing'
   }
 };
 

@@ -5,34 +5,44 @@ import { ValidationRequestSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 
 export async function POST(request: NextRequest) {
+  console.log('[VALIDATE-IMAGE API] Request received');
+  
   try {
     const body = await request.json();
+    console.log('[VALIDATE-IMAGE API] Body parsed, keys:', Object.keys(body));
     
     // Validate input
     const validatedData = ValidationRequestSchema.parse(body);
+    console.log('[VALIDATE-IMAGE API] Schema validation passed');
     
     // Support both formats
     const imageData = 'data' in validatedData ? validatedData.data : validatedData.imageData;
     const mimeType = validatedData.mimeType;
+    console.log('[VALIDATE-IMAGE API] Image data length:', imageData.length, 'mimeType:', mimeType);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('GEMINI_API_KEY not configured');
+      console.error('[VALIDATE-IMAGE API] GEMINI_API_KEY not configured');
       return NextResponse.json(
-        { error: 'Server configuration error' },
+        { 
+          valid: false,
+          error: 'Server configuration error: Missing API key',
+          reason: 'Server configuration error. Please contact support.',
+          shape: 'standard'
+        },
         { status: 500 }
       );
     }
 
     const imageDataObj: ImageData = { data: imageData, mimeType };
-    console.log('[VALIDATE-IMAGE] Starting validation...');
+    console.log('[VALIDATE-IMAGE API] Starting Gemini validation...');
     const result = await validateImage({ apiKey }, imageDataObj);
-    console.log('[VALIDATE-IMAGE] Result:', JSON.stringify(result));
+    console.log('[VALIDATE-IMAGE API] Validation result:', JSON.stringify(result));
 
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ZodError) {
-      console.error('Validation error:', error.issues);
+      console.error('[VALIDATE-IMAGE API] Zod validation error:', error.issues);
       return NextResponse.json(
         {
           valid: false,
@@ -43,11 +53,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.error('Image validation error:', error);
+    console.error('[VALIDATE-IMAGE API] Unexpected error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[VALIDATE-IMAGE API] Error details:', errorMessage);
+    
     return NextResponse.json(
       {
         valid: false,
         reason: 'Unable to verify image content. Please try again.',
+        error: errorMessage,
         shape: 'standard'
       },
       { status: 500 }

@@ -82,6 +82,7 @@ export async function generateVisualization(
     config: {
       systemInstruction: getSystemPrompt(),
       responseModalities: [Modality.IMAGE],
+      temperature: 0.3,
     },
   });
 
@@ -107,58 +108,83 @@ export async function validateImage(
 ): Promise<ImageValidationResponse> {
   const { apiKey } = config;
 
+  console.log('[GEMINI validateImage] Starting validation');
+
   if (!apiKey) {
+    console.error('[GEMINI validateImage] API key missing');
     throw new Error('GEMINI_API_KEY is required');
   }
 
   if (!imageData.data || !imageData.mimeType) {
+    console.error('[GEMINI validateImage] Invalid image data', {
+      hasData: !!imageData.data,
+      mimeType: imageData.mimeType
+    });
     throw new Error('imageData and mimeType are required');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  console.log('[GEMINI validateImage] Image data valid, length:', imageData.data.length);
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: {
-      parts: [
-        {
-          inlineData: { 
-            data: imageData.data, 
-            mimeType: imageData.mimeType 
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    console.log('[GEMINI validateImage] GoogleGenAI client created');
+
+    const validationPrompt = getValidationPrompt();
+    console.log('[GEMINI validateImage] Using validation prompt:', validationPrompt.substring(0, 100) + '...');
+
+    console.log('[GEMINI validateImage] Calling Gemini API...');
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          {
+            inlineData: { 
+              data: imageData.data, 
+              mimeType: imageData.mimeType 
+            }
+          },
+          {
+            text: validationPrompt
           }
-        },
-        {
-          text: getValidationPrompt()
-        }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          isValid: { type: Type.BOOLEAN },
-          reason: { type: Type.STRING, description: "Short error message if invalid." },
-          shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] }
-        },
-        required: ["isValid", "shape"]
+        ]
       },
-    },
-  });
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            isValid: { type: Type.BOOLEAN },
+            reason: { type: Type.STRING, description: "Short error message if invalid." },
+            shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] }
+          },
+          required: ["isValid", "shape"]
+        },
+      },
+    });
 
-  const text = response.text;
-  if (!text) {
+    console.log('[GEMINI validateImage] API response received');
+    const text = response.text;
+    console.log('[GEMINI validateImage] Response text:', text);
+
+    if (!text) {
+      console.error('[GEMINI validateImage] Empty response text');
+      return {
+        valid: false,
+        reason: "Could not analyze image.",
+        shape: "standard"
+      };
+    }
+
+    const result = JSON.parse(text);
+    console.log('[GEMINI validateImage] Parsed result:', result);
+    
     return {
-      valid: false,
-      reason: "Could not analyze image.",
-      shape: "standard"
+      valid: result.isValid,
+      reason: result.reason,
+      shape: result.shape || "standard"
     };
+  } catch (error) {
+    console.error('[GEMINI validateImage] Error during validation:', error);
+    throw error;
   }
-
-  const result = JSON.parse(text);
-  return {
-    valid: result.isValid,
-    reason: result.reason,
-    shape: result.shape || "standard"
-  };
 }

@@ -91,6 +91,201 @@
       ]
     },
     {
+      "id": "glass_style_details",
+      "type": "material_specifications",
+      "content": [
+        "",
+        "GLASS STYLE VISUAL SPECIFICATIONS:",
+        ""
+      ]
+    },
+    {
+      "id": "glass_clear",
+      "type": "material_detail",
+      "condition": {
+        "variable": "glass_style",
+        "operator": "equals",
+        "value": "clear"
+      },
+      "content": [
+        "CLEAR GLASS APPEARANCE:",
+        "Standard tempered safety glass with natural iron content. Has a subtle blue-green tint that becomes more noticeable at the edges, in thicker sections, and when viewing at angles. When looking straight through, the tint is minimal but present. The glass is smooth, reflective, and fully transparent—objects behind it are clearly visible with accurate colors, though whites may appear slightly cooler. Edges appear distinctly green. Reflections are sharp and mirror-like.",
+        ""
+      ]
+    },
+    {
+      "id": "glass_low_iron",
+      "type": "material_detail",
+      "condition": {
+        "variable": "glass_style",
+        "operator": "equals",
+        "value": "low_iron"
+      },
+      "content": [
+        "LOW IRON (ULTRA-CLEAR) GLASS APPEARANCE:",
+        "Premium tempered glass with iron oxide removed during manufacturing. Appears completely colorless and neutral—no green or blue tint at any angle or thickness. Objects behind the glass appear in their true colors with no color shift. Edges appear clear or very faintly blue rather than green. Whites remain pure white when viewed through the glass. Reflections are crisp and color-accurate. Often called 'Starphire' or 'ultra-clear.'",
+        ""
+      ]
+    },
+    {
+      "id": "glass_p516",
+      "type": "material_detail",
+      "condition": {
+        "variable": "glass_style",
+        "operator": "equals",
+        "value": "p516"
+      },
+      "content": [
+        "P516 PATTERN (RAIN GLASS) APPEARANCE:",
+        "Textured tempered glass with a vertical rain-like pattern on one surface. The texture consists of irregular vertical striations resembling water droplets streaming down the glass. The opposite side remains smooth. Light passes through but is diffused and distorted by the texture, obscuring shapes and details behind it while preserving silhouettes and movement. Colors appear softened and blended. Provides significant privacy while maintaining brightness. The textured surface catches light differently than smooth glass, creating subtle visual depth and interest. Pattern is consistent across the entire panel.",
+        ""
+      ]
+    },
+    {
+      "id": "hardware_finish_details",
+      "type": "material_specifications",
+      "content": [
+        "",
+        "HARDWARE FINISH VISUAL SPECIFICATIONS:",
+        ""
+      ]
+    },
+    {
+      "id": "finish_chrome",
+      "type": "material_detail",
+      "condition": {
+        "variable": "hardware_finish",
+        "operator": "equals",
+        "value": "chrome"
+      },
+      "content": [
+        "POLISHED CHROME FINISH APPEARANCE:",
+        "Highly reflective mirror-like finish with a cool, blue-silver tone. Surface is smooth and flawless with no visible texture or grain. Reflects surrounding colors and light sources sharply and clearly like a mirror. Appears bright white under direct light, with crisp specular highlights. Cool-toned—sits on the blue side of neutral silver. The most reflective of all finish options.",
+        ""
+      ]
+    },
+    {
+      "id": "finish_brushed_nickel",
+      "type": "material_detail",
+      "condition": {
+        "variable": "hardware_finish",
+        "operator": "equals",
+        "value": "brushed_nickel"
+      },
+      "content": [
+        "BRUSHED NICKEL FINISH APPEARANCE:",
+        "Warm-toned silver with a soft satin sheen. Surface has fine linear brushing marks running in one direction, creating subtle texture. Reflects light diffusely rather than sharply—highlights are soft and spread out rather than crisp points. Warmer than chrome, with slight yellow or champagne undertones. Low-gloss appearance that's neither matte nor mirror-like. The brushed texture catches light differently depending on viewing angle.",
+        ""
+      ]
+    },
+    {
+      "id": "finish_matte_black",
+      "type": "material_detail",
+      "condition": {
+        "variable": "hardware_finish",
+        "operator": "equals",
+        "value": "matte_black"
+      },
+      "content": [
+        "MATTE BLACK FINISH APPEARANCE:",
+        "Flat, non-reflective black finish. Surface absorbs light rather than reflecting it—no shine, no specular highlights, no visible reflections of surroundings. Appears as solid, even black from all angles. Texture is smooth but not glossy. Edges and forms are defined by subtle shading and ambient light rather than reflections. Modern, bold appearance with maximum contrast against light-colored tile and glass.",
+        ""
+      ]
+    },
+    {
+      "id": "finish_polished_brass",
+      "type": "material_detail",
+      "condition": {
+        "variable": "hardware_finish",
+        "operator": "equals",
+        "value": "polished_brass"
+      },
+      "content": [
+        "POLISHED BRASS FINISH APPEARANCE:",
+        "Rich gold-toned finish with high reflectivity. Warm yellow-gold color, distinctly warmer than chrome or nickel. Mirror-like surface reflects surroundings with a golden tint. Specular highlights appear bright yellow-white. Luxurious, traditional appearance. Color is consistent and saturated—not pale or washed out. Similar reflective behavior to polished chrome but with warm gold color instead of cool silver.",
+        ""
+      ]
+    },
+    {
+      "id": "finish_oil_rubbed_bronze",
+      "type": "material_detail",
+      "condition": {
+        "variable": "hardware_finish",
+        "operator": "equals",
+        "value": "oil_rubbed_bronze"
+      },
+      "content": [
+        "OIL RUBBED BRONZE FINISH APPEARANCE:",
+        "Dark brown finish with subtle warm undertones and a low sheen. Base color is deep espresso or dark chocolate brown, not black. Surface has a soft, slightly waxy or oiled appearance rather than matte or glossy. May show very subtle variations in tone suggesting an aged, rubbed patina. Highlights are soft and warm-toned. Some lighter bronze or copper tones may appear at edges or high points where the 'rubbing' effect occurs.",
+        ""
+      ]
+    },
+    {
+      "id": "handle_style_details",
+      "type": "material_specifications",
+      "content": [
+        "",
+        "HANDLE STYLE VISUAL SPECIFICATIONS:",
+        ""
+      ]
+    },
+    {
+      "id": "handle_ladder",
+      "type": "material_detail",
+      "condition": {
+        "variable": "handle_style",
+        "operator": "equals",
+        "value": "ladder"
+      },
+      "content": [
+        "LADDER PULL HANDLE APPEARANCE:",
+        "Vertical bar handle with horizontal rungs connecting two parallel uprights, resembling a ladder. Mounted vertically on the door. Typically 12-18 inches tall. The rungs provide multiple grip points along the length. Clean, architectural appearance with geometric right angles. Creates a strong vertical line on the glass door.",
+        ""
+      ]
+    },
+    {
+      "id": "handle_square",
+      "type": "material_detail",
+      "condition": {
+        "variable": "handle_style",
+        "operator": "equals",
+        "value": "square"
+      },
+      "content": [
+        "SQUARE PULL HANDLE APPEARANCE:",
+        "Single vertical bar handle with a square or rectangular cross-section profile. Straight, minimal design—just one bar mounted vertically. Edges are sharp and geometric rather than rounded. Modern, angular appearance. Typically 6-12 inches in length. Creates a bold, simple vertical accent on the door.",
+        ""
+      ]
+    },
+    {
+      "id": "handle_d_pull",
+      "type": "material_detail",
+      "condition": {
+        "variable": "handle_style",
+        "operator": "equals",
+        "value": "d_pull"
+      },
+      "content": [
+        "CRESCENT (D) PULL HANDLE APPEARANCE:",
+        "Curved handle forming a D-shape or crescent arc when viewed from above. The curved bar bows outward from the glass, creating space for fingers to wrap around. Smooth, continuous curve with no sharp angles or straight lines. Ergonomic shape that fits naturally in the hand. Traditional and elegant appearance. Profile resembles the rounded letter D when mounted.",
+        ""
+      ]
+    },
+    {
+      "id": "handle_knob",
+      "type": "material_detail",
+      "condition": {
+        "variable": "handle_style",
+        "operator": "equals",
+        "value": "knob"
+      },
+      "content": [
+        "KNOB HANDLE APPEARANCE:",
+        "Small, round cylindrical or spherical grip. Compact, minimalist hardware that doesn't extend far from the glass surface. Typically 1-2 inches in diameter. Takes up minimal visual space on the door. Classic, understated appearance.",
+        ""
+      ]
+    },
+    {
       "id": "hardware_details",
       "type": "hardware_specifications",
       "content": [
@@ -117,7 +312,7 @@
         "- Hinges: Rectangular metal plates (approx 2\"×4\") with visible screw holes on wall side",
         "- Glass-clamp mechanisms on door side of each hinge",
         "- Glass thickness: 3/8\" to 1/2\" tempered glass",
-        "- ALL edges are polished/beveled and fully exposed - NO metal surrounds ANY glass edge",
+        "- ALL edges are flat and smooth (NOT beveled, NOT decorative) - just clean straight edges with no metal surrounding ANY glass edge",
         "- Vertical handle or towel bar mounts through glass via through-glass fittings",
         "- Door closes against fixed panel using small glass-to-glass clamps OR directly against wall",
         "- Clear vinyl sweep along bottom edge and magnetic strip on closing edge",
@@ -188,7 +383,7 @@
         "- Two pivot points: floor-mounted pivot pin/bracket + ceiling/header-mounted pivot clamp",
         "- NO side hinges - door floats and rotates around two small pivot points",
         "- Pivot hardware: Small circular/rectangular mechanisms (2\"×2\" footprint) at top and bottom",
-        "- Glass: 3/8\" to 1/2\" thick with all edges exposed and polished",
+        "- Glass: 3/8\" to 1/2\" thick with all edges exposed, flat, and smooth (no bevels)",
         "- Through-glass handle provides grip",
         "- Non-pivot side swings past plane of adjacent panels (creates offset swing)",
         "- Bottom pivot sits in small stainless steel cup/plate embedded in floor tile",
@@ -212,7 +407,7 @@
         "- Pivot door itself is FRAMELESS with exposed glass edges",
         "- Pivot hardware mounts to narrow header bar at top (not ceiling) and floor plate at bottom",
         "- Header bar: Narrow aluminum extrusion spanning shower opening for top pivot mount",
-        "- Door glass remains unframed with polished edges",
+        "- Door glass remains unframed with flat, smooth edges (no bevels)",
         "- Through-glass handle on door",
         "- Pivot mechanism visible at offset position from edge",
         ""
@@ -259,7 +454,7 @@
         "- Rollers: Exposed circular wheels in stainless steel or chrome",
         "- NO bottom track - just small guide pin or floor guide to prevent swinging",
         "- Glass panels bypass each other (one slides in front of other) or meet in center",
-        "- All glass edges exposed and polished (3/8\" glass typical)",
+        "- All glass edges exposed, flat, and smooth - no bevels (3/8\" glass typical)",
         "- Vertical handles mount through-glass on outer edges of panels",
         "- Track rail is round bar or rectangular profile, mounted to wall at ends via visible wall brackets",
         "- When closed, panels meet with clean vertical seam in middle",
@@ -342,7 +537,14 @@
         "7. HANDLE PLACEMENT (CRITICAL):",
         "   - SLIDING DOORS: Handles on outer edges of panels only, NEVER at the center seam where panels meet",
         "   - HINGED/PIVOT DOORS: Handle on the opening edge, clearly visible",
-        "8. The shower glass must appear crystal clear and premium quality",
+        "8. GLASS TYPE (CRITICAL - MUST MATCH SPECIFICATION):",
+        "   - The glass style applies to ALL glass panels in the enclosure - both the door AND any fixed panels",
+        "   - Every piece of glass in the shower enclosure must use the same glass type consistently",
+        "   - The glass MUST display the exact characteristics described in the GLASS STYLE VISUAL SPECIFICATIONS section above",
+        "   - For CLEAR GLASS: Show smooth, transparent glass with subtle blue-green tint at edges on ALL panels",
+        "   - For LOW IRON: Show completely colorless, neutral glass with no tint on ALL panels",
+        "   - For P516 RAIN GLASS: Show VISIBLE vertical rain-like texture pattern on ALL glass panels (door AND fixed panels) - this is NOT clear glass, it MUST show the distinctive vertical striations that obscure what's behind it while letting light through",
+        "   - The glass type is a PRIMARY FEATURE the customer selected - it MUST be clearly visible and accurate on every glass surface",
         "9. Hardware (hinges, handles, tracks, pivots) must be precisely rendered in {{hardware_finish_name}}",
         "10. Handle style should be clearly visible as {{handle_style_name}}",
         "11. The installation must look professionally done and seamlessly integrated",
@@ -351,6 +553,7 @@
         "14. FINAL CHECKS:",
         "    - Confirm output image dimensions match input dimensions exactly",
         "    - Confirm the door spans the COMPLETE width of the shower entrance, wall-to-wall",
+        "    - Confirm the GLASS TYPE matches the specification (especially for textured P516 rain glass)",
         "",
         "Generate the image maintaining photorealistic quality with accurate material properties and lighting."
       ]
