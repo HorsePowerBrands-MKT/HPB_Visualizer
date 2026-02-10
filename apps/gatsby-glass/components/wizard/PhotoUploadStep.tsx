@@ -73,6 +73,10 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
             onChange={onFileChange} 
           />
         </div>
+        
+        <p className="text-xs text-gray-500 text-center mt-4 px-4">
+          By uploading images, you agree that Gatsby Glass may collect and use these images to improve our visualization service.
+        </p>
       </div>
     </div>
   );

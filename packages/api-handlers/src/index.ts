@@ -10,8 +10,17 @@ export {
   submitLead,
   getLeadsByZipCode,
   updateLeadStatus,
+  saveVisualization,
+  reportIssue,
   type SupabaseConfig
 } from './supabase';
+
+// Supabase Storage handlers
+export {
+  uploadImage,
+  deleteImage,
+  listImages
+} from './storage';
 
 // Validation utilities
 export {
