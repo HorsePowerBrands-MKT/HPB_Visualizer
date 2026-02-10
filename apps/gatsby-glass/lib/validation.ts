@@ -38,7 +38,7 @@ export const LeadSubmissionSchema = z.object({
   // Contact information
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number too short').max(20, 'Phone number too long'),
+  phone: z.string().min(10, 'Phone number too short').max(20, 'Phone number too long').optional(),
   zipCode: z.string().min(5, 'Invalid zip code').max(10, 'Invalid zip code'),
   
   // Visualization details
@@ -47,7 +47,11 @@ export const LeadSubmissionSchema = z.object({
   doorType: z.string().optional(),
   finish: z.string().optional(),
   hardware: z.string().optional(),
+  handleStyle: z.string().optional(),
+  trackPreference: z.string().optional(),
+  mode: z.string().optional(),
   showerShape: z.string().optional(),
+  sessionId: z.string().optional(),
 });
 
 // Export types

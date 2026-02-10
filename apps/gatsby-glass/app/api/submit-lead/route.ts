@@ -48,7 +48,11 @@ export async function POST(request: NextRequest) {
       doorType: validatedData.doorType as any,
       finish: validatedData.finish as any,
       hardware: validatedData.hardware as any,
+      handleStyle: validatedData.handleStyle as any,
+      trackPreference: validatedData.trackPreference as any,
+      mode: validatedData.mode as any,
       showerShape: validatedData.showerShape as any,
+      sessionId: validatedData.sessionId,
       source: 'Gatsby Glass Visualizer'
     };
 

@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
-import { RefreshCw, Check, AlertCircle, History, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { RefreshCw, Check, AlertCircle, History, Sparkles, Flag } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Label } from '../ui/Label';
+import { ReportIssueModal } from '../ReportIssueModal';
 import type { HistoryItem, Payload } from '@repo/types';
 import { CATALOG } from '../../lib/gatsby-constants/src';
 
@@ -15,6 +16,7 @@ interface ResultStepProps {
   error: string | null;
   history: HistoryItem[];
   form?: Payload;
+  sessionId?: string;
   onToggleView: () => void;
   onSelectHistory: (item: HistoryItem) => void;
   onSave: () => void;
@@ -93,6 +95,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   error,
   history,
   form,
+  sessionId,
   onToggleView,
   onSelectHistory,
   onSave,
@@ -100,6 +103,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   onTryAgain,
   onChangeOptions
 }) => {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const description = form ? generateDescription(form) : null;
 
   return (
@@ -268,10 +272,29 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               >
                 Start Over
               </Button>
+              {sessionId && (
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => setIsReportModalOpen(true)}
+                >
+                  <Flag size={16} />
+                  Report Issue
+                </Button>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Report Issue Modal */}
+      {sessionId && (
+        <ReportIssueModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          sessionId={sessionId}
+        />
+      )}
 
       {/* Error Display */}
       {error && (

@@ -352,17 +352,87 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
       const result = await response.json();
       
+      // Generate session_id if not already set
+      const sessionId = form.session_id || uuidv4();
+      
+      // Update form with session_id
+      const updatedForm = { ...form, session_id: sessionId };
+      setForm(updatedForm);
+      
       const newHistoryItem: HistoryItem = {
         id: uuidv4(),
         timestamp: Date.now(),
         imageUrl: result.image,
         label: createHistoryLabel(form),
-        payload: { ...form, session_id: uuidv4() }
+        payload: updatedForm
       };
 
       setResultUrl(result.image);
       addHistoryItem(newHistoryItem);
       setShowResult(true);
+      
+      // Auto-save visualization data to Supabase
+      try {
+        console.log('[AUTO-SAVE] Starting image uploads...');
+        
+        // Upload visualization image to Supabase Storage
+        const vizUploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageData: result.image,
+            fileName: `visualization_${sessionId}.png`
+          })
+        });
+        
+        if (!vizUploadResponse.ok) {
+          throw new Error('Failed to upload visualization image');
+        }
+        
+        const vizUploadData = await vizUploadResponse.json();
+        console.log('[AUTO-SAVE] Visualization image uploaded:', vizUploadData.url);
+        
+        // Upload original image to Supabase Storage
+        const originalImageData = await fileToBase64Data(imageFile);
+        const originalUploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageData: `data:${originalImageData.mimeType};base64,${originalImageData.data}`,
+            fileName: `original_${sessionId}.${originalImageData.mimeType.split('/')[1]}`
+          })
+        });
+        
+        if (!originalUploadResponse.ok) {
+          throw new Error('Failed to upload original image');
+        }
+        
+        const originalUploadData = await originalUploadResponse.json();
+        console.log('[AUTO-SAVE] Original image uploaded:', originalUploadData.url);
+        
+        // Save visualization data with storage URLs
+        await fetch('/api/save-visualization', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: sessionId,
+            mode: form.mode,
+            enclosureType: form.enclosure_type,
+            glassStyle: form.glass_style,
+            hardwareFinish: form.hardware_finish,
+            handleStyle: form.handle_style,
+            trackPreference: form.track_preference,
+            showerShape: form.shower_shape,
+            visualizationImage: vizUploadData.url,
+            originalImage: originalUploadData.url
+          })
+        });
+        
+        console.log('[AUTO-SAVE] Visualization data saved successfully');
+      } catch (saveError) {
+        // Log error but don't block user flow
+        console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
+      }
       
       // Auto-advance to result step
       goToNextStep();
@@ -465,6 +535,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               error={error}
               history={history}
               form={form}
+              sessionId={form.session_id}
               onToggleView={() => setShowResult(!showResult)}
               onSelectHistory={(item) => selectHistoryItem(item, false)}
               onSave={() => {
@@ -507,6 +578,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             error={error}
             history={history}
             form={form}
+            sessionId={form.session_id}
             onToggleView={() => setShowResult(!showResult)}
             onSelectHistory={(item) => selectHistoryItem(item, false)}
             onSave={() => {

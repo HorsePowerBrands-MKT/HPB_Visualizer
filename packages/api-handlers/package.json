@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./gemini": "./src/gemini.ts",
     "./supabase": "./src/supabase.ts",
+    "./storage": "./src/storage.ts",
     "./validation": "./src/validation.ts"
   },
   "scripts": {

@@ -41,8 +41,16 @@
         "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
         "- INTELLIGENT PLACEMENT: Position the door to swing in the most practical direction based on the bathroom layout",
         "- Ensure the door swing doesn't obstruct fixtures, toilets, vanities, or block the bathroom entry",
-        "- The hinges should be mounted on the side that provides the most natural and unobstructed access",
-        "- Handle should be clearly visible on the outer edge of the door panel"
+        "",
+        "CRITICAL HINGE AND HANDLE PLACEMENT:",
+        "- Hinges are mounted on ONE SIDE ONLY - either left or right edge of the door",
+        "- DO NOT show hinges on both sides - this is physically impossible",
+        "- The hinges should be on the side that provides the most natural and unobstructed access",
+        "- The HANDLE MUST BE ON THE OPPOSITE SIDE from the hinges",
+        "- If hinges are on the left side, handle is on the right side",
+        "- If hinges are on the right side, handle is on the left side",
+        "- The handle should be clearly visible on the opening edge of the door (opposite the hinge side)",
+        "- This is standard door construction - hinges on one side, handle on the other for pulling/pushing"
       ]
     },
     {
@@ -60,13 +68,24 @@
         "- DOOR POSITION: Show the door SLIGHTLY OPEN (15-20 degrees) swinging OUTWARD away from the shower",
         "- INTELLIGENT PLACEMENT: Position the pivot mechanism optimally based on the bathroom layout",
         "- Ensure the door swing doesn't obstruct fixtures, toilets, vanities, or block the bathroom entry",
-        "- PIVOT MECHANISM EXPLANATION:",
-        "  * Unlike hinged doors, pivot doors rotate on a central pivot point (not edge-mounted hinges)",
-        "  * The pivot point is typically offset from the edge, creating a unique swing pattern",
-        "  * When open, the door creates an angled profile (like -/ shape, not _/ shape)",
-        "  * Part of the door panel extends slightly into the shower space while the other part swings outward",
-        "  * This offset pivot creates a distinctive appearance different from standard hinged doors",
-        "- Hardware should show the pivot mechanism clearly, not standard edge hinges"
+        "",
+        "PIVOT MECHANISM EXPLANATION:",
+        "- Unlike hinged doors, pivot doors rotate on a central pivot point (not edge-mounted hinges)",
+        "- The pivot point is typically offset from the edge (usually 4-6 inches from one side)",
+        "- The pivot is positioned on ONE SIDE ONLY - either left or right side of the door panel",
+        "- When open, the door creates an angled profile (like -/ shape, not _/ shape)",
+        "- Part of the door panel extends slightly into the shower space while the other part swings outward",
+        "- This offset pivot creates a distinctive appearance different from standard hinged doors",
+        "",
+        "CRITICAL PIVOT AND HANDLE PLACEMENT:",
+        "- The pivot mechanism (top and bottom pivot points) is located on ONE SIDE of the door - either left or right",
+        "- DO NOT show pivot hardware on both sides - pivot is on ONE side only",
+        "- The HANDLE MUST BE ON THE OPPOSITE SIDE from the pivot mechanism",
+        "- If pivot is on the left side (4-6 inches from left edge), handle is on the right side",
+        "- If pivot is on the right side (4-6 inches from right edge), handle is on the left side",
+        "- The handle should be clearly visible on the side opposite the pivot for natural door operation",
+        "- Hardware should show the pivot mechanism (small circular/rectangular fittings at top and bottom) clearly on ONE side only",
+        "- DO NOT show standard edge hinges - pivot hardware looks different from hinges"
       ]
     },
     {
@@ -536,7 +555,8 @@
         "   - PIVOT DOORS: Show SLIGHTLY OPEN (15-20 degrees) with the distinctive pivot swing pattern",
         "7. HANDLE PLACEMENT (CRITICAL):",
         "   - SLIDING DOORS: Handles on outer edges of panels only, NEVER at the center seam where panels meet",
-        "   - HINGED/PIVOT DOORS: Handle on the opening edge, clearly visible",
+        "   - HINGED DOORS: Hinges on ONE side only (left OR right edge), handle on the OPPOSITE side from hinges - this is standard door construction",
+        "   - PIVOT DOORS: Pivot mechanism on ONE side only (left OR right, 4-6 inches from edge), handle on the OPPOSITE side from pivot - allows natural door operation",
         "8. GLASS TYPE (CRITICAL - MUST MATCH SPECIFICATION):",
         "   - The glass style applies to ALL glass panels in the enclosure - both the door AND any fixed panels",
         "   - Every piece of glass in the shower enclosure must use the same glass type consistently",
@@ -554,6 +574,8 @@
         "    - Confirm output image dimensions match input dimensions exactly",
         "    - Confirm the door spans the COMPLETE width of the shower entrance, wall-to-wall",
         "    - Confirm the GLASS TYPE matches the specification (especially for textured P516 rain glass)",
+        "    - For HINGED DOORS: Confirm hinges are on ONE side only and handle is on the OPPOSITE side",
+        "    - For PIVOT DOORS: Confirm pivot mechanism is on ONE side only and handle is on the OPPOSITE side",
         "",
         "Generate the image maintaining photorealistic quality with accurate material properties and lighting."
       ]

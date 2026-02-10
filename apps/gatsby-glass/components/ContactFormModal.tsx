@@ -83,7 +83,11 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           doorType: visualizationData.configs.enclosure_type,
           finish: visualizationData.configs.glass_style,
           hardware: visualizationData.configs.hardware_finish,
+          handleStyle: visualizationData.configs.handle_style,
+          trackPreference: visualizationData.configs.track_preference,
+          mode: visualizationData.configs.mode,
           showerShape: visualizationData.configs.shower_shape,
+          sessionId: visualizationData.configs.session_id,
           source: 'Gatsby Glass Visualizer'
         })
       });
