@@ -109,9 +109,10 @@
 @layer base {
   * {
     @apply border-border;
+    border-radius: 0 !important;
   }
   body {
-    @apply bg-brand-black text-white font-sans;
+    @apply bg-brand-brown text-white font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display uppercase;

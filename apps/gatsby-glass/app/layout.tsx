@@ -22,34 +22,28 @@ export default function RootLayout({
           Skip to main content
         </a>
         <div className="flex flex-col min-h-screen">
-          <main id="main-content" className="flex-grow bg-brand-black">
-            <div className="container mx-auto px-4 py-8">
-              <header className="mb-8">
-                <h1 className="text-4xl md:text-5xl font-display text-center text-brand-secondary mb-2">
+          <main id="main-content" className="flex-grow bg-brand-brown">
+            <div className="w-full p-2">
+              {/* App Header */}
+              <header className="text-center py-6">
+                <h1 className="text-4xl md:text-5xl font-display font-bold text-brand-gold tracking-wider">
                   GATSBYVIEW
                 </h1>
-                <p className="text-center text-gray-400 font-sans">
-                  Design your dream shower with AI-powered visualization
-                </p>
+                <div className="flex items-center justify-center gap-4 mt-3">
+                  <span className="text-sm md:text-base text-white/80 tracking-widest uppercase font-sans">Visualize</span>
+                  <span className="text-brand-gold text-lg">&#x2022;</span>
+                  <span className="text-sm md:text-base text-white/80 tracking-widest uppercase font-sans">Personalize</span>
+                  <span className="text-brand-gold text-lg">&#x2022;</span>
+                  <span className="text-sm md:text-base text-white/80 tracking-widest uppercase font-sans">Realize</span>
+                </div>
+                <div className="mt-5">
+                  <img src="/GG-Deco-Element.svg" alt="" className="w-full h-auto" />
+                </div>
               </header>
+
               {children}
             </div>
           </main>
-          <footer className="bg-brand-black py-8 mt-8">
-            <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto text-center space-y-4">
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  GatsbyView visualizations are AI-generated simulations intended for design inspiration only. 
-                  Actual material appearance, hardware scaling, and structural feasibility may vary based on 
-                  your specific bathroom conditions. Final technical specifications and pricing will be confirmed 
-                  during your professional in-home consultation.
-                </p>
-                <p className="text-xs text-gray-500">
-                  © 2026 Gatsby Glass. All rights reserved.
-                </p>
-              </div>
-            </div>
-          </footer>
         </div>
       </body>
     </html>

@@ -109,18 +109,18 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl md:text-3xl font-bold text-brand-secondary">Your Custom Shower Design</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Your Custom Shower Design</h2>
         <p className="text-gray-400 text-sm md:text-base">
           {loading ? 'Generating your visualization...' : 'See how your shower will look'}
         </p>
       </div>
 
       {/* Main Content - Side by side layout on larger screens */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left side - Image and controls */}
         <div className="flex flex-col items-center gap-4">
-          {/* Preview Area - container sized by the "after" image, both images overlay */}
-          <div className="relative inline-block rounded-2xl overflow-hidden border-2 border-brand-primary/30">
+          {/* Preview Area */}
+          <div className="relative w-full overflow-hidden border border-brand-gold/30 bg-black/20">
             {loading && (
               <div className="absolute inset-0 z-10 bg-black/50 flex flex-col items-center justify-center text-white">
                 <RefreshCw className="h-12 w-12 animate-spin mb-4" />
@@ -135,12 +135,12 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               </div>
             )}
             
-            {/* After Image - this one sizes the container (always in flow) */}
+            {/* After Image - sizes the container */}
             {resultUrl && (
               <img 
                 src={resultUrl} 
                 alt="After" 
-                className="max-h-[500px] w-auto block transition-opacity duration-500" 
+                className="w-full max-h-[600px] object-contain block transition-opacity duration-500" 
                 style={{ opacity: showResult ? 1 : 0 }}
               />
             )}
@@ -158,26 +158,26 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               <img 
                 src={previewUrl} 
                 alt="Before" 
-                className="max-h-[500px] w-auto block" 
+                className="w-full max-h-[600px] object-contain block" 
               />
             )}
           </div>
 
           {/* Before/After Toggle - directly under image */}
           {resultUrl && (
-            <div className="flex justify-center items-center gap-4 bg-brand-black/50 px-6 py-3 rounded-full">
-              <span className={`text-sm font-medium transition-colors ${!showResult ? 'text-brand-secondary' : 'text-gray-400'}`}>Before</span>
+            <div className="flex justify-center items-center gap-4 bg-brand-brown-hover px-6 py-3">
+              <span className={`text-sm font-medium transition-colors ${!showResult ? 'text-brand-gold' : 'text-gray-400'}`}>Before</span>
               <div 
                 onClick={onToggleView}
-                className="relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                style={{backgroundColor: showResult ? '#a37529' : '#6b7280'}}
+                className="relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer border border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                style={{backgroundColor: showResult ? '#e4bf6e' : '#6b7280'}}
               >
                 <span 
-                  className="inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  className="inline-block h-6 w-6 transform bg-white shadow ring-0 transition duration-200 ease-in-out"
                   style={{transform: showResult ? 'translateX(1.75rem)' : 'translateX(0rem)'}}
                 />
               </div>
-              <span className={`text-sm font-medium transition-colors ${showResult ? 'text-brand-secondary' : 'text-gray-400'}`}>After</span>
+              <span className={`text-sm font-medium transition-colors ${showResult ? 'text-brand-gold' : 'text-gray-400'}`}>After</span>
             </div>
           )}
 
@@ -185,7 +185,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
           {history.length > 0 && (
             <div className="w-full max-w-md space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-brand-secondary flex items-center gap-2 text-sm">
+                <Label className="text-brand-gold flex items-center gap-2 text-sm">
                   <History size={14}/> Design Gallery
                 </Label>
                 <span className="text-xs text-gray-400">Tap to compare</span>
@@ -195,14 +195,14 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                   <div 
                     key={item.id}
                     onClick={() => onSelectHistory(item)}
-                    className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 cursor-pointer transition-all snap-start
-                      ${resultUrl === item.imageUrl ? 'border-brand-secondary ring-2 ring-brand-primary/30' : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-500'}
+                    className={`relative flex-shrink-0 w-20 h-20 overflow-hidden border cursor-pointer transition-all snap-start
+                      ${resultUrl === item.imageUrl ? 'border-brand-gold ring-1 ring-brand-gold/30' : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-500'}
                     `}
                   >
                     <img src={item.imageUrl} alt="Option" className="w-full h-full object-cover" />
                     {resultUrl === item.imageUrl && (
-                      <div className="absolute inset-0 bg-brand-secondary/10 flex items-center justify-center">
-                        <div className="bg-brand-secondary text-black rounded-full p-1 shadow-sm">
+                      <div className="absolute inset-0 bg-brand-gold/10 flex items-center justify-center">
+                        <div className="bg-brand-gold text-black p-1 shadow-sm">
                           <Check size={12} strokeWidth={3} />
                         </div>
                       </div>
@@ -219,8 +219,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
         {/* Right side - Description panel */}
         {description && resultUrl && (
-          <div className="w-full lg:w-80 bg-gradient-to-br from-brand-black to-brand-black-secondary border border-brand-primary/30 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center gap-2 text-brand-secondary">
+          <div className="w-full bg-brand-brown border border-brand-gold p-6 space-y-4 lg:self-start">
+            <div className="flex items-center gap-2 text-brand-gold">
               <Sparkles size={20} />
               <h3 className="font-bold text-lg">{description.title}</h3>
             </div>
@@ -229,12 +229,12 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               {description.summary}
             </p>
 
-            <div className="border-t border-brand-primary/20 pt-4">
-              <h4 className="text-brand-secondary text-sm font-semibold mb-3">Selected Features</h4>
+            <div className="border-t border-brand-gold/20 pt-4">
+              <h4 className="text-brand-gold text-sm font-semibold mb-3">Selected Features</h4>
               <ul className="space-y-2">
                 {description.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-2 text-xs text-gray-400">
-                    <Check size={14} className="text-brand-secondary flex-shrink-0 mt-0.5" />
+                    <Check size={14} className="text-brand-gold flex-shrink-0 mt-0.5" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -242,8 +242,9 @@ export const ResultStep: React.FC<ResultStepProps> = ({
             </div>
 
             {/* Action Buttons - stacked in sidebar */}
-            <div className="border-t border-brand-primary/20 pt-4 space-y-2">
+            <div className="border-t border-brand-gold/20 pt-4 space-y-2">
               <Button
+                variant="primary"
                 className="w-full"
                 onClick={onSave}
               >
@@ -258,7 +259,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               </Button>
               {onChangeOptions && form?.mode === 'configure' && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full"
                   onClick={onChangeOptions}
                 >
@@ -266,7 +267,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                 </Button>
               )}
               <Button
-                variant="outline"
+                variant="secondary"
                 className="w-full"
                 onClick={onTryAgain}
               >
@@ -274,7 +275,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               </Button>
               {sessionId && (
                 <Button
-                  variant="outline"
+                  variant="tertiary"
                   className="w-full flex items-center justify-center gap-2"
                   onClick={() => setIsReportModalOpen(true)}
                 >
@@ -298,7 +299,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="flex items-start gap-2 p-4 bg-red-900/30 border border-red-500/30 rounded-xl text-red-200 text-sm animate-in fade-in slide-in-from-top-2 max-w-md mx-auto">
+        <div className="flex items-start gap-2 p-4 bg-red-900/30 border border-red-500/30 text-red-200 text-sm animate-in fade-in slide-in-from-top-2 max-w-md mx-auto">
           <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
           <span>{error}</span>
         </div>
