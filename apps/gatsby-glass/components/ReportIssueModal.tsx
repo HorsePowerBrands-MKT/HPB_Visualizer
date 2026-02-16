@@ -77,10 +77,10 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <Card className="w-full max-w-md bg-brand-black-secondary border-brand-primary/30">
+      <Card className="w-full max-w-md bg-brand-brown border-brand-gold">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl text-brand-secondary">
+            <CardTitle className="text-xl text-brand-gold">
               Report Issue
             </CardTitle>
             <button
@@ -96,7 +96,7 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
         <CardContent>
           {success ? (
             <div className="py-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 mb-4">
                 <Check className="w-8 h-8 text-green-500" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Thank you!</h3>
@@ -111,7 +111,7 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
               </p>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30">
                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-red-400">{error}</p>
                 </div>
@@ -126,8 +126,8 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
                     setIssueMessage(e.target.value);
                     if (error) setError('');
                   }}
-                  className={`mt-1 w-full min-h-[120px] px-3 py-2 rounded-lg border bg-black/30 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary/50 transition-all ${
-                    error ? 'border-red-500' : 'border-brand-primary/30'
+                  className={`mt-1 w-full min-h-[120px] px-3 py-2 border bg-black/30 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition-all ${
+                    error ? 'border-red-500' : 'border-brand-gold/30'
                   }`}
                   placeholder="Example: The glass texture doesn't look right, or the door is on the wrong side..."
                   disabled={submitting}

@@ -33,7 +33,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
       {!isFirstStep && (
         <button
           onClick={onPrevious}
-          className="flex items-center gap-2 text-gray-400 hover:text-brand-secondary transition-colors group"
+          className="flex items-center gap-2 text-gray-400 hover:text-brand-gold transition-colors group"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           <span className="text-sm font-medium">Back</span>
@@ -47,9 +47,9 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
             onClick={onGenerate}
             disabled={loading || !canProceed}
             className={`
-              relative px-8 py-3 rounded-xl font-semibold text-base
-              bg-gradient-to-r from-brand-primary to-brand-secondary
-              text-brand-black shadow-lg
+              relative px-8 py-3 font-semibold text-base
+              bg-gradient-to-r from-brand-primary to-brand-gold
+              text-brand-brown shadow-lg border border-brand-gold
               transition-all duration-300
               ${loading || !canProceed 
                 ? 'opacity-50 cursor-not-allowed' 
@@ -74,13 +74,13 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
             onClick={onNext}
             disabled={!canProceed}
             className={`
-              relative px-6 py-2.5 rounded-lg text-sm font-normal
-              border border-brand-primary/50 text-brand-secondary
+              relative px-6 py-2.5 text-sm font-normal
+              border border-brand-gold text-brand-gold
               transition-all duration-300
               group
               ${!canProceed 
                 ? 'opacity-40 cursor-not-allowed' 
-                : 'hover:border-brand-secondary hover:bg-brand-secondary/5'
+                : 'hover:bg-brand-gold/10'
               }
             `}
           >

@@ -22,7 +22,7 @@ import { GlassFramingStep } from './wizard/GlassFramingStep';
 import { HardwareHandlesStep } from './wizard/HardwareHandlesStep';
 import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
-import { StepNavigation } from './wizard/StepNavigation';
+
 import { 
   Droplets, Grid, BoxSelect, Minimize, Shield, Square, Sparkles 
 } from 'lucide-react';
@@ -94,8 +94,8 @@ const IconHandleKnob = ({ className }: { className?: string }) => (
 );
 
 const PlaceholderIcon = ({ icon: Icon, label }: { icon?: React.ElementType, label?: string }) => (
-  <div className="w-10 h-10 rounded-md flex items-center justify-center border border-brand-primary/20 bg-brand-black">
-    {Icon ? <Icon className="text-[#a37529] w-6 h-6" /> : <span className="text-[10px] text-[#a37529] font-bold uppercase">{label?.substring(0, 2)}</span>}
+  <div className="w-10 h-10 flex items-center justify-center">
+    {Icon ? <Icon className="text-brand-gold w-6 h-6" strokeWidth={1} /> : <span className="text-[10px] text-brand-gold font-bold uppercase">{label?.substring(0, 2)}</span>}
   </div>
 );
 
@@ -117,7 +117,7 @@ const HardwareIcon = ({ type }: { type: HardwareFinish }) => {
   };
 
   return (
-    <div className="w-10 h-10 rounded-md border border-brand-primary/20 shadow-sm" style={{ background: classes[type] }} />
+    <div className="w-10 h-10 border border-brand-gold" style={{ background: classes[type] }} />
   );
 };
 
@@ -617,38 +617,29 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     (form.mode === 'inspiration' && currentStep === 4);
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Progress Indicator */}
+    <div className="mx-auto">
+      {/* Main Card with Current Step */}
+      <Card className="shadow-none bg-brand-brown border-0">
+        <CardContent className="p-0">
+          {renderCurrentStep()}
+        </CardContent>
+      </Card>
+
+      {/* Progress Indicator with Navigation */}
       <ProgressIndicator
         currentStep={currentStep}
         totalSteps={getTotalSteps()}
         maxStepReached={maxStepReached}
         onStepClick={goToStep}
         mode={form.mode}
+        canProceed={canProceedToNextStep()}
+        loading={loading}
+        onNext={goToNextStep}
+        onPrevious={goToPreviousStep}
+        onGenerate={onGenerate}
+        showGenerateButton={showGenerateButton}
+        isResultStep={isResultStep}
       />
-
-      {/* Main Card with Current Step */}
-      <Card className="shadow-2xl bg-brand-black-secondary border border-brand-primary/50">
-        <CardContent className="p-6 md:p-10 lg:p-12">
-          {renderCurrentStep()}
-        </CardContent>
-        
-        {/* Step Navigation - Integrated at bottom of card */}
-        {!isResultStep && (
-          <div className="border-t border-brand-primary/20 px-6 md:px-10 lg:px-12 py-6">
-            <StepNavigation
-              currentStep={currentStep}
-              totalSteps={getTotalSteps()}
-              canProceed={canProceedToNextStep()}
-              loading={loading}
-              onNext={goToNextStep}
-              onPrevious={goToPreviousStep}
-              onGenerate={onGenerate}
-              showGenerateButton={showGenerateButton}
-            />
-          </div>
-        )}
-      </Card>
 
       {/* Contact Form Modal */}
       {resultUrl && imageFile && (

@@ -70,13 +70,13 @@ export const EnclosureTypeStep: React.FC<EnclosureTypeStepProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl md:text-3xl font-bold text-brand-secondary">Choose Your Enclosure Type</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Choose Your Enclosure Type</h2>
         <p className="text-gray-400 text-base md:text-lg">Select the door style that fits your bathroom best</p>
       </div>
 
       {infoMessage && (
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-start gap-3 p-4 bg-brand-primary/10 border border-brand-primary/30 rounded-xl text-brand-secondary text-sm animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-start gap-3 p-4 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm animate-in fade-in slide-in-from-top-2">
             <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <span>{infoMessage}</span>
           </div>
@@ -94,21 +94,26 @@ export const EnclosureTypeStep: React.FC<EnclosureTypeStepProps> = ({
               key={option.value}
               onClick={() => !isDisabled && onEnclosureSelect(option.value)}
               disabled={isDisabled}
-              className={`group relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl border-2 transition-all duration-300 ${
+              className={`group relative flex flex-col items-center justify-center p-6 md:p-8 border border-brand-gold transition-all duration-200 overflow-hidden ${
                 isDisabled
                   ? 'opacity-40 cursor-not-allowed bg-gray-900 border-gray-700'
                   : isSelected
-                    ? 'bg-brand-primary/20 border-brand-secondary shadow-[0_0_30px_rgba(228,191,110,0.3)] scale-105'
-                    : 'bg-brand-black border-brand-primary/30 hover:bg-brand-black-secondary hover:border-brand-primary/50 hover:scale-105 hover:shadow-lg'
+                    ? 'bg-brand-brown-hover shadow-[0_0_30px_rgba(228,191,110,0.3)]'
+                    : 'bg-brand-brown hover:bg-brand-brown-hover'
               }`}
             >
-              <div className={`p-6 rounded-full mb-4 transition-all duration-300 ${
-                isSelected ? 'bg-brand-secondary/20' : 'bg-brand-primary/10 group-hover:bg-brand-primary/20'
-              }`}>
+              {/* Art deco corner - top left on first card, bottom right on last card */}
+              {option.value === 'hinged' && (
+                <img src="/GG-Deco-Corner.svg" alt="" className="absolute top-[-1px] left-[-1px] w-16 h-16 pointer-events-none" style={{ transform: 'scaleX(-1)' }} />
+              )}
+              {option.value === 'sliding' && (
+                <img src="/GG-Deco-Corner.svg" alt="" className="absolute bottom-[-1px] right-[-1px] w-16 h-16 pointer-events-none" style={{ transform: 'scaleY(-1)' }} />
+              )}
+              <div className="mb-4">
                 <Icon className="w-20 h-20" />
               </div>
               <h3 className={`text-2xl font-bold mb-2 ${
-                isSelected ? 'text-brand-secondary' : 'text-white group-hover:text-brand-secondary/90'
+                isSelected ? 'text-brand-gold' : 'text-white group-hover:text-brand-gold'
               }`}>
                 {option.label}
               </h3>
@@ -118,7 +123,7 @@ export const EnclosureTypeStep: React.FC<EnclosureTypeStepProps> = ({
                 {option.description}
               </p>
               {isDisabled && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <span className="text-xs text-gray-400 font-medium">Not compatible with neo-angle showers</span>
                 </div>
               )}

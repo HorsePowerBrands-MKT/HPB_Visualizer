@@ -29,14 +29,19 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl md:text-3xl font-bold text-brand-secondary">{title}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">{title}</h2>
         <p className="text-gray-400 text-base md:text-lg">{description}</p>
       </div>
 
       <div className="mt-6 md:mt-8">
-        <div className="relative flex items-center justify-center w-full h-[400px] md:h-[450px] lg:h-[500px] max-h-[500px] border-2 border-dashed rounded-2xl border-brand-primary/50 hover:border-brand-secondary transition-all duration-300 bg-black/20 overflow-hidden group">
+        <div className="relative flex items-center justify-center w-full h-[400px] md:h-[450px] lg:h-[500px] max-h-[500px] border border-dashed border-brand-gold hover:border-brand-gold transition-all duration-300 bg-black/20 overflow-hidden group">
+          {/* Art deco corners */}
+          <img src="/GG-Deco-Corner.svg" alt="" className="absolute top-[-1px] left-[-1px] w-20 h-20 pointer-events-none" style={{ transform: 'scaleX(-1)' }} />
+          <img src="/GG-Deco-Corner.svg" alt="" className="absolute top-[-1px] right-[-1px] w-20 h-20 pointer-events-none" />
+          <img src="/GG-Deco-Corner.svg" alt="" className="absolute bottom-[-1px] left-[-1px] w-20 h-20 pointer-events-none" style={{ transform: 'scale(-1, -1)' }} />
+          <img src="/GG-Deco-Corner.svg" alt="" className="absolute bottom-[-1px] right-[-1px] w-20 h-20 pointer-events-none" style={{ transform: 'scaleY(-1)' }} />
           {validating && (
-            <div className="absolute inset-0 z-20 bg-black/70 flex flex-col items-center justify-center text-brand-secondary animate-in fade-in">
+            <div className="absolute inset-0 z-20 bg-black/70 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
               <Loader2 className="h-12 w-12 animate-spin mb-4" />
               <span className="text-lg font-medium">Verifying & Scanning Layout...</span>
               <span className="text-sm text-gray-400 mt-2">This may take a moment</span>
@@ -45,10 +50,10 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           
           {previewUrl ? (
             <>
-              <img src={previewUrl} alt="Uploaded" className="object-contain h-full w-full rounded-xl" />
+              <img src={previewUrl} alt="Uploaded" className="object-contain h-full w-full" />
               <button 
                 onClick={onRemove} 
-                className="absolute top-4 right-4 p-3 bg-black bg-opacity-70 text-white rounded-full hover:bg-opacity-90 z-10 transition-all hover:scale-110"
+                className="absolute top-4 right-4 p-3 bg-black bg-opacity-70 text-white hover:bg-opacity-90 z-10 transition-all hover:scale-110"
                 aria-label="Remove uploaded image"
               >
                 <X size={24} />
@@ -57,7 +62,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           ) : (
             <div className="text-center p-8">
               <div className="mb-6 transform transition-transform group-hover:scale-110 duration-300">
-                <UploadCloud className="mx-auto h-24 w-24 text-brand-secondary/60" />
+                <UploadCloud className="mx-auto h-24 w-24 text-brand-gold" />
               </div>
               <p className="text-xl font-medium text-gray-300 mb-2">Click to upload or drag & drop</p>
               <p className="text-sm text-gray-400 mb-4">Best results: Straight-on photo, good lighting</p>
