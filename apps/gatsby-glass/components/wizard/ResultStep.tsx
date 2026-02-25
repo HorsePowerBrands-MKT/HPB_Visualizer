@@ -299,6 +299,13 @@ export const ResultStep: React.FC<ResultStepProps> = ({
             )}
           </div>
 
+          {/* AI Disclaimer */}
+          {resultUrl && (
+            <p className="text-[11px] text-gray-500 text-center px-4 pt-2 leading-relaxed">
+              This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
+            </p>
+          )}
+
           {/* Before/After Toggle - directly under image */}
           {resultUrl && (
             <div className="flex justify-center items-center gap-4 bg-brand-brown-hover px-6 py-3">

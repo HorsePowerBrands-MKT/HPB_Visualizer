@@ -138,7 +138,9 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         </div>
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          By uploading images, you agree that Gatsby Glass may collect and use these images to improve our visualization service.
+          By uploading images, you acknowledge that they will be transmitted to and processed by an AI service (Google Gemini) to generate your visualization, and may be stored securely by Gatsby Glass to improve our service. Do not upload images containing identifiable individuals or sensitive personal information. See our{' '}
+          <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
+          for details.
         </p>
       </div>
     );
@@ -172,7 +174,9 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         />
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          By uploading images, you agree that Gatsby Glass may collect and use these images to improve our visualization service.
+          By uploading an image, you acknowledge that it will be transmitted to and processed by an AI service (Google Gemini) to generate your visualization, and may be stored securely by Gatsby Glass to improve our service. Do not upload images containing identifiable individuals or sensitive personal information. See our{' '}
+          <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
+          for details on how your data is used and your rights.
         </p>
       </div>
     </div>
