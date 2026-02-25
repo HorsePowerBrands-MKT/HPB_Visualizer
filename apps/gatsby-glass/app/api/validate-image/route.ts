@@ -39,6 +39,10 @@ export async function POST(request: NextRequest) {
     const result = await validateImage({ apiKey }, imageDataObj);
     console.log('[VALIDATE-IMAGE API] Validation result:', JSON.stringify(result));
 
+    if (result.contentFlag && result.contentFlag !== 'safe') {
+      console.warn(`[VALIDATE-IMAGE API] Content flagged as: ${result.contentFlag}`);
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof ZodError) {

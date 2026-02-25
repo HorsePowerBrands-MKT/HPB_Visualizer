@@ -165,26 +165,27 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
   }, []);
 
   const getTotalSteps = useCallback((): number => {
-    // Step 1: Mode selection
-    // Step 2: Upload bathroom
-    // Step 3: Enclosure type (configure) OR Upload inspiration (inspiration)
-    // Step 4: Framing, Hardware & Handles (configure only)
-    // Step 5: Generate/Result (configure) OR Step 4: Result (inspiration)
-    return form.mode === 'configure' ? 5 : 4;
+    // Configure: Step 1 (Mode) → Step 2 (Upload Bathroom) → Step 3 (Enclosure) → Step 4 (Framing/Hardware) → Step 5 (Result)
+    // Inspiration: Step 1 (Mode) → Step 2 (Upload Both Photos) → Step 3 (Result)
+    return form.mode === 'configure' ? 5 : 3;
   }, [form.mode]);
 
   const canProceedToNextStep = useCallback((): boolean => {
     switch (currentStep) {
       case 1: // Mode selection
         return form.mode !== undefined;
-      case 2: // Upload bathroom photo
-        return imageFile !== null && previewUrl !== null;
-      case 3: // Enclosure type OR inspiration upload
+      case 2: // Upload photo(s)
+        if (form.mode === 'configure') {
+          return imageFile !== null && previewUrl !== null;
+        } else {
+          return imageFile !== null && previewUrl !== null
+            && inspirationFile !== null && inspirationPreviewUrl !== null;
+        }
+      case 3: // Enclosure type (configure only)
         if (form.mode === 'configure') {
           return form.enclosure_type !== undefined;
-        } else {
-          return inspirationFile !== null && inspirationPreviewUrl !== null;
         }
+        return false;
       case 4: // Framing, Hardware & Handles (configure only)
         return form.track_preference !== undefined && form.hardware_finish !== undefined && form.handle_style !== undefined;
       default:

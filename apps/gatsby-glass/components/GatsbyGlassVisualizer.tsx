@@ -289,15 +289,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
           setTimeout(() => setInfoMessage(null), 8000);
         }
-        // Auto-advance to next step (force=true to bypass stale closure issue)
-        console.log('[FILE UPLOAD] Auto-advancing to next step...');
-        setTimeout(() => goToNextStep(true), 500);
+        // Auto-advance for configure mode (single upload step)
+        if (form.mode === 'configure') {
+          console.log('[FILE UPLOAD] Auto-advancing to next step...');
+          setTimeout(() => goToNextStep(true), 500);
+        }
       } else {
         setInspirationFile(file);
         setInspirationPreviewUrl(URL.createObjectURL(file));
-        // Auto-advance to next step (force=true to bypass stale closure issue)
-        console.log('[FILE UPLOAD] Auto-advancing to next step...');
-        setTimeout(() => goToNextStep(true), 500);
       }
     } catch (err) {
       console.error('[FILE UPLOAD] Error during validation:', err);
@@ -476,25 +475,53 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onNext={goToNextStep}
           />
         );
-      
+
       case 2:
-        // Upload Bathroom Photo
-        return (
-          <PhotoUploadStep
-            type="bathroom"
-            file={imageFile}
-            previewUrl={previewUrl}
-            validating={validating === 'target'}
-            error={error}
-            onFileChange={(e) => handleFileChange(e, 'target')}
-            onRemove={() => {
-              setImageFile(null);
-              setPreviewUrl(null);
-              setError(null);
-            }}
-          />
-        );
-      
+        if (form.mode === 'configure') {
+          // Upload Bathroom Photo (single)
+          return (
+            <PhotoUploadStep
+              type="bathroom"
+              file={imageFile}
+              previewUrl={previewUrl}
+              validating={validating === 'target'}
+              onFileChange={(e) => handleFileChange(e, 'target')}
+              onRemove={() => {
+                setImageFile(null);
+                setPreviewUrl(null);
+                setError(null);
+              }}
+              error={error}
+            />
+          );
+        } else {
+          // Upload Both Photos (bathroom + inspiration side by side)
+          return (
+            <PhotoUploadStep
+              type="both"
+              file={imageFile}
+              previewUrl={previewUrl}
+              validating={validating === 'target'}
+              onFileChange={(e) => handleFileChange(e, 'target')}
+              onRemove={() => {
+                setImageFile(null);
+                setPreviewUrl(null);
+                setError(null);
+              }}
+              inspirationFile={inspirationFile}
+              inspirationPreviewUrl={inspirationPreviewUrl}
+              inspirationValidating={validating === 'inspiration'}
+              onInspirationFileChange={(e) => handleFileChange(e, 'inspiration')}
+              onInspirationRemove={() => {
+                setInspirationFile(null);
+                setInspirationPreviewUrl(null);
+                setError(null);
+              }}
+              error={error}
+            />
+          );
+        }
+
       case 3:
         if (form.mode === 'configure') {
           // Enclosure Type Selection
@@ -510,42 +537,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
               onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
               onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
-            />
-          );
-        } else {
-          // Upload Inspiration Photo
-          return (
-            <PhotoUploadStep
-              type="inspiration"
-              file={inspirationFile}
-              previewUrl={inspirationPreviewUrl}
-              validating={validating === 'inspiration'}
-              error={error}
-              onFileChange={(e) => handleFileChange(e, 'inspiration')}
-              onRemove={() => {
-                setInspirationFile(null);
-                setInspirationPreviewUrl(null);
-                setError(null);
-              }}
-            />
-          );
-        }
-      
-      case 4:
-        if (form.mode === 'configure') {
-          // Framing, Hardware & Handles
-          return (
-            <FramingHardwareStep
-              trackPreference={form.track_preference}
-              hardwareFinish={form.hardware_finish}
-              handleStyle={form.handle_style}
-              onTrackPreferenceChange={(track) => updateFormField('track_preference', track)}
-              onHardwareFinishChange={(finish) => updateFormField('hardware_finish', finish)}
-              onHandleStyleChange={(style) => updateFormField('handle_style', style)}
-              framingOptions={framingOptions}
-              hardwareOptions={hardwareOptions}
-              handleOptions={handleOptions}
-              detectedHardware={form.detected_hardware}
             />
           );
         } else {
@@ -578,7 +569,24 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             />
           );
         }
-      
+
+      case 4:
+        // Framing, Hardware & Handles (configure only)
+        return (
+          <FramingHardwareStep
+            trackPreference={form.track_preference}
+            hardwareFinish={form.hardware_finish}
+            handleStyle={form.handle_style}
+            onTrackPreferenceChange={(track) => updateFormField('track_preference', track)}
+            onHardwareFinishChange={(finish) => updateFormField('hardware_finish', finish)}
+            onHandleStyleChange={(style) => updateFormField('handle_style', style)}
+            framingOptions={framingOptions}
+            hardwareOptions={hardwareOptions}
+            handleOptions={handleOptions}
+            detectedHardware={form.detected_hardware}
+          />
+        );
+
       case 5:
         // Result (configure only)
         return (
@@ -621,7 +629,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
           />
         );
-      
+
       default:
         return null;
     }
@@ -630,11 +638,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   // Determine if we should show generate button
   const showGenerateButton =
     (form.mode === 'configure' && currentStep === 4) ||
-    (form.mode === 'inspiration' && currentStep === 3);
+    (form.mode === 'inspiration' && currentStep === 2);
 
   const isResultStep =
     (form.mode === 'configure' && currentStep === 5) ||
-    (form.mode === 'inspiration' && currentStep === 4);
+    (form.mode === 'inspiration' && currentStep === 3);
 
   return (
     <div className="mx-auto">

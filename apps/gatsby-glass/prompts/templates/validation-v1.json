@@ -1,15 +1,42 @@
 {
   "id": "validation-v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Image Validation Prompt",
   "type": "validation",
-  "description": "Prompt template for validating bathroom images and detecting shower shape",
+  "description": "Prompt template for validating bathroom images, detecting shower shape, and screening for PII/inappropriate content",
   "sections": [
     {
       "id": "task",
       "type": "header",
       "content": [
-        "Analyze this image. Does it show ANY part of a bathroom, shower area, bathtub, or shower enclosure?"
+        "Analyze this image. Perform THREE checks in order: (1) content safety, (2) bathroom validation, (3) feature detection."
+      ]
+    },
+    {
+      "id": "content_safety",
+      "type": "instructions",
+      "content": [
+        "",
+        "CONTENT SAFETY CHECK (do this FIRST):",
+        "Scan the image for the following. If ANY are found, set isValid to false and set the appropriate contentFlag:",
+        "",
+        "PII / Personal Information:",
+        "- Human faces that are clearly identifiable (not blurry reflections or distant/tiny figures)",
+        "- Readable personal documents, IDs, mail, or papers with names/addresses",
+        "- Visible credit cards, financial documents, or account numbers",
+        "- Readable phone numbers, email addresses, or social media handles",
+        "- Children in any context",
+        "If PII is detected, set contentFlag to 'pii'.",
+        "",
+        "Inappropriate Content:",
+        "- Nudity or sexually explicit content",
+        "- Graphic violence or gore",
+        "- Illegal activities",
+        "If inappropriate content is detected, set contentFlag to 'inappropriate'.",
+        "",
+        "If the image is safe, set contentFlag to 'safe'.",
+        "",
+        "IMPORTANT: Blurry reflections in mirrors or glass do NOT count as identifiable faces. Only flag clear, identifiable people. A person's hand or arm in frame is fine — only flag identifiable faces."
       ]
     },
     {
@@ -17,7 +44,7 @@
       "type": "instructions",
       "content": [
         "",
-        "VALIDATION GUIDELINES:",
+        "BATHROOM VALIDATION (only if content is safe):",
         "Be VERY LENIENT - if you see tiles, shower fixtures, bathroom walls, a tub, or any bathroom space where a shower door could be installed, answer YES (isValid: true).",
         "",
         "Only reject if it's clearly NOT a bathroom at all (like outdoors, kitchen, living room, etc)."
@@ -58,8 +85,9 @@
         "",
         "RESPONSE FORMAT:",
         "Return JSON with:",
-        "- isValid (boolean)",
-        "- reason (string, only if invalid)",
+        "- isValid (boolean): false if content safety fails OR not a bathroom",
+        "- reason (string, only if invalid): user-friendly explanation",
+        "- contentFlag (string: 'safe', 'pii', or 'inappropriate')",
         "- shape (string: 'standard', 'neo_angle', or 'tub')",
         "- detectedHardware (string: 'chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze', or 'none')"
       ]
@@ -68,9 +96,9 @@
   "variables": [],
   "metadata": {
     "createdAt": "2026-01-27T00:00:00.000Z",
-    "updatedAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-02-05T00:00:00.000Z",
     "author": "Gatsby Glass Team",
-    "tags": ["validation", "image-analysis", "shape-detection"],
-    "notes": "Used to validate uploaded images and detect shower configuration"
+    "tags": ["validation", "image-analysis", "shape-detection", "content-safety", "pii"],
+    "notes": "Used to validate uploaded images, screen for PII/inappropriate content, and detect shower configuration"
   }
 }
