@@ -1,4 +1,4 @@
-import { EnclosureType, GlassStyle, HardwareFinish, ShowerShape, TrackPreference, HandleStyle, DesignMode } from './visualizer';
+import { EnclosureType, GlassStyle, HardwareFinish, ShowerShape, TrackPreference, HandleStyle, DesignMode, HingedConfig, PivotConfig, SlidingConfig } from './visualizer';
 
 // Contact form data
 export interface ContactFormData {
@@ -54,12 +54,16 @@ export interface VisualizationData {
 export interface GenerationRecord {
   sessionId: string;
   generationIndex: number;  // 1 for first, 2 for re-generate, etc.
+  mode?: DesignMode;
   enclosureType?: EnclosureType;
+  framingStyle?: TrackPreference;
   hardwareFinish?: HardwareFinish;
   handleStyle?: HandleStyle;
-  trackPreference?: TrackPreference;
   showerShape?: ShowerShape;
-  mode?: DesignMode;
+  // Door sub-option configs (stored as JSONB so queries can dig into them)
+  hingedConfig?: HingedConfig;
+  pivotConfig?: PivotConfig;
+  slidingConfig?: SlidingConfig;
   visualizationImageUrl?: string;
   originalImageUrl?: string;
   team?: string;
