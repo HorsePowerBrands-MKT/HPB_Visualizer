@@ -38,14 +38,15 @@ const createInitialFormState = (config?: VisualizerConfig): Payload => ({
     side: "right",
     swing: null,
   },
-  hinged_config: {},
-  pivot_config: {},
-  sliding_config: {},
+  hinged_config: { to_ceiling: false, direction: 'right' },
+  pivot_config: { direction: 'right' },
+  sliding_config: { configuration: 'single', direction: 'left' },
   track_preference: "frameless",
   optional: config?.defaultOptionalConfig || DEFAULT_OPTIONAL_CONFIG,
   user_notes: "",
   session_id: "",
   catalog_version: config?.catalogVersion || '2025.10',
+  detected_hardware: 'none',
 });
 
 export interface VisualizerState {
@@ -167,10 +168,9 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     // Step 1: Mode selection
     // Step 2: Upload bathroom
     // Step 3: Enclosure type (configure) OR Upload inspiration (inspiration)
-    // Step 4: Glass & Framing (configure only)
-    // Step 5: Hardware & Handles (configure only)
-    // Step 6: Generate/Result
-    return form.mode === 'configure' ? 6 : 4;
+    // Step 4: Framing, Hardware & Handles (configure only)
+    // Step 5: Generate/Result (configure) OR Step 4: Result (inspiration)
+    return form.mode === 'configure' ? 5 : 4;
   }, [form.mode]);
 
   const canProceedToNextStep = useCallback((): boolean => {
@@ -185,10 +185,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
         } else {
           return inspirationFile !== null && inspirationPreviewUrl !== null;
         }
-      case 4: // Glass & Framing (configure only)
-        return form.glass_style !== undefined && form.track_preference !== undefined;
-      case 5: // Hardware & Handles (configure only)
-        return form.hardware_finish !== undefined && form.handle_style !== undefined;
+      case 4: // Framing, Hardware & Handles (configure only)
+        return form.track_preference !== undefined && form.hardware_finish !== undefined && form.handle_style !== undefined;
       default:
         return false;
     }

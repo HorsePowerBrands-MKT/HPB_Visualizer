@@ -38,9 +38,8 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
         case 1: return 'Choose Design Method';
         case 2: return 'Upload Bathroom Photo';
         case 3: return 'Select Enclosure Type';
-        case 4: return 'Choose Glass & Framing';
-        case 5: return 'Select Hardware & Handles';
-        case 6: return 'View Your Design';
+        case 4: return 'Framing, Hardware & Handles';
+        case 5: return 'View Your Design';
         default: return '';
       }
     } else {

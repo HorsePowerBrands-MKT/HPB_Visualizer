@@ -19,6 +19,15 @@ export type HandleStyle = 'ladder' | 'square' | 'd_pull' | 'knob';
 // Track/framing preference
 export type TrackPreference = 'frameless' | 'semi_frameless' | 'framed';
 
+// Door direction for hinged/pivot doors
+export type DoorDirection = 'left' | 'right' | 'double';
+
+// Sliding door direction
+export type SlidingDirection = 'left' | 'right';
+
+// Sliding door configuration count
+export type SlidingConfiguration = 'single' | 'double';
+
 // Door opening configuration
 export interface DoorOpening {
   type: EnclosureType;
@@ -26,17 +35,21 @@ export interface DoorOpening {
   swing: 'in' | 'out' | null;
 }
 
-// Simplified configs - details handled automatically by AI
+// Hinged door sub-options
 export interface HingedConfig {
-  // No longer needed - AI determines optimal configuration
+  to_ceiling: boolean;
+  direction: DoorDirection;
 }
 
+// Pivot door sub-options
 export interface PivotConfig {
-  // No longer needed - AI determines optimal configuration
+  direction: DoorDirection;
 }
 
+// Sliding door sub-options
 export interface SlidingConfig {
-  // No longer needed - AI determines optimal configuration
+  configuration: SlidingConfiguration;
+  direction: SlidingDirection;
 }
 
 // Optional configurations
@@ -67,6 +80,7 @@ export interface Payload {
   user_notes: string;
   session_id: string;
   catalog_version: string;
+  detected_hardware: string;
 }
 
 // Alternative config type for components

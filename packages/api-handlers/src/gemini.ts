@@ -155,9 +155,10 @@ export async function validateImage(
           properties: {
             isValid: { type: Type.BOOLEAN },
             reason: { type: Type.STRING, description: "Short error message if invalid." },
-            shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] }
+            shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] },
+            detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "none"] }
           },
-          required: ["isValid", "shape"]
+          required: ["isValid", "shape", "detectedHardware"]
         },
       },
     });
@@ -171,7 +172,8 @@ export async function validateImage(
       return {
         valid: false,
         reason: "Could not analyze image.",
-        shape: "standard"
+        shape: "standard",
+        detectedHardware: "none"
       };
     }
 
@@ -181,7 +183,8 @@ export async function validateImage(
     return {
       valid: result.isValid,
       reason: result.reason,
-      shape: result.shape || "standard"
+      shape: result.shape || "standard",
+      detectedHardware: result.detectedHardware || "none"
     };
   } catch (error) {
     console.error('[GEMINI validateImage] Error during validation:', error);
