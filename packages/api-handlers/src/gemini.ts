@@ -154,11 +154,12 @@ export async function validateImage(
           type: Type.OBJECT,
           properties: {
             isValid: { type: Type.BOOLEAN },
-            reason: { type: Type.STRING, description: "Short error message if invalid." },
+            reason: { type: Type.STRING, description: "Short user-friendly error message if invalid." },
+            contentFlag: { type: Type.STRING, enum: ["safe", "pii", "inappropriate"] },
             shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] },
             detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "none"] }
           },
-          required: ["isValid", "shape", "detectedHardware"]
+          required: ["isValid", "contentFlag", "shape", "detectedHardware"]
         },
       },
     });
@@ -179,12 +180,23 @@ export async function validateImage(
 
     const result = JSON.parse(text);
     console.log('[GEMINI validateImage] Parsed result:', result);
-    
+
+    const contentFlag = result.contentFlag || 'safe';
+
+    // Override reason with user-friendly messages for content safety issues
+    let reason = result.reason;
+    if (contentFlag === 'pii') {
+      reason = 'This image appears to contain personal information (such as a visible face or personal documents). Please upload a photo of just the bathroom/shower area without people or personal items visible.';
+    } else if (contentFlag === 'inappropriate') {
+      reason = 'This image contains content that cannot be processed. Please upload an appropriate photo of your bathroom or shower area.';
+    }
+
     return {
       valid: result.isValid,
-      reason: result.reason,
+      reason,
       shape: result.shape || "standard",
-      detectedHardware: result.detectedHardware || "none"
+      detectedHardware: result.detectedHardware || "none",
+      contentFlag,
     };
   } catch (error) {
     console.error('[GEMINI validateImage] Error during validation:', error);

@@ -6,6 +6,7 @@ export interface ImageValidationResponse {
   reason?: string;
   shape: ShowerShape;
   detectedHardware?: string;
+  contentFlag?: 'safe' | 'pii' | 'inappropriate';
 }
 
 // Image data structure

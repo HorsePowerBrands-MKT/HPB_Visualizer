@@ -45,9 +45,8 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
     } else {
       switch (step) {
         case 1: return 'Choose Design Method';
-        case 2: return 'Upload Bathroom Photo';
-        case 3: return 'Upload Inspiration Photo';
-        case 4: return 'View Your Design';
+        case 2: return 'Upload Your Photos';
+        case 3: return 'View Your Design';
         default: return '';
       }
     }
