@@ -425,16 +425,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sessionId,
+            generationIndex: nextGenIndex,
             mode: form.mode,
             enclosureType: form.enclosure_type,
-            glassStyle: form.glass_style,
+            framingStyle: form.track_preference,
             hardwareFinish: form.hardware_finish,
             handleStyle: form.handle_style,
-            trackPreference: form.track_preference,
             showerShape: form.shower_shape,
+            // Door sub-option configs — whichever is active gets stored
+            hingedConfig: form.hinged_config ?? null,
+            pivotConfig: form.pivot_config ?? null,
+            slidingConfig: form.sliding_config ?? null,
             visualizationImage: vizUploadData.url,
             ...(originalImageUrl ? { originalImage: originalImageUrl } : {}),
-            generationIndex: nextGenIndex,
             team: teamUtm || null,
           })
         });
