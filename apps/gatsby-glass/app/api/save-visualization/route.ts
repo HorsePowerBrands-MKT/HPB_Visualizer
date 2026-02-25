@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveVisualization } from '@repo/api-handlers/supabase';
-import type { VisualizationData } from '@repo/types';
+import { saveVisualization, saveGeneration } from '@repo/api-handlers/supabase';
+import type { VisualizationData, GenerationRecord } from '@repo/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
     
     console.log('[SAVE-VIZ API] Request body:', JSON.stringify(body, null, 2));
     
-    // Validate required fields
     if (!body.sessionId) {
       console.error('[SAVE-VIZ API] Missing sessionId in request');
       return NextResponse.json(
@@ -17,18 +16,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Supabase credentials
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase credentials not configured');
+      console.error('[SAVE-VIZ API] Supabase credentials not configured');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
 
+    const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
+
+    // Upsert the session-level lead record (first gen creates it, re-gens update it)
     const visualizationData: VisualizationData = {
       sessionId: body.sessionId,
       mode: body.mode,
@@ -40,17 +41,33 @@ export async function POST(request: NextRequest) {
       showerShape: body.showerShape,
       visualizationImage: body.visualizationImage,
       originalImage: body.originalImage,
-      source: 'Gatsby Glass Visualizer'
+      source: 'Gatsby Glass Visualizer',
+      team: body.team || null,
     };
 
-    const result = await saveVisualization(
-      { url: supabaseUrl, serviceKey: supabaseKey },
-      visualizationData
-    );
+    const sessionResult = await saveVisualization(supabaseConfig, visualizationData);
 
-    return NextResponse.json(result);
+    // Always insert a new row into visualizations for every generation event
+    const generationRecord: GenerationRecord = {
+      sessionId: body.sessionId,
+      generationIndex: body.generationIndex || 1,
+      enclosureType: body.enclosureType,
+      hardwareFinish: body.hardwareFinish,
+      handleStyle: body.handleStyle,
+      trackPreference: body.trackPreference,
+      showerShape: body.showerShape,
+      mode: body.mode,
+      visualizationImageUrl: body.visualizationImage,
+      originalImageUrl: body.originalImage,
+      team: body.team || null,
+    };
+
+    const genResult = await saveGeneration(supabaseConfig, generationRecord);
+    console.log('[SAVE-VIZ API] Generation record saved:', genResult.id);
+
+    return NextResponse.json({ ...sessionResult, generationId: genResult.id });
   } catch (error) {
-    console.error('Visualization save error:', error);
+    console.error('[SAVE-VIZ API] Error:', error);
     return NextResponse.json(
       { error: 'An error occurred while saving visualization data' },
       { status: 500 }

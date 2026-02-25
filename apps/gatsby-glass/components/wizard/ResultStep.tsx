@@ -129,6 +129,7 @@ interface ResultStepProps {
   onHingedConfigChange?: (config: HingedConfig) => void;
   onPivotConfigChange?: (config: PivotConfig) => void;
   onSlidingConfigChange?: (config: SlidingConfig) => void;
+  team?: string | null;
 }
 
 // Generate marketing description based on selections
@@ -234,7 +235,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   detectedHardware,
   onHingedConfigChange,
   onPivotConfigChange,
-  onSlidingConfigChange
+  onSlidingConfigChange,
+  team,
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -552,6 +554,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
           isOpen={isReportModalOpen}
           onClose={() => setIsReportModalOpen(false)}
           sessionId={sessionId}
+          visualizationImageUrl={resultUrl}
+          team={team}
         />
       )}
 
