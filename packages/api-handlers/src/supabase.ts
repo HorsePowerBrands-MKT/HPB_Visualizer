@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Lead, LeadSubmissionResponse, VisualizationData, IssueReport } from '@repo/types';
+import type { Lead, LeadSubmissionResponse, VisualizationData, IssueReport, GenerationRecord } from '@repo/types';
 
 export interface SupabaseConfig {
   url: string;
@@ -195,7 +195,8 @@ export async function saveVisualization(
     showerShape,
     visualizationImage,
     originalImage,
-    source = 'Gatsby Glass Visualizer'
+    source = 'Gatsby Glass Visualizer',
+    team
   } = visualizationData;
 
   if (!sessionId) {
@@ -259,6 +260,7 @@ export async function saveVisualization(
         visualization_image_url: visualizationImage || null,
         original_image_url: originalImage || null,
         source,
+        team: team || null,
         status: 'new',
         contact_submitted: false
       }
@@ -320,6 +322,86 @@ export async function reportIssue(
     console.error('Database error:', error);
     throw new Error('Failed to report issue');
   }
+
+  return {
+    success: true,
+    message: 'Issue reported successfully',
+    leadId: data.id
+  };
+}
+
+/**
+ * Save a single image generation event to the visualizations table
+ * Called every time an image is generated (including re-generates)
+ */
+export async function saveGeneration(
+  config: SupabaseConfig,
+  record: GenerationRecord
+): Promise<{ id: string }> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('visualizations')
+    .insert([{
+      session_id: record.sessionId,
+      generation_index: record.generationIndex,
+      enclosure_type: record.enclosureType || null,
+      hardware_finish: record.hardwareFinish || null,
+      handle_style: record.handleStyle || null,
+      track_preference: record.trackPreference || null,
+      shower_shape: record.showerShape || null,
+      mode: record.mode || null,
+      visualization_image_url: record.visualizationImageUrl || null,
+      original_image_url: record.originalImageUrl || null,
+      team: record.team || null,
+    }])
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('[saveGeneration] Database error:', error);
+    throw new Error('Failed to save generation record');
+  }
+
+  return { id: data.id };
+}
+
+/**
+ * Create an issue report in the issue_reports table (many per session)
+ */
+export async function createIssueReport(
+  config: SupabaseConfig,
+  issueData: IssueReport
+): Promise<LeadSubmissionResponse> {
+  const { sessionId, issueMessage, visualizationImageUrl, team } = issueData;
+
+  if (!sessionId || !issueMessage) {
+    throw new Error('Session ID and issue message are required');
+  }
+
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('issue_reports')
+    .insert([{
+      session_id: sessionId,
+      message: issueMessage,
+      visualization_image_url: visualizationImageUrl || null,
+      team: team || null,
+    }])
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('[createIssueReport] Database error:', error);
+    throw new Error('Failed to save issue report');
+  }
+
+  // Also flag the lead record so it's easy to filter in the leads view
+  await supabase
+    .from('leads')
+    .update({ issue_reported: true, updated_at: new Date().toISOString() })
+    .eq('session_id', sessionId);
 
   return {
     success: true,

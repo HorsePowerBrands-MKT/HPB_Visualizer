@@ -47,10 +47,28 @@ export interface VisualizationData {
   visualizationImage?: string;
   originalImage?: string;
   source?: string;
+  team?: string;
 }
 
-// Issue report data
+// A single image generation event (many per session)
+export interface GenerationRecord {
+  sessionId: string;
+  generationIndex: number;  // 1 for first, 2 for re-generate, etc.
+  enclosureType?: EnclosureType;
+  hardwareFinish?: HardwareFinish;
+  handleStyle?: HandleStyle;
+  trackPreference?: TrackPreference;
+  showerShape?: ShowerShape;
+  mode?: DesignMode;
+  visualizationImageUrl?: string;
+  originalImageUrl?: string;
+  team?: string;
+}
+
+// Issue report data (many per session)
 export interface IssueReport {
   sessionId: string;
   issueMessage: string;
+  visualizationImageUrl?: string;
+  team?: string;
 }

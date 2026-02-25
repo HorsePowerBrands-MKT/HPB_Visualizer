@@ -187,6 +187,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   const [contactModalOpen, setContactModalOpen] = useState<boolean>(false);
   const [contactModalMode, setContactModalMode] = useState<'save' | 'quote'>('save');
 
+  // UTM team param — read once on mount from the URL
+  const [teamUtm, setTeamUtm] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('team');
+      if (t) setTeamUtm(t);
+    }
+  }, []);
+
+  // Track how many times the user has generated an image in this session
+  const [generationIndex, setGenerationIndex] = useState(0);
+
   // Prepare options for Rich Select
   const enclosureOptions: RichSelectOption[] = [
     { value: 'hinged', label: 'Hinged', icon: <IconHinged className="w-10 h-10" /> },
@@ -356,6 +369,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         payload: updatedForm
       };
 
+      const nextGenIndex = generationIndex + 1;
+      setGenerationIndex(nextGenIndex);
+
       setResultUrl(result.image);
       addHistoryItem(newHistoryItem);
       setShowResult(true);
@@ -370,7 +386,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageData: result.image,
-            fileName: `visualization_${sessionId}.png`
+            fileName: `visualization_${sessionId}_${nextGenIndex}.png`
           })
         });
         
@@ -381,30 +397,34 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         const vizUploadData = await vizUploadResponse.json();
         console.log('[AUTO-SAVE] Visualization image uploaded:', vizUploadData.url);
         
-        // Upload original image to Supabase Storage
-        const originalImageData = await fileToBase64Data(imageFile);
-        const originalUploadResponse = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageData: `data:${originalImageData.mimeType};base64,${originalImageData.data}`,
-            fileName: `original_${sessionId}.${originalImageData.mimeType.split('/')[1]}`
-          })
-        });
-        
-        if (!originalUploadResponse.ok) {
-          throw new Error('Failed to upload original image');
+        // Upload original image to Supabase Storage (only on first generation)
+        let originalImageUrl: string | null = null;
+        if (nextGenIndex === 1) {
+          const originalImageData = await fileToBase64Data(imageFile);
+          const originalUploadResponse = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageData: `data:${originalImageData.mimeType};base64,${originalImageData.data}`,
+              fileName: `original_${sessionId}.${originalImageData.mimeType.split('/')[1]}`
+            })
+          });
+          
+          if (!originalUploadResponse.ok) {
+            throw new Error('Failed to upload original image');
+          }
+          
+          const originalUploadData = await originalUploadResponse.json();
+          originalImageUrl = originalUploadData.url;
+          console.log('[AUTO-SAVE] Original image uploaded:', originalImageUrl);
         }
         
-        const originalUploadData = await originalUploadResponse.json();
-        console.log('[AUTO-SAVE] Original image uploaded:', originalUploadData.url);
-        
-        // Save visualization data with storage URLs
+        // Save visualization data — upserts session record + inserts generation row
         await fetch('/api/save-visualization', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sessionId: sessionId,
+            sessionId,
             mode: form.mode,
             enclosureType: form.enclosure_type,
             glassStyle: form.glass_style,
@@ -413,11 +433,13 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             trackPreference: form.track_preference,
             showerShape: form.shower_shape,
             visualizationImage: vizUploadData.url,
-            originalImage: originalUploadData.url
+            ...(originalImageUrl ? { originalImage: originalImageUrl } : {}),
+            generationIndex: nextGenIndex,
+            team: teamUtm || null,
           })
         });
         
-        console.log('[AUTO-SAVE] Visualization data saved successfully');
+        console.log('[AUTO-SAVE] Visualization data saved successfully (generation #', nextGenIndex, ')');
       } catch (saveError) {
         // Log error but don't block user flow
         console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
@@ -437,7 +459,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -535,6 +557,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               history={history}
               form={form}
               sessionId={form.session_id}
+              team={teamUtm}
               onToggleView={() => setShowResult(!showResult)}
               onSelectHistory={(item) => selectHistoryItem(item, false)}
               onSave={() => {
@@ -565,6 +588,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             history={history}
             form={form}
             sessionId={form.session_id}
+            team={teamUtm}
             onToggleView={() => setShowResult(!showResult)}
             onSelectHistory={(item) => selectHistoryItem(item, false)}
             onSave={() => {

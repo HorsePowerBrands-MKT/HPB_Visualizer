@@ -10,12 +10,16 @@ interface ReportIssueModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionId: string;
+  visualizationImageUrl?: string | null;
+  team?: string | null;
 }
 
 export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
   isOpen,
   onClose,
-  sessionId
+  sessionId,
+  visualizationImageUrl,
+  team,
 }) => {
   const [issueMessage, setIssueMessage] = useState('');
   const [error, setError] = useState<string>('');
@@ -41,7 +45,9 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          issueMessage: issueMessage.trim()
+          issueMessage: issueMessage.trim(),
+          visualizationImageUrl: visualizationImageUrl || null,
+          team: team || null,
         })
       });
 
