@@ -4,12 +4,14 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { 
   EnclosureType, 
-  GlassStyle, 
   HardwareFinish, 
   HandleStyle, 
   TrackPreference,
   HistoryItem,
-  Payload
+  Payload,
+  HingedConfig,
+  PivotConfig,
+  SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
 import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt } from '@repo/visualizer-core';
@@ -18,13 +20,12 @@ import { ContactFormModal } from './ContactFormModal';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';
 import { PhotoUploadStep } from './wizard/PhotoUploadStep';
 import { EnclosureTypeStep } from './wizard/EnclosureTypeStep';
-import { GlassFramingStep } from './wizard/GlassFramingStep';
-import { HardwareHandlesStep } from './wizard/HardwareHandlesStep';
+import { FramingHardwareStep } from './wizard/GlassFramingStep';
 import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
 
 import { 
-  Droplets, Grid, BoxSelect, Minimize, Shield, Square, Sparkles 
+  BoxSelect, Minimize, Shield, Square, Sparkles 
 } from 'lucide-react';
 
 // Custom Icons (using HubSpot CDN)
@@ -121,15 +122,6 @@ const HardwareIcon = ({ type }: { type: HardwareFinish }) => {
   );
 };
 
-const GlassIcon = ({ type }: { type: GlassStyle }) => {
-  switch(type) {
-    case 'clear': return <PlaceholderIcon icon={Droplets} label="CL" />;
-    case 'low_iron': return <PlaceholderIcon icon={Sparkles} label="LI" />;
-    case 'p516': return <PlaceholderIcon icon={Grid} label="P5" />;
-    default: return <PlaceholderIcon icon={Sparkles} label="GL" />;
-  }
-};
-
 const FramingIcon = ({ type }: { type: TrackPreference }) => {
   switch(type) {
     case 'frameless': return <PlaceholderIcon icon={BoxSelect} label="FL" />;
@@ -202,12 +194,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     { value: 'sliding', label: 'Sliding', icon: <IconSliding className="w-10 h-10" /> },
   ];
 
-  const glassOptions: RichSelectOption[] = Object.entries(CATALOG.glassStyles).map(([key, { name }]) => ({
-    value: key,
-    label: name,
-    icon: <GlassIcon type={key as GlassStyle} />
-  }));
-
   const hardwareOptions: RichSelectOption[] = Object.entries(CATALOG.hardwareFinishes).map(([key, { name }]) => ({
     value: key,
     label: name,
@@ -278,9 +264,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         setResultUrl(null);
         setShowResult(false);
         
+        const detectedHw = result.detectedHardware || 'none';
         setForm({
           ...form,
           shower_shape: result.shape,
+          detected_hardware: detectedHw,
+          ...(detectedHw !== 'none' ? { hardware_finish: detectedHw as HardwareFinish } : {}),
           ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
         });
         if (result.shape === 'neo_angle') {
@@ -490,6 +479,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               showerShape={form.shower_shape}
               infoMessage={infoMessage}
               onEnclosureSelect={handleEnclosureChange}
+              hingedConfig={form.hinged_config!}
+              pivotConfig={form.pivot_config!}
+              slidingConfig={form.sliding_config!}
+              onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
+              onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
+              onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
             />
           );
         } else {
@@ -513,15 +508,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       
       case 4:
         if (form.mode === 'configure') {
-          // Glass & Framing
+          // Framing, Hardware & Handles
           return (
-            <GlassFramingStep
-              glassStyle={form.glass_style}
+            <FramingHardwareStep
               trackPreference={form.track_preference}
-              onGlassStyleChange={(style) => updateFormField('glass_style', style)}
+              hardwareFinish={form.hardware_finish}
+              handleStyle={form.handle_style}
               onTrackPreferenceChange={(track) => updateFormField('track_preference', track)}
-              glassOptions={glassOptions}
+              onHardwareFinishChange={(finish) => updateFormField('hardware_finish', finish)}
+              onHandleStyleChange={(style) => updateFormField('handle_style', style)}
               framingOptions={framingOptions}
+              hardwareOptions={hardwareOptions}
+              handleOptions={handleOptions}
+              detectedHardware={form.detected_hardware}
             />
           );
         } else {
@@ -555,19 +554,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         }
       
       case 5:
-        // Hardware & Handles (configure only)
-        return (
-          <HardwareHandlesStep
-            hardwareFinish={form.hardware_finish}
-            handleStyle={form.handle_style}
-            onHardwareFinishChange={(finish) => updateFormField('hardware_finish', finish)}
-            onHandleStyleChange={(style) => updateFormField('handle_style', style)}
-            hardwareOptions={hardwareOptions}
-            handleOptions={handleOptions}
-          />
-        );
-      
-      case 6:
         // Result (configure only)
         return (
           <ResultStep
@@ -593,12 +579,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               resetAll();
               goToStep(1);
             }}
-            onChangeOptions={() => {
-              // Keep the uploaded image, just go back to enclosure type step
-              setResultUrl(null);
-              setShowResult(false);
-              goToStep(3);
-            }}
+            enclosureOptions={enclosureOptions}
+            framingOptions={framingOptions}
+            hardwareOptions={hardwareOptions}
+            handleOptions={handleOptions}
+            onEnclosureChange={handleEnclosureChange}
+            onTrackPreferenceChange={(track) => updateFormField('track_preference', track)}
+            onHardwareFinishChange={(finish) => updateFormField('hardware_finish', finish)}
+            onHandleStyleChange={(style) => updateFormField('handle_style', style)}
+            onRegenerate={onGenerate}
+            detectedHardware={form.detected_hardware}
+            onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
+            onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
+            onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
           />
         );
       
@@ -608,12 +601,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   };
 
   // Determine if we should show generate button
-  const showGenerateButton = 
-    (form.mode === 'configure' && currentStep === 5) ||
+  const showGenerateButton =
+    (form.mode === 'configure' && currentStep === 4) ||
     (form.mode === 'inspiration' && currentStep === 3);
 
-  const isResultStep = 
-    (form.mode === 'configure' && currentStep === 6) ||
+  const isResultStep =
+    (form.mode === 'configure' && currentStep === 5) ||
     (form.mode === 'inspiration' && currentStep === 4);
 
   return (

@@ -36,6 +36,22 @@
       ]
     },
     {
+      "id": "hardware_detection",
+      "type": "specifications",
+      "content": [
+        "",
+        "HARDWARE DETECTION:",
+        "If the image shows existing shower hardware (handles, hinges, towel bars, fixtures), identify the finish:",
+        "- 'chrome': Shiny silver/mirror-like metal",
+        "- 'brushed_nickel': Matte/satin silver with brushed texture",
+        "- 'matte_black': Flat black metal",
+        "- 'polished_brass': Gold/brass-toned shiny metal",
+        "- 'oil_rubbed_bronze': Dark brown/bronze metal",
+        "- 'none': No hardware visible or cannot determine",
+        "Set detectedHardware to the best match, or 'none' if unclear."
+      ]
+    },
+    {
       "id": "response_format",
       "type": "custom",
       "content": [
@@ -44,7 +60,8 @@
         "Return JSON with:",
         "- isValid (boolean)",
         "- reason (string, only if invalid)",
-        "- shape (string: 'standard', 'neo_angle', or 'tub')"
+        "- shape (string: 'standard', 'neo_angle', or 'tub')",
+        "- detectedHardware (string: 'chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze', or 'none')"
       ]
     }
   ],

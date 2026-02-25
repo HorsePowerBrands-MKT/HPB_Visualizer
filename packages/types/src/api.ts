@@ -5,6 +5,7 @@ export interface ImageValidationResponse {
   valid: boolean;
   reason?: string;
   shape: ShowerShape;
+  detectedHardware?: string;
 }
 
 // Image data structure

@@ -1,12 +1,106 @@
 'use client';
 
-import React, { useState } from 'react';
-import { RefreshCw, Check, AlertCircle, History, Sparkles, Flag } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { RefreshCw, Check, AlertCircle, History, Sparkles, Flag, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Label } from '../ui/Label';
 import { ReportIssueModal } from '../ReportIssueModal';
-import type { HistoryItem, Payload } from '@repo/types';
+import type { HistoryItem, Payload, EnclosureType, TrackPreference, HardwareFinish, HandleStyle, HingedConfig, PivotConfig, SlidingConfig, DoorDirection, SlidingDirection, SlidingConfiguration } from '@repo/types';
 import { CATALOG } from '../../lib/gatsby-constants/src';
+
+interface OptionItem {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+const OptionDropdown: React.FC<{
+  label: string;
+  value: string;
+  options: OptionItem[];
+  onChange: (value: string) => void;
+  badge?: string;
+}> = ({ label, value, options, onChange, badge }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="flex items-center gap-4" ref={ref}>
+      <span className="text-sm text-brand-gold font-medium w-28 flex-shrink-0">{label}</span>
+      <div className="relative flex-grow">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center gap-3 bg-brand-brown-hover border border-brand-gold/40 hover:border-brand-gold text-white text-sm h-10 px-3 transition-colors"
+        >
+          {selected?.icon && <div className="w-5 h-5 flex-shrink-0 overflow-hidden [&>*]:w-5 [&>*]:h-5">{selected.icon}</div>}
+          <span className="flex-grow text-left">{selected?.label}</span>
+          <ChevronDown size={14} className={`text-brand-gold/60 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+
+        {open && (
+          <div className="absolute z-50 mt-1 w-full bg-brand-brown border border-brand-gold shadow-lg shadow-black/40 max-h-52 overflow-y-auto">
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              const hasBadge = badge === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 h-10 text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-brand-gold/15 text-brand-gold'
+                      : 'text-gray-300 hover:bg-brand-brown-hover hover:text-white'
+                  }`}
+                >
+                  {opt.icon && <div className="w-5 h-5 flex-shrink-0 overflow-hidden [&>*]:w-5 [&>*]:h-5">{opt.icon}</div>}
+                  <span className="flex-grow text-left">{opt.label}</span>
+                  {hasBadge && <span className="text-[10px] text-brand-gold/80 flex-shrink-0">✓ Match</span>}
+                  {isSelected && <Check size={14} className="text-brand-gold flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const SubOptionPills: React.FC<{
+  label: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}> = ({ label, options, value, onChange }) => (
+  <div className="flex items-center gap-3">
+    <span className="text-[11px] text-gray-500 uppercase tracking-wider w-24 flex-shrink-0">{label}</span>
+    <div className="flex flex-wrap gap-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`px-2 h-6 text-[11px] font-medium transition-all duration-200 ${
+            value === opt.value
+              ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/40'
+              : 'text-gray-500 hover:text-gray-300 border border-transparent'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
 
 interface ResultStepProps {
   loading: boolean;
@@ -22,7 +116,19 @@ interface ResultStepProps {
   onSave: () => void;
   onRequestQuote: () => void;
   onTryAgain: () => void;
-  onChangeOptions?: () => void;
+  onRegenerate?: () => void;
+  enclosureOptions?: OptionItem[];
+  framingOptions?: OptionItem[];
+  hardwareOptions?: OptionItem[];
+  handleOptions?: OptionItem[];
+  onEnclosureChange?: (value: EnclosureType) => void;
+  onTrackPreferenceChange?: (value: TrackPreference) => void;
+  onHardwareFinishChange?: (value: HardwareFinish) => void;
+  onHandleStyleChange?: (value: HandleStyle) => void;
+  detectedHardware?: string;
+  onHingedConfigChange?: (config: HingedConfig) => void;
+  onPivotConfigChange?: (config: PivotConfig) => void;
+  onSlidingConfigChange?: (config: SlidingConfig) => void;
 }
 
 // Generate marketing description based on selections
@@ -41,44 +147,59 @@ const generateDescription = (form: Payload): { title: string; features: string[]
 
   const features: string[] = [];
   
-  // Enclosure type
+  // Enclosure type with door config details
   const enclosure = CATALOG.enclosureTypes[form.enclosure_type];
   if (enclosure) {
-    features.push(`${enclosure.name} - ${enclosure.description}`);
-  }
-
-  // Glass style
-  const glass = CATALOG.glassStyles[form.glass_style];
-  if (glass) {
-    features.push(`${glass.name} - ${glass.description}`);
+    let enclosureDetail = `${enclosure.name}`;
+    if (form.enclosure_type === 'hinged' && form.hinged_config) {
+      const dir = form.hinged_config.direction === 'double' ? 'Double Door' : `Swing ${form.hinged_config.direction === 'left' ? 'Left' : 'Right'}`;
+      enclosureDetail += ` — ${dir}${form.hinged_config.to_ceiling ? ', To Ceiling' : ''}`;
+    } else if (form.enclosure_type === 'pivot' && form.pivot_config) {
+      const dir = form.pivot_config.direction === 'double' ? 'Double Door' : `Swing ${form.pivot_config.direction === 'left' ? 'Left' : 'Right'}`;
+      enclosureDetail += ` — ${dir}`;
+    } else if (form.enclosure_type === 'sliding' && form.sliding_config) {
+      const cfg = form.sliding_config.configuration === 'double' ? 'Double Door' : 'Single Door';
+      const dir = `Slides ${form.sliding_config.direction === 'left' ? 'Left' : 'Right'}`;
+      enclosureDetail += ` — ${cfg}, ${dir}`;
+    }
+    features.push(enclosureDetail);
   }
 
   // Framing
   const framing = CATALOG.trackPreferences[form.track_preference];
   if (framing) {
-    features.push(`${framing.name} - ${framing.description}`);
+    features.push(`${framing.name} framing`);
   }
 
   // Hardware
   const hardware = CATALOG.hardwareFinishes[form.hardware_finish];
   if (hardware) {
-    features.push(`${hardware.name} hardware - ${hardware.description}`);
+    features.push(`${hardware.name} hardware`);
   }
 
   // Handle
   const handle = CATALOG.handleStyles[form.handle_style];
   if (handle) {
-    features.push(`${handle.name} - ${handle.description}`);
+    features.push(`${handle.name} handle`);
   }
+
+  // Double door note
+  const isDoubleDoor =
+    (form.enclosure_type === 'hinged' && form.hinged_config?.direction === 'double') ||
+    (form.enclosure_type === 'pivot' && form.pivot_config?.direction === 'double') ||
+    (form.enclosure_type === 'sliding' && form.sliding_config?.configuration === 'double');
 
   // Generate summary
   const summaryParts = [];
   if (enclosure) summaryParts.push(enclosure.name.toLowerCase());
   if (framing) summaryParts.push(framing.name.toLowerCase());
-  if (glass) summaryParts.push(glass.name.toLowerCase());
   if (hardware) summaryParts.push(`${hardware.name.toLowerCase()} hardware`);
 
-  const summary = `A stunning ${summaryParts.slice(0, 3).join(', ')} shower enclosure${hardware ? ` with elegant ${hardware.name.toLowerCase()} accents` : ''}. This design combines modern aesthetics with timeless elegance, perfectly tailored to transform your bathroom.`;
+  let summary = `A stunning ${summaryParts.slice(0, 3).join(', ')} shower enclosure${hardware ? ` with elegant ${hardware.name.toLowerCase()} accents` : ''}. Perfectly tailored to transform your bathroom.`;
+
+  if (isDoubleDoor) {
+    summary += ' Note: The double door configuration may be adjusted in the visualization to account for your bathroom\'s layout and any obstructions.';
+  }
 
   return {
     title: 'Your Custom Configuration',
@@ -101,9 +222,22 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   onSave,
   onRequestQuote,
   onTryAgain,
-  onChangeOptions
+  onRegenerate,
+  enclosureOptions,
+  framingOptions,
+  hardwareOptions,
+  handleOptions,
+  onEnclosureChange,
+  onTrackPreferenceChange,
+  onHardwareFinishChange,
+  onHandleStyleChange,
+  detectedHardware,
+  onHingedConfigChange,
+  onPivotConfigChange,
+  onSlidingConfigChange
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const description = form ? generateDescription(form) : null;
 
   return (
@@ -115,12 +249,12 @@ export const ResultStep: React.FC<ResultStepProps> = ({
         </p>
       </div>
 
-      {/* Main Content - Side by side layout on larger screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      {/* Main Content - Side by side on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Left side - Image and controls */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 w-full">
           {/* Preview Area */}
-          <div className="relative w-full overflow-hidden border border-brand-gold/30 bg-black/20">
+          <div className="relative w-full overflow-hidden border border-brand-gold bg-black/20">
             {loading && (
               <div className="absolute inset-0 z-10 bg-black/50 flex flex-col items-center justify-center text-white">
                 <RefreshCw className="h-12 w-12 animate-spin mb-4" />
@@ -217,32 +351,37 @@ export const ResultStep: React.FC<ResultStepProps> = ({
           )}
         </div>
 
-        {/* Right side - Description panel */}
-        {description && resultUrl && (
-          <div className="w-full bg-brand-brown border border-brand-gold p-6 space-y-4 lg:self-start">
-            <div className="flex items-center gap-2 text-brand-gold">
-              <Sparkles size={20} />
-              <h3 className="font-bold text-lg">{description.title}</h3>
-            </div>
-            
-            <p className="text-gray-300 text-sm leading-relaxed">
-              {description.summary}
-            </p>
+        {/* Right side - Details, options & actions */}
+        <div className="flex flex-col gap-4 w-full">
+          {/* Description panel */}
+          {description && resultUrl && (
+            <div className="bg-brand-brown border border-brand-gold p-6 space-y-4">
+              <div className="flex items-center gap-2 text-brand-gold">
+                <Sparkles size={20} />
+                <h3 className="font-bold text-lg">{description.title}</h3>
+              </div>
+              
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {description.summary}
+              </p>
 
-            <div className="border-t border-brand-gold/20 pt-4">
-              <h4 className="text-brand-gold text-sm font-semibold mb-3">Selected Features</h4>
-              <ul className="space-y-2">
-                {description.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2 text-xs text-gray-400">
-                    <Check size={14} className="text-brand-gold flex-shrink-0 mt-0.5" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="border-t border-brand-gold/20 pt-4">
+                <h4 className="text-brand-gold text-sm font-semibold mb-3">Selected Features</h4>
+                <ul className="space-y-2">
+                  {description.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2 text-xs text-gray-400">
+                      <Check size={14} className="text-brand-gold flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
+          )}
 
-            {/* Action Buttons - stacked in sidebar */}
-            <div className="border-t border-brand-gold/20 pt-4 space-y-2">
+          {/* Action Buttons */}
+          {resultUrl && (
+            <div className="space-y-2">
               <Button
                 variant="primary"
                 className="w-full"
@@ -257,15 +396,134 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               >
                 Request Quote
               </Button>
-              {onChangeOptions && form?.mode === 'configure' && (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={onChangeOptions}
-                >
-                  Change Options
-                </Button>
+
+              {/* Change Options accordion */}
+              {form?.mode === 'configure' && enclosureOptions && (
+                <div className="border border-white/30 overflow-hidden">
+                  <button
+                    onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                    className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium text-white bg-transparent hover:bg-white/10 transition-all duration-300"
+                  >
+                    Change Options
+                    {isOptionsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+
+                  <div
+                    className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+                    style={{ gridTemplateRows: isOptionsOpen ? '1fr' : '0fr' }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="border-t border-white/20 p-5 space-y-4">
+                        <div className="space-y-3">
+                          {onEnclosureChange && (
+                            <>
+                              <OptionDropdown
+                                label="Enclosure"
+                                value={form.enclosure_type}
+                                options={enclosureOptions}
+                                onChange={(v) => onEnclosureChange(v as EnclosureType)}
+                              />
+                              {/* Enclosure sub-options */}
+                              {form.enclosure_type === 'hinged' && form.hinged_config && onHingedConfigChange && (
+                                <div className="ml-32 border-l border-brand-gold/20 pl-3 py-1 space-y-1.5">
+                                  <SubOptionPills
+                                    label="To Ceiling"
+                                    options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]}
+                                    value={form.hinged_config.to_ceiling ? 'yes' : 'no'}
+                                    onChange={(v) => onHingedConfigChange({ ...form.hinged_config!, to_ceiling: v === 'yes' })}
+                                  />
+                                  <SubOptionPills
+                                    label="Door Direction"
+                                    options={[
+                                      { value: 'left', label: 'Left' },
+                                      { value: 'right', label: 'Right' },
+                                      { value: 'double', label: 'Double' },
+                                    ]}
+                                    value={form.hinged_config.direction}
+                                    onChange={(v) => onHingedConfigChange({ ...form.hinged_config!, direction: v as DoorDirection })}
+                                  />
+                                </div>
+                              )}
+                              {form.enclosure_type === 'pivot' && form.pivot_config && onPivotConfigChange && (
+                                <div className="ml-32 border-l border-brand-gold/20 pl-3 py-1 space-y-1.5">
+                                  <SubOptionPills
+                                    label="Door Direction"
+                                    options={[
+                                      { value: 'left', label: 'Left' },
+                                      { value: 'right', label: 'Right' },
+                                      { value: 'double', label: 'Double' },
+                                    ]}
+                                    value={form.pivot_config.direction}
+                                    onChange={(v) => onPivotConfigChange({ ...form.pivot_config!, direction: v as DoorDirection })}
+                                  />
+                                </div>
+                              )}
+                              {form.enclosure_type === 'sliding' && form.sliding_config && onSlidingConfigChange && (
+                                <div className="ml-32 border-l border-brand-gold/20 pl-3 py-1 space-y-1.5">
+                                  <SubOptionPills
+                                    label="Doors"
+                                    options={[{ value: 'single', label: 'Single' }, { value: 'double', label: 'Double' }]}
+                                    value={form.sliding_config.configuration}
+                                    onChange={(v) => onSlidingConfigChange({ ...form.sliding_config!, configuration: v as SlidingConfiguration })}
+                                  />
+                                  <SubOptionPills
+                                    label="Door Direction"
+                                    options={[{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]}
+                                    value={form.sliding_config.direction}
+                                    onChange={(v) => onSlidingConfigChange({ ...form.sliding_config!, direction: v as SlidingDirection })}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
+                          {framingOptions && onTrackPreferenceChange && (
+                            <OptionDropdown
+                              label="Framing"
+                              value={form.track_preference}
+                              options={framingOptions}
+                              onChange={(v) => onTrackPreferenceChange(v as TrackPreference)}
+                            />
+                          )}
+                          {hardwareOptions && onHardwareFinishChange && (
+                            <OptionDropdown
+                              label="Hardware"
+                              value={form.hardware_finish}
+                              options={hardwareOptions}
+                              onChange={(v) => onHardwareFinishChange(v as HardwareFinish)}
+                              badge={detectedHardware && detectedHardware !== 'none' ? detectedHardware : undefined}
+                            />
+                          )}
+                          {handleOptions && onHandleStyleChange && (
+                            <OptionDropdown
+                              label="Handle"
+                              value={form.handle_style}
+                              options={handleOptions}
+                              onChange={(v) => onHandleStyleChange(v as HandleStyle)}
+                            />
+                          )}
+                        </div>
+
+                        {onRegenerate && (
+                          <div className="flex justify-end pt-1">
+                            <button
+                              onClick={() => {
+                                setIsOptionsOpen(false);
+                                onRegenerate();
+                              }}
+                              disabled={loading}
+                              className="inline-flex items-center justify-center gap-2 px-4 h-9 text-sm font-medium bg-brand-gold text-brand-brown hover:bg-brand-gold/90 transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none"
+                            >
+                              <Sparkles size={16} />
+                              {loading ? 'Generating...' : 'Re-Generate'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
+
               <Button
                 variant="secondary"
                 className="w-full"
@@ -284,8 +542,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                 </Button>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Report Issue Modal */}

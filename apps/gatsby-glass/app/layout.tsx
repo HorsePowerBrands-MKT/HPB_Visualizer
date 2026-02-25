@@ -23,7 +23,7 @@ export default function RootLayout({
         </a>
         <div className="flex flex-col min-h-screen">
           <main id="main-content" className="flex-grow bg-brand-brown">
-            <div className="w-full p-2">
+            <div className="w-full p-8">
               {/* App Header */}
               <header className="text-center py-6">
                 <h1 className="text-4xl md:text-5xl font-display font-bold text-brand-gold tracking-wider">
