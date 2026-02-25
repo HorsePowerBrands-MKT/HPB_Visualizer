@@ -19,8 +19,8 @@ const nextConfig = {
             value: 'nosniff',
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://*.horsepowerbrands.com https://*.hubspot.com https://*.vercel.app",
           },
           {
             key: 'X-XSS-Protection',
