@@ -23,9 +23,12 @@ import { EnclosureTypeStep } from './wizard/EnclosureTypeStep';
 import { FramingHardwareStep } from './wizard/GlassFramingStep';
 import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
+import { UsageCounter } from './UsageCounter';
+import { createClient } from '../lib/supabase/client';
+import Link from 'next/link';
 
 import { 
-  BoxSelect, Minimize, Shield, Square, Sparkles 
+  BoxSelect, Minimize, Shield, Square, Sparkles, LogOut, User as UserIcon
 } from 'lucide-react';
 
 // Custom Icons (using HubSpot CDN)
@@ -200,6 +203,64 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   // Track how many times the user has generated an image in this session
   const [generationIndex, setGenerationIndex] = useState(0);
 
+  // --- Rate limiting state ---
+  const [userFingerprint, setUserFingerprint] = useState<string | null>(null);
+  const [usageCount, setUsageCount] = useState(0);
+  const [usageLimit, setUsageLimit] = useState(10);
+  const isRateLimited = usageCount >= usageLimit;
+
+  // --- Auth state ---
+  const [authUser, setAuthUser] = useState<{ email: string; locationName: string | null } | null>(null);
+
+  // Generate or retrieve fingerprint from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let fp = localStorage.getItem('hpb_user_id');
+    if (!fp) {
+      fp = uuidv4();
+      localStorage.setItem('hpb_user_id', fp);
+    }
+    setUserFingerprint(fp);
+  }, []);
+
+  // Fetch current usage count once fingerprint is available
+  useEffect(() => {
+    if (!userFingerprint || authUser) return;
+    fetch(`/api/usage-count?fingerprint=${encodeURIComponent(userFingerprint)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.usageCount === 'number') setUsageCount(data.usageCount);
+        if (typeof data.limit === 'number') setUsageLimit(data.limit);
+      })
+      .catch(() => {});
+  }, [userFingerprint, authUser]);
+
+  // Check Supabase auth state on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setAuthUser({ email: user.email, locationName: null });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) {
+        setAuthUser({ email: session.user.email, locationName: null });
+      } else {
+        setAuthUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setAuthUser(null);
+  };
+
   // Prepare options for Rich Select
   const enclosureOptions: RichSelectOption[] = [
     { value: 'hinged', label: 'Hinged', icon: <IconHinged className="w-10 h-10" /> },
@@ -333,7 +394,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         bathroomImage: bathroomImageData,
         prompt,
         targetWidth: bathroomImageData.width,
-        targetHeight: bathroomImageData.height
+        targetHeight: bathroomImageData.height,
+        ...(userFingerprint ? { userFingerprint } : {}),
       };
 
       if (form.mode === 'inspiration' && inspirationFile) {
@@ -348,10 +410,18 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.rateLimited) {
+          setUsageCount(errorData.usageCount ?? usageLimit);
+          throw new Error('Monthly visualization limit reached');
+        }
         throw new Error(errorData.error || 'Failed to generate visualization');
       }
 
       const result = await response.json();
+
+      if (typeof result.usageCount === 'number') {
+        setUsageCount(result.usageCount);
+      }
       
       // Generate session_id if not already set
       const sessionId = form.session_id || uuidv4();
@@ -461,7 +531,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -635,10 +705,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     }
   };
 
-  // Determine if we should show generate button
+  // Determine if we should show generate button (disabled when rate-limited for non-team users)
+  const canGenerate = authUser || !isRateLimited;
   const showGenerateButton =
-    (form.mode === 'configure' && currentStep === 4) ||
-    (form.mode === 'inspiration' && currentStep === 2);
+    ((form.mode === 'configure' && currentStep === 4) ||
+    (form.mode === 'inspiration' && currentStep === 2)) && canGenerate;
 
   const isResultStep =
     (form.mode === 'configure' && currentStep === 5) ||
@@ -646,6 +717,41 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   return (
     <div className="mx-auto">
+      {/* Auth badge / usage counter bar */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <div className="flex-1 min-w-0">
+          {authUser ? (
+            <div className="flex items-center gap-2">
+              <UserIcon className="w-3.5 h-3.5 text-brand-gold" />
+              <span className="text-xs font-sans text-brand-gold truncate">
+                {authUser.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-1"
+              >
+                <LogOut className="w-3 h-3" />
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <UsageCounter
+              usageCount={usageCount}
+              limit={usageLimit}
+              isRateLimited={isRateLimited}
+            />
+          )}
+        </div>
+        {!authUser && (
+          <Link
+            href="/login"
+            className="text-[11px] font-sans text-white/30 hover:text-white/60 tracking-wide transition-colors ml-4 shrink-0"
+          >
+            Team Login
+          </Link>
+        )}
+      </div>
+
       {/* Main Card with Current Step */}
       <Card className="shadow-none bg-brand-brown border-0">
         <CardContent className="p-0">

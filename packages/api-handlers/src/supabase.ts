@@ -369,6 +369,93 @@ export async function saveGeneration(
   return { id: data.id };
 }
 
+// ---------------------------------------------------------------------------
+// Rate limiting helpers
+// ---------------------------------------------------------------------------
+
+const MONTHLY_GENERATION_LIMIT = 10;
+
+/**
+ * Count how many generations a fingerprint has used in the current calendar month.
+ */
+export async function getMonthlyUsageCount(
+  config: SupabaseConfig,
+  fingerprint: string
+): Promise<number> {
+  const supabase = getSupabaseClient(config);
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const { count, error } = await supabase
+    .from('rate_limits')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_fingerprint', fingerprint)
+    .gte('created_at', monthStart);
+
+  if (error) {
+    console.error('[getMonthlyUsageCount] Database error:', error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * Record a generation event for rate-limiting purposes.
+ */
+export async function recordUsage(
+  config: SupabaseConfig,
+  fingerprint: string,
+  ipAddress: string | null
+): Promise<void> {
+  const supabase = getSupabaseClient(config);
+
+  const { error } = await supabase
+    .from('rate_limits')
+    .insert([{ user_fingerprint: fingerprint, ip_address: ipAddress }]);
+
+  if (error) {
+    console.error('[recordUsage] Database error:', error);
+  }
+}
+
+export { MONTHLY_GENERATION_LIMIT };
+
+// ---------------------------------------------------------------------------
+// Team location helpers
+// ---------------------------------------------------------------------------
+
+export interface TeamLocation {
+  locationId: string;
+  locationName: string | null;
+}
+
+/**
+ * Look up a team member by email. Returns location info if the email belongs
+ * to an active franchisee, or null otherwise.
+ */
+export async function getTeamLocation(
+  config: SupabaseConfig,
+  email: string
+): Promise<TeamLocation | null> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select('location_id, location_name')
+    .eq('email', email.toLowerCase())
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    locationId: data.location_id,
+    locationName: data.location_name,
+  };
+}
+
 /**
  * Create an issue report in the issue_reports table (many per session)
  */
