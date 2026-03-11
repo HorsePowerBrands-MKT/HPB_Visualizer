@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
-    "@supabase/supabase-js": "^2.39.0",
+    "@repo/prompt-templates": "workspace:*",
     "@repo/types": "workspace:*",
-    "@repo/prompt-templates": "workspace:*"
+    "@supabase/supabase-js": "^2.99.0"
   }
 }

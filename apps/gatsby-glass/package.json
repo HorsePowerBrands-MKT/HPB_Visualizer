@@ -13,6 +13,8 @@
     "@repo/api-handlers": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/visualizer-core": "workspace:*",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.99.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",

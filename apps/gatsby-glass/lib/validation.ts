@@ -31,6 +31,7 @@ export const VisualizationRequestSchema = z.object({
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
   hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
   showerShape: z.enum(['standard', 'neo_angle', 'tub']).optional(),
+  userFingerprint: z.string().uuid('Invalid fingerprint').optional(),
 });
 
 // Lead submission request
