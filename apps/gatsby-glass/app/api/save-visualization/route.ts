@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       visualizationImageUrl: body.visualizationImage,
       originalImageUrl: body.originalImage,
       team: body.team || null,
+      userFingerprint: body.userFingerprint || null,
     };
 
     const genResult = await saveGeneration(supabaseConfig, generationRecord);

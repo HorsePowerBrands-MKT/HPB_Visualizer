@@ -67,6 +67,7 @@ export interface GenerationRecord {
   visualizationImageUrl?: string;
   originalImageUrl?: string;
   team?: string;
+  userFingerprint?: string;
 }
 
 // Issue report data (many per session)
