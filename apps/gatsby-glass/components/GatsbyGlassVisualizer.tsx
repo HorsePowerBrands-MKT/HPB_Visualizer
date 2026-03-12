@@ -24,6 +24,7 @@ import { FramingHardwareStep } from './wizard/GlassFramingStep';
 import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
 import { UsageCounter } from './UsageCounter';
+import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
 import { createClient } from '../lib/supabase/client';
 import Link from 'next/link';
 
@@ -209,6 +210,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   const [usageLimit, setUsageLimit] = useState(10);
   const isRateLimited = usageCount >= usageLimit;
 
+  // --- Past visualizations state ---
+  const [pastVisualizations, setPastVisualizations] = useState<PastVisualizationItem[]>([]);
+
   // --- Auth state ---
   const [authUser, setAuthUser] = useState<{ email: string; locationName: string | null } | null>(null);
 
@@ -223,14 +227,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setUserFingerprint(fp);
   }, []);
 
-  // Fetch current usage count once fingerprint is available
+  // Fetch current usage count and past visualizations once fingerprint is available
   useEffect(() => {
     if (!userFingerprint || authUser) return;
+
     fetch(`/api/usage-count?fingerprint=${encodeURIComponent(userFingerprint)}`)
       .then((res) => res.json())
       .then((data) => {
         if (typeof data.usageCount === 'number') setUsageCount(data.usageCount);
         if (typeof data.limit === 'number') setUsageLimit(data.limit);
+      })
+      .catch(() => {});
+
+    fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
       })
       .catch(() => {});
   }, [userFingerprint, authUser]);
@@ -507,11 +519,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             slidingConfig: form.sliding_config ?? null,
             visualizationImage: vizUploadData.url,
             ...(originalImageUrl ? { originalImage: originalImageUrl } : {}),
-            team: teamUtm || null,
+            team: result.teamLocationId || teamUtm || null,
+            userFingerprint: userFingerprint || null,
           })
         });
         
         console.log('[AUTO-SAVE] Visualization data saved successfully (generation #', nextGenIndex, ')');
+
+        // Refresh the past visualizations list
+        if (userFingerprint) {
+          fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
+            })
+            .catch(() => {});
+        }
       } catch (saveError) {
         // Log error but don't block user flow
         console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
@@ -751,6 +774,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           </Link>
         )}
       </div>
+
+      {/* Past visualizations strip */}
+      {pastVisualizations.length > 0 && (
+        <PastVisualizations items={pastVisualizations} />
+      )}
 
       {/* Main Card with Current Step */}
       <Card className="shadow-none bg-brand-brown border-0">

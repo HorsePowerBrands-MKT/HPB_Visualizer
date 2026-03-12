@@ -357,6 +357,7 @@ export async function saveGeneration(
       visualization_image_url: record.visualizationImageUrl || null,
       original_image_url: record.originalImageUrl || null,
       team: record.team || null,
+      user_fingerprint: record.userFingerprint || null,
     }])
     .select('id')
     .single();
@@ -454,6 +455,49 @@ export async function getTeamLocation(
     locationId: data.location_id,
     locationName: data.location_name,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Past visualizations retrieval
+// ---------------------------------------------------------------------------
+
+export interface PastVisualization {
+  id: string;
+  visualization_image_url: string | null;
+  original_image_url: string | null;
+  mode: string | null;
+  enclosure_type: string | null;
+  framing_style: string | null;
+  hardware_finish: string | null;
+  handle_style: string | null;
+  shower_shape: string | null;
+  created_at: string;
+}
+
+/**
+ * Fetch past visualizations for a given user fingerprint, most recent first.
+ */
+export async function getVisualizationsByFingerprint(
+  config: SupabaseConfig,
+  fingerprint: string,
+  limit = 20
+): Promise<PastVisualization[]> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('visualizations')
+    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at')
+    .eq('user_fingerprint', fingerprint)
+    .not('visualization_image_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[getVisualizationsByFingerprint] Database error:', error);
+    return [];
+  }
+
+  return data ?? [];
 }
 
 /**
