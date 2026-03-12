@@ -77,7 +77,7 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
 
       <Input
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
         disabled={validating}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
         onChange={onFileChange}

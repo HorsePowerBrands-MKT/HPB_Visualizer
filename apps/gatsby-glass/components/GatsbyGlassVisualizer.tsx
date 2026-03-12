@@ -14,7 +14,7 @@ import type {
   SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
-import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt } from '@repo/visualizer-core';
+import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt, isHeic, isSupportedImageType, convertHeicToJpeg } from '@repo/visualizer-core';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';
@@ -300,7 +300,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   ];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'target' | 'inspiration') => {
-    const file = e.target.files?.[0] || null;
+    let file = e.target.files?.[0] || null;
     console.log('[FILE UPLOAD] File selected:', file?.name, file?.size, file?.type);
     
     if (!file) {
@@ -311,6 +311,27 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     if (file.size > 10 * 1024 * 1024) {
       console.error('[FILE UPLOAD] File too large:', file.size);
       setError("Image size should be less than 10MB.");
+      return;
+    }
+
+    // Convert HEIC/HEIF (common on iPhones) to JPEG before processing
+    if (isHeic(file)) {
+      setValidating(type);
+      setError(null);
+      try {
+        console.log('[FILE UPLOAD] Converting HEIC to JPEG...');
+        file = await convertHeicToJpeg(file);
+        console.log('[FILE UPLOAD] HEIC conversion complete:', file.name, file.type);
+      } catch (err) {
+        console.error('[FILE UPLOAD] HEIC conversion failed:', err);
+        setError("We couldn't process this HEIC image. Please convert it to JPEG or PNG and try again.");
+        setValidating(null);
+        return;
+      }
+    }
+
+    if (!isSupportedImageType(file)) {
+      setError("This image format isn't supported. Please upload a JPEG, PNG, or WebP photo.");
       return;
     }
 
