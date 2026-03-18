@@ -189,7 +189,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="relative max-w-2xl w-full bg-brand-black border border-brand-gold/20 shadow-2xl shadow-black/50 animate-in zoom-in-95 duration-200"
+            className="relative max-w-2xl w-auto bg-brand-black border border-brand-gold/20 shadow-2xl shadow-black/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -204,7 +204,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
               <img
                 src={selectedItem.visualization_image_url}
                 alt={formatLabel(selectedItem)}
-                className="w-full h-auto"
+                className="max-h-[65vh] w-auto max-w-full object-contain"
               />
             ) : (
               <div className="w-full aspect-video bg-white/[0.03] flex items-center justify-center">

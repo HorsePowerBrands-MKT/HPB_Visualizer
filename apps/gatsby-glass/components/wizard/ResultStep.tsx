@@ -282,7 +282,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               <img 
                 src={resultUrl} 
                 alt="After" 
-                className="w-full max-h-[600px] object-contain block transition-opacity duration-500" 
+                className="w-full max-h-[60vh] object-contain block transition-opacity duration-500" 
                 style={{ opacity: showResult ? 1 : 0 }}
               />
             )}
@@ -300,7 +300,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               <img 
                 src={previewUrl} 
                 alt="Before" 
-                className="w-full max-h-[600px] object-contain block" 
+                className="w-full max-h-[60vh] object-contain block" 
               />
             )}
           </div>
