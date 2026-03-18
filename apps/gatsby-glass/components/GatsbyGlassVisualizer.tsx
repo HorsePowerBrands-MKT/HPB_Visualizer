@@ -762,19 +762,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="relative">
-          <UsageCounter
-            usageCount={usageCount}
-            limit={usageLimit}
-            isRateLimited={isRateLimited}
-          />
-          <Link
-            href="/login"
-            className="absolute top-3 right-4 text-[10px] font-sans text-white/25 hover:text-white/50 tracking-wide transition-colors"
-          >
-            Team Login
-          </Link>
-        </div>
+        <UsageCounter
+          usageCount={usageCount}
+          limit={usageLimit}
+          isRateLimited={isRateLimited}
+          loginSlot={
+            <Link
+              href="/login"
+              className="text-[10px] font-sans text-white/25 hover:text-white/50 tracking-wide transition-colors"
+            >
+              Team Login
+            </Link>
+          }
+        />
       )}
 
       {/* Past visualizations */}

@@ -7,12 +7,14 @@ interface UsageCounterProps {
   usageCount: number;
   limit: number;
   isRateLimited: boolean;
+  loginSlot?: React.ReactNode;
 }
 
 export const UsageCounter: React.FC<UsageCounterProps> = ({
   usageCount,
   limit,
   isRateLimited,
+  loginSlot,
 }) => {
   const remaining = Math.max(0, limit - usageCount);
   const percentage = Math.min(100, (usageCount / limit) * 100);
@@ -84,11 +86,14 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
         <span className="text-[10px] font-sans text-white/30">
           {usageCount} of {limit} used this month
         </span>
-        {percentage >= 70 && percentage < 100 && (
-          <span className="text-[10px] font-sans text-amber-400/80">
-            Running low
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {percentage >= 70 && percentage < 100 && (
+            <span className="text-[10px] font-sans text-amber-400/80">
+              Running low
+            </span>
+          )}
+          {loginSlot}
+        </div>
       </div>
     </div>
   );
