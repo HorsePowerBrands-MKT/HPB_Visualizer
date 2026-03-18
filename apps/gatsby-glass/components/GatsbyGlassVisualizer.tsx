@@ -25,6 +25,7 @@ import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
 import { UsageCounter } from './UsageCounter';
 import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
+import { GeneratingOverlay } from './GeneratingOverlay';
 import { createClient } from '../lib/supabase/client';
 import Link from 'next/link';
 
@@ -717,6 +718,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
             onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
             onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
+            isTeamMember={!!authUser}
+            usageCount={usageCount}
+            usageLimit={usageLimit}
           />
         );
 
@@ -737,6 +741,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   return (
     <div className="mx-auto">
+      {/* Full-screen generation loading overlay */}
+      <GeneratingOverlay visible={loading} />
+
       {/* Auth badge / usage counter */}
       {authUser ? (
         <div className="flex items-center justify-between bg-brand-black/40 border border-white/[0.06] px-4 py-3 mb-3">
@@ -794,6 +801,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         onGenerate={onGenerate}
         showGenerateButton={showGenerateButton}
         isResultStep={isResultStep}
+        isTeamMember={!!authUser}
+        usageCount={usageCount}
+        usageLimit={usageLimit}
       />
 
       {/* Contact Form Modal */}

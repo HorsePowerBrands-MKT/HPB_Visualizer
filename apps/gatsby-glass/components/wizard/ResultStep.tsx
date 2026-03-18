@@ -130,6 +130,9 @@ interface ResultStepProps {
   onPivotConfigChange?: (config: PivotConfig) => void;
   onSlidingConfigChange?: (config: SlidingConfig) => void;
   team?: string | null;
+  isTeamMember?: boolean;
+  usageCount?: number;
+  usageLimit?: number;
 }
 
 // Generate marketing description based on selections
@@ -237,6 +240,9 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   onPivotConfigChange,
   onSlidingConfigChange,
   team,
+  isTeamMember = false,
+  usageCount = 0,
+  usageLimit = 10,
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -413,7 +419,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
               {/* Change Options accordion */}
               {form?.mode === 'configure' && enclosureOptions && (
-                <div className="border border-white/30 overflow-hidden">
+                <div className="border border-white/30">
                   <button
                     onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                     className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium text-white bg-transparent hover:bg-white/10 transition-all duration-300"
@@ -422,11 +428,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                     {isOptionsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
 
-                  <div
-                    className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-                    style={{ gridTemplateRows: isOptionsOpen ? '1fr' : '0fr' }}
-                  >
-                    <div className="overflow-hidden">
+                  {isOptionsOpen && (
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="border-t border-white/20 p-5 space-y-4">
                         <div className="space-y-3">
                           {onEnclosureChange && (
@@ -528,13 +531,13 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                               className="inline-flex items-center justify-center gap-2 px-4 h-9 text-sm font-medium bg-brand-gold text-brand-brown hover:bg-brand-gold/90 transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none"
                             >
                               <Sparkles size={16} />
-                              {loading ? 'Generating...' : 'Re-Generate'}
+                              {loading ? 'Generating...' : isTeamMember ? 'Re-Generate' : `Re-Generate (${usageCount + 1} of ${usageLimit})`}
                             </button>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 

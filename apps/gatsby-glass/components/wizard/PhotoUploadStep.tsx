@@ -46,10 +46,10 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
       <img src="/GG-Deco-Corner.svg" alt="" className="absolute bottom-[-1px] right-[-1px] w-20 h-20 pointer-events-none" style={{ transform: 'scaleY(-1)' }} />
 
       {validating && (
-        <div className="absolute inset-0 z-20 bg-black/70 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
+        <div className="absolute inset-0 z-20 bg-brand-brown/95 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
           <Loader2 className="h-12 w-12 animate-spin mb-4" />
-          <span className="text-lg font-medium">Verifying & Scanning Layout...</span>
-          <span className="text-sm text-gray-400 mt-2">This may take a moment</span>
+          <span className="text-lg font-medium">Verifying &amp; Scanning Layout...</span>
+          <span className="text-sm text-white/40 mt-2">This may take a moment</span>
         </div>
       )}
 
