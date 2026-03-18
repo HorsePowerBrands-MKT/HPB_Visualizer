@@ -301,9 +301,14 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
           {/* AI Disclaimer */}
           {resultUrl && (
-            <p className="text-[11px] text-gray-500 text-center px-4 pt-2 leading-relaxed">
-              This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
-            </p>
+            <div className="text-center px-4 pt-2 space-y-1">
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
+              </p>
+              <p className="text-[10px] text-gray-600 leading-relaxed">
+                Your generated visualization is available for 30 days. Request a quote to have it shared with your local Gatsby Glass professional.
+              </p>
+            </div>
           )}
 
           {/* Before/After Toggle - directly under image */}

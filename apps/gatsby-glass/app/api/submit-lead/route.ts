@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
       phone: validatedData.phone,
       zipCode: validatedData.zipCode,
       visualizationImage: validatedData.visualizationImage,
-      originalImage: validatedData.originalImage,
       doorType: validatedData.doorType as any,
       finish: validatedData.finish as any,
       hardware: validatedData.hardware as any,

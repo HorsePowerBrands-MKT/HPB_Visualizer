@@ -2,5 +2,11 @@
   "buildCommand": "cd ../.. && pnpm install && pnpm --filter gatsby-glass build",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-images",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }

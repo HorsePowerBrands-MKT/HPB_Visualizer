@@ -499,28 +499,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         const vizUploadData = await vizUploadResponse.json();
         console.log('[AUTO-SAVE] Visualization image uploaded:', vizUploadData.url);
         
-        // Upload original image to Supabase Storage (only on first generation)
-        let originalImageUrl: string | null = null;
-        if (nextGenIndex === 1) {
-          const originalImageData = await fileToBase64Data(imageFile);
-          const originalUploadResponse = await fetch('/api/upload-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageData: `data:${originalImageData.mimeType};base64,${originalImageData.data}`,
-              fileName: `original_${sessionId}.${originalImageData.mimeType.split('/')[1]}`
-            })
-          });
-          
-          if (!originalUploadResponse.ok) {
-            throw new Error('Failed to upload original image');
-          }
-          
-          const originalUploadData = await originalUploadResponse.json();
-          originalImageUrl = originalUploadData.url;
-          console.log('[AUTO-SAVE] Original image uploaded:', originalImageUrl);
-        }
-        
         // Save visualization data — upserts session record + inserts generation row
         await fetch('/api/save-visualization', {
           method: 'POST',
@@ -534,12 +512,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             hardwareFinish: form.hardware_finish,
             handleStyle: form.handle_style,
             showerShape: form.shower_shape,
-            // Door sub-option configs — whichever is active gets stored
             hingedConfig: form.hinged_config ?? null,
             pivotConfig: form.pivot_config ?? null,
             slidingConfig: form.sliding_config ?? null,
             visualizationImage: vizUploadData.url,
-            ...(originalImageUrl ? { originalImage: originalImageUrl } : {}),
             team: result.teamLocationId || teamUtm || null,
             userFingerprint: userFingerprint || null,
           })
@@ -761,45 +737,41 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   return (
     <div className="mx-auto">
-      {/* Auth badge / usage counter bar */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <div className="flex-1 min-w-0">
-          {authUser ? (
-            <div className="flex items-center gap-2">
-              <UserIcon className="w-3.5 h-3.5 text-brand-gold" />
-              <span className="text-xs font-sans text-brand-gold truncate">
-                {authUser.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-1"
-              >
-                <LogOut className="w-3 h-3" />
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <UsageCounter
-              usageCount={usageCount}
-              limit={usageLimit}
-              isRateLimited={isRateLimited}
-            />
-          )}
+      {/* Auth badge / usage counter */}
+      {authUser ? (
+        <div className="flex items-center justify-between bg-brand-black/40 border border-white/[0.06] px-4 py-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <UserIcon className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+            <span className="text-xs font-sans text-brand-gold truncate">
+              {authUser.email}
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-3 shrink-0"
+          >
+            <LogOut className="w-3 h-3" />
+            Sign out
+          </button>
         </div>
-        {!authUser && (
+      ) : (
+        <div className="relative">
+          <UsageCounter
+            usageCount={usageCount}
+            limit={usageLimit}
+            isRateLimited={isRateLimited}
+          />
           <Link
             href="/login"
-            className="text-[11px] font-sans text-white/30 hover:text-white/60 tracking-wide transition-colors ml-4 shrink-0"
+            className="absolute top-3 right-4 text-[10px] font-sans text-white/25 hover:text-white/50 tracking-wide transition-colors"
           >
             Team Login
           </Link>
-        )}
-      </div>
-
-      {/* Past visualizations strip */}
-      {pastVisualizations.length > 0 && (
-        <PastVisualizations items={pastVisualizations} />
+        </div>
       )}
+
+      {/* Past visualizations */}
+      <PastVisualizations items={pastVisualizations} />
 
       {/* Main Card with Current Step */}
       <Card className="shadow-none bg-brand-brown border-0">

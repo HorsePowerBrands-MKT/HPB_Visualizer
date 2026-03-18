@@ -79,7 +79,6 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           phone: formData.phone || undefined,
           zipCode: formData.zipCode,
           visualizationImage: visualizationData.resultUrl,
-          originalImage: visualizationData.uploadedImage,
           doorType: visualizationData.configs.enclosure_type,
           finish: visualizationData.configs.glass_style,
           hardware: visualizationData.configs.hardware_finish,
@@ -265,6 +264,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
               <p className="text-[11px] text-gray-500 leading-relaxed pt-2">
                 By submitting this form, you consent to being contacted by a local Gatsby Glass franchisee via email{formData.phone ? ', phone, and/or text message' : ' or phone'} regarding your inquiry. If a phone number is provided, message and data rates may apply; reply STOP to opt out of texts at any time.{' '}
+                Your generated visualization image will be shared with the franchisee serving your area to assist with your quote.{' '}
                 Your information will be used to process your request and may be shared with the Gatsby Glass franchisee serving your area. We will not sell your personal information to third parties.{' '}
                 View our{' '}
                 <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>.

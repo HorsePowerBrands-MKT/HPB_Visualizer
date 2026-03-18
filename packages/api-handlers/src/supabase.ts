@@ -25,6 +25,24 @@ function getSupabaseClient(config: SupabaseConfig): SupabaseClient {
 }
 
 /**
+ * Remove expiry from visualization images for a session so they are retained
+ * indefinitely (used when a quote/lead is submitted).
+ */
+async function retainVisualizationImages(
+  supabase: SupabaseClient,
+  sessionId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('visualizations')
+    .update({ expires_at: null })
+    .eq('session_id', sessionId);
+
+  if (error) {
+    console.error('[retainVisualizationImages] Failed to clear expiry:', error);
+  }
+}
+
+/**
  * Submit a lead to the database
  * If sessionId is provided, updates existing record; otherwise creates new one
  */
@@ -66,7 +84,6 @@ export async function submitLead(
       .single();
 
     if (!findError && existing) {
-      // Update existing record with contact info
       const { data, error } = await supabase
         .from('leads')
         .update({
@@ -75,6 +92,7 @@ export async function submitLead(
           phone: phone || null,
           zip_code: zipCode,
           contact_submitted: true,
+          images_retained: true,
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
@@ -85,6 +103,8 @@ export async function submitLead(
         console.error('Database error:', error);
         throw new Error('Failed to update lead information');
       }
+
+      await retainVisualizationImages(supabase, sessionId);
 
       return {
         success: true,
@@ -104,7 +124,7 @@ export async function submitLead(
         phone: phone || null,
         zip_code: zipCode,
         visualization_image_url: visualizationImage || null,
-        original_image_url: originalImage || null,
+        original_image_url: null,
         door_type: doorType || null,
         finish: finish || null,
         hardware: hardware || null,
@@ -115,6 +135,7 @@ export async function submitLead(
         session_id: sessionId || null,
         status: 'new',
         source,
+        images_retained: true,
         contact_submitted: true
       }
     ])
@@ -124,6 +145,10 @@ export async function submitLead(
   if (error) {
     console.error('Database error:', error);
     throw new Error('Failed to save lead information');
+  }
+
+  if (sessionId) {
+    await retainVisualizationImages(supabase, sessionId);
   }
 
   return {
@@ -225,7 +250,7 @@ export async function saveVisualization(
         track_preference: trackPreference || null,
         shower_shape: showerShape || null,
         visualization_image_url: visualizationImage || null,
-        original_image_url: originalImage || null,
+        original_image_url: null,
         updated_at: new Date().toISOString()
       })
       .eq('session_id', sessionId)
@@ -258,7 +283,7 @@ export async function saveVisualization(
         track_preference: trackPreference || null,
         shower_shape: showerShape || null,
         visualization_image_url: visualizationImage || null,
-        original_image_url: originalImage || null,
+        original_image_url: null,
         source,
         team: team || null,
         status: 'new',
@@ -355,7 +380,7 @@ export async function saveGeneration(
       pivot_config: record.pivotConfig || null,
       sliding_config: record.slidingConfig || null,
       visualization_image_url: record.visualizationImageUrl || null,
-      original_image_url: record.originalImageUrl || null,
+      original_image_url: null,
       team: record.team || null,
       user_fingerprint: record.userFingerprint || null,
     }])

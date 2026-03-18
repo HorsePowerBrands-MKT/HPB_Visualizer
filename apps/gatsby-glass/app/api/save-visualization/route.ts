@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       trackPreference: body.trackPreference,
       showerShape: body.showerShape,
       visualizationImage: body.visualizationImage,
-      originalImage: body.originalImage,
       source: 'Gatsby Glass Visualizer',
       team: body.team || null,
     };
@@ -61,7 +60,6 @@ export async function POST(request: NextRequest) {
       pivotConfig: body.pivotConfig,
       slidingConfig: body.slidingConfig,
       visualizationImageUrl: body.visualizationImage,
-      originalImageUrl: body.originalImage,
       team: body.team || null,
       userFingerprint: body.userFingerprint || null,
     };
