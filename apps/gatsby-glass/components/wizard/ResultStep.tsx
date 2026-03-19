@@ -317,29 +317,34 @@ export const ResultStep: React.FC<ResultStepProps> = ({
             </div>
           )}
 
-          {/* Before/After Toggle - directly under image */}
+          {/* Before/After Toggle */}
           {resultUrl && (
-            <div className="flex justify-center items-center gap-4 px-6 py-3">
-              <span className={`text-sm font-medium transition-colors duration-200 ${!showResult ? 'text-brand-gold' : 'text-gray-500'}`}>Before</span>
-              <button 
-                onClick={onToggleView}
-                className={`relative inline-flex h-7 w-[52px] flex-shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 ${
-                  showResult ? 'bg-brand-gold' : 'bg-white/15'
-                }`}
-                role="switch"
-                aria-checked={showResult}
-                aria-label="Toggle before and after view"
-              >
-                <span 
-                  className="pointer-events-none inline-block h-6 w-6 rounded-full shadow-lg ring-0"
+            <div className="flex justify-center py-4">
+              <div className="relative inline-flex rounded-full bg-brand-black/60 border border-white/[0.08] p-0.5">
+                <div
+                  className="absolute top-0.5 bottom-0.5 rounded-full bg-brand-gold/90 transition-all duration-300 ease-in-out"
                   style={{
-                    transform: showResult ? 'translateX(22px)' : 'translateX(0px)',
-                    backgroundColor: showResult ? '#231f20' : '#ffffff',
-                    transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                    width: 'calc(50% - 2px)',
+                    left: showResult ? 'calc(50% + 2px)' : '2px',
                   }}
                 />
-              </button>
-              <span className={`text-sm font-medium transition-colors duration-200 ${showResult ? 'text-brand-gold' : 'text-gray-500'}`}>After</span>
+                <button
+                  onClick={() => showResult && onToggleView()}
+                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                    !showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
+                  }`}
+                >
+                  Before
+                </button>
+                <button
+                  onClick={() => !showResult && onToggleView()}
+                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                    showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
+                  }`}
+                >
+                  After
+                </button>
+              </div>
             </div>
           )}
 
