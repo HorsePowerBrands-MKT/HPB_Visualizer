@@ -186,7 +186,7 @@ export async function validateImage(
     // Override reason with user-friendly messages for content safety issues
     let reason = result.reason;
     if (contentFlag === 'pii') {
-      reason = 'This image appears to contain personal information (such as a visible face or personal documents). Please upload a photo of just the bathroom/shower area without people or personal items visible.';
+      reason = 'This image appears to contain a person. For privacy, please upload a photo of just your bathroom or shower area with no people visible. Tip: Use a timer or prop your phone up to take the photo.';
     } else if (contentFlag === 'inappropriate') {
       reason = 'This image contains content that cannot be processed. Please upload an appropriate photo of your bathroom or shower area.';
     }

@@ -16,6 +16,9 @@ interface ProgressIndicatorProps {
   onGenerate?: () => void;
   showGenerateButton?: boolean;
   isResultStep?: boolean;
+  isTeamMember?: boolean;
+  usageCount?: number;
+  usageLimit?: number;
 }
 
 export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
@@ -31,6 +34,9 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   onGenerate,
   showGenerateButton = false,
   isResultStep = false,
+  isTeamMember = false,
+  usageCount = 0,
+  usageLimit = 10,
 }) => {
   const getStepLabel = (step: number): string => {
     if (mode === 'configure') {
@@ -51,6 +57,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       }
     }
   };
+
+  const generateLabel = isTeamMember
+    ? 'Generate Preview'
+    : `Generate Preview (${usageCount + 1} of ${usageLimit})`;
 
   const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
   const nextStep = currentStep < totalSteps ? currentStep + 1 : null;
@@ -79,14 +89,12 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
             className="absolute top-0 left-0 h-full bg-brand-gold transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           >
-            {/* Shimmer effect with fade */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
           </div>
         </div>
 
         {/* Next Step + Navigation Buttons */}
         <div className="flex items-center justify-between">
-          {/* Next Step Label */}
           {nextStep ? (
             <div>
               <span className="text-xs text-gray-500 uppercase tracking-wider">Next Step</span>
@@ -98,7 +106,6 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
             <div />
           )}
 
-          {/* Navigation Buttons */}
           {!isResultStep && (
             <div className="flex items-center gap-3">
               {!isFirstStep && onPrevious && (
@@ -133,7 +140,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
                   ) : (
                     <span className="flex items-center gap-2">
                       <Sparkles className="h-4 w-4" strokeWidth={1.5} />
-                      Generate Preview
+                      {generateLabel}
                     </span>
                   )}
                 </button>

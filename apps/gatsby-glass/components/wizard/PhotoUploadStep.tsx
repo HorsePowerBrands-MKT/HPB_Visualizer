@@ -46,10 +46,10 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
       <img src="/GG-Deco-Corner.svg" alt="" className="absolute bottom-[-1px] right-[-1px] w-20 h-20 pointer-events-none" style={{ transform: 'scaleY(-1)' }} />
 
       {validating && (
-        <div className="absolute inset-0 z-20 bg-black/70 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
+        <div className="absolute inset-0 z-20 bg-brand-brown/95 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
           <Loader2 className="h-12 w-12 animate-spin mb-4" />
-          <span className="text-lg font-medium">Verifying & Scanning Layout...</span>
-          <span className="text-sm text-gray-400 mt-2">This may take a moment</span>
+          <span className="text-lg font-medium">Verifying &amp; Scanning Layout...</span>
+          <span className="text-sm text-white/40 mt-2">This may take a moment</span>
         </div>
       )}
 
@@ -77,7 +77,7 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
 
       <Input
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
         disabled={validating}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
         onChange={onFileChange}
@@ -138,7 +138,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         </div>
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          By uploading images, you acknowledge that they will be transmitted to and processed by an AI service (Google Gemini) to generate your visualization, and may be stored securely by Gatsby Glass to improve our service. Do not upload images containing identifiable individuals or sensitive personal information. See our{' '}
+          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are sent to an AI service (Google Gemini) to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
           <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
           for details.
         </p>
@@ -174,7 +174,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         />
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          By uploading an image, you acknowledge that it will be transmitted to and processed by an AI service (Google Gemini) to generate your visualization, and may be stored securely by Gatsby Glass to improve our service. Do not upload images containing identifiable individuals or sensitive personal information. See our{' '}
+          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is sent to an AI service (Google Gemini) to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
           <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
           for details on how your data is used and your rights.
         </p>

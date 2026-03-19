@@ -20,12 +20,15 @@
         "CONTENT SAFETY CHECK (do this FIRST):",
         "Scan the image for the following. If ANY are found, set isValid to false and set the appropriate contentFlag:",
         "",
-        "PII / Personal Information:",
-        "- Human faces that are clearly identifiable (not blurry reflections or distant/tiny figures)",
+        "PII / Personal Information — flag ANY visible person or human figure, including:",
+        "- Faces: clear, blurry, reflected in mirrors/glass, or distant",
+        "- Torsos, legs, or bodies — full or partial, including silhouettes",
+        "- People visible in mirrors, glass, or other reflective surfaces",
+        "- Children in any context",
         "- Readable personal documents, IDs, mail, or papers with names/addresses",
         "- Visible credit cards, financial documents, or account numbers",
         "- Readable phone numbers, email addresses, or social media handles",
-        "- Children in any context",
+        "EXCEPTION: A photographer's hand or forearm holding the camera/phone to take the photo is acceptable and should NOT be flagged.",
         "If PII is detected, set contentFlag to 'pii'.",
         "",
         "Inappropriate Content:",
@@ -36,7 +39,7 @@
         "",
         "If the image is safe, set contentFlag to 'safe'.",
         "",
-        "IMPORTANT: Blurry reflections in mirrors or glass do NOT count as identifiable faces. Only flag clear, identifiable people. A person's hand or arm in frame is fine — only flag identifiable faces."
+        "IMPORTANT: Be strict about people. Any human figure — face, torso, legs — whether clear, blurry, reflected in glass or mirrors, or partially cropped out of frame — must trigger a PII flag. The ONLY exception is the photographer's hand or forearm holding the camera/phone."
       ]
     },
     {

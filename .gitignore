@@ -36,3 +36,6 @@ temp/
 
 # Temp
 .tmp
+
+# Supabase email templates (managed in Supabase dashboard)
+supabase/email-templates/

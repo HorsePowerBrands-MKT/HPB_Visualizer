@@ -41,7 +41,7 @@ const OptionPills: React.FC<{
   onChange: (value: string) => void;
 }> = ({ label, options, value, onChange }) => (
   <div className="flex items-center gap-4">
-    <span className="text-xs text-gray-500 uppercase tracking-wider w-28 flex-shrink-0">{label}</span>
+    <span className="text-xs text-white/60 uppercase tracking-wider w-28 flex-shrink-0">{label}</span>
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => (
         <button
@@ -50,7 +50,7 @@ const OptionPills: React.FC<{
           className={`px-3 h-7 text-xs font-medium transition-all duration-200 ${
             value === opt.value
               ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/40'
-              : 'text-gray-500 hover:text-gray-300 border border-transparent'
+              : 'text-white/70 hover:text-white border border-transparent'
           }`}
           title={opt.hint}
         >

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Clock } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 export interface PastVisualizationItem {
   id: string;
@@ -28,8 +28,18 @@ function formatLabel(item: PastVisualizationItem): string {
     item.framing_style,
   ].filter(Boolean);
   return parts.length > 0
-    ? parts.map((s) => s!.replace(/_/g, ' ')).join(' / ')
+    ? parts.map((s) => s!.replace(/_/g, ' ')).join(' \u2022 ')
     : 'Visualization';
+}
+
+function formatDetailRows(item: PastVisualizationItem): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  if (item.enclosure_type) rows.push({ label: 'Style', value: item.enclosure_type.replace(/_/g, ' ') });
+  if (item.framing_style) rows.push({ label: 'Frame', value: item.framing_style.replace(/_/g, ' ') });
+  if (item.hardware_finish) rows.push({ label: 'Finish', value: item.hardware_finish.replace(/_/g, ' ') });
+  if (item.handle_style) rows.push({ label: 'Handle', value: item.handle_style.replace(/_/g, ' ') });
+  if (item.shower_shape) rows.push({ label: 'Shape', value: item.shower_shape.replace(/_/g, ' ') });
+  return rows;
 }
 
 function formatDate(iso: string): string {
@@ -37,96 +47,207 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function formatDateLong(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items }) => {
   const [selectedItem, setSelectedItem] = useState<PastVisualizationItem | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      observer.disconnect();
+    };
+  }, [items, isOpen]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.6;
+    el.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+  };
 
   if (items.length === 0) return null;
 
   return (
     <>
-      <div className="mb-3">
-        <div className="flex items-center gap-1.5 mb-2 px-1">
-          <Clock className="w-3 h-3 text-white/40" />
+      <div className="mb-3 relative">
+        {/* Accordion trigger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center gap-1.5 px-3 py-2.5 border border-white/[0.08] hover:border-brand-gold/30 bg-brand-black/30 transition-all duration-200 group/trigger"
+        >
+          <Clock className="w-3 h-3 text-brand-gold/50" />
           <span className="text-[11px] font-sans text-white/40 tracking-wide uppercase">
-            Past Visualizations
+            Your Visualizations
           </span>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSelectedItem(item)}
-              className="shrink-0 group focus:outline-none"
+          <span className="text-[10px] font-sans text-white/20 ml-1">
+            ({items.length})
+          </span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-white/30 ml-auto transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {/* Collapsible content */}
+        <div
+          ref={contentRef}
+          className="overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            maxHeight: isOpen ? `${contentRef.current?.scrollHeight ?? 200}px` : '0px',
+            opacity: isOpen ? 1 : 0,
+          }}
+        >
+          <div className="pt-2 relative group">
+            {/* Left fade + arrow */}
+            {canScrollLeft && (
+              <>
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-brand-brown to-transparent z-10 pointer-events-none" />
+                <button
+                  onClick={() => scroll('left')}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            {/* Right fade + arrow */}
+            {canScrollRight && (
+              <>
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-brand-brown to-transparent z-10 pointer-events-none" />
+                <button
+                  onClick={() => scroll('right')}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            <div
+              ref={scrollRef}
+              className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
             >
-              <div className="w-24 bg-brand-black/60 border border-white/10 hover:border-brand-gold/40 transition-colors overflow-hidden">
-                {item.visualization_image_url ? (
-                  <img
-                    src={item.visualization_image_url}
-                    alt={formatLabel(item)}
-                    className="w-24 h-18 object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-24 h-18 bg-white/5 flex items-center justify-center">
-                    <span className="text-[10px] text-white/20">No image</span>
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className="shrink-0 group/card focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-gold/50"
+                >
+                  <div className="w-32 bg-brand-black/60 border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-200 overflow-hidden hover:shadow-lg hover:shadow-brand-gold/5">
+                    {item.visualization_image_url ? (
+                      <img
+                        src={item.visualization_image_url}
+                        alt={formatLabel(item)}
+                        className="w-32 h-24 object-cover group-hover/card:scale-[1.02] transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-32 h-24 bg-white/[0.03] flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-white/10" />
+                      </div>
+                    )}
+                    <div className="px-2 py-1.5 border-t border-white/[0.04]">
+                      <p className="text-[11px] font-sans text-white/60 truncate capitalize leading-tight">
+                        {formatLabel(item)}
+                      </p>
+                      <p className="text-[10px] font-sans text-white/25 mt-0.5">
+                        {formatDate(item.created_at)}
+                      </p>
+                    </div>
                   </div>
-                )}
-                <div className="px-1.5 py-1">
-                  <p className="text-[10px] font-sans text-white/60 truncate capitalize">
-                    {formatLabel(item)}
-                  </p>
-                  <p className="text-[9px] font-sans text-white/30">
-                    {formatDate(item.created_at)}
-                  </p>
-                </div>
-              </div>
-            </button>
-          ))}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Lightbox modal */}
       {selectedItem && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="relative max-w-2xl w-full bg-brand-black border border-brand-gold/20"
+            className="relative max-w-2xl w-auto bg-brand-black border border-brand-gold/20 shadow-2xl shadow-black/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedItem(null)}
-              className="absolute top-2 right-2 z-10 p-1 bg-black/60 hover:bg-black/80 transition-colors"
+              className="absolute top-3 right-3 z-10 p-1.5 bg-black/70 hover:bg-black/90 border border-white/10 transition-colors"
               aria-label="Close preview"
             >
-              <X className="w-5 h-5 text-white/70" />
+              <X className="w-4 h-4 text-white/70" />
             </button>
 
-            {selectedItem.visualization_image_url && (
+            {selectedItem.visualization_image_url ? (
               <img
                 src={selectedItem.visualization_image_url}
                 alt={formatLabel(selectedItem)}
-                className="w-full h-auto"
+                className="max-h-[65vh] w-auto max-w-full object-contain"
               />
+            ) : (
+              <div className="w-full aspect-video bg-white/[0.03] flex items-center justify-center">
+                <ImageIcon className="w-10 h-10 text-white/10" />
+              </div>
             )}
 
-            <div className="p-4 border-t border-white/10">
-              <p className="text-sm font-sans text-white/80 capitalize">
-                {formatLabel(selectedItem)}
-              </p>
-              {selectedItem.handle_style && (
-                <p className="text-xs font-sans text-white/50 mt-0.5 capitalize">
-                  Handle: {selectedItem.handle_style.replace(/_/g, ' ')}
-                </p>
+            <div className="p-5 border-t border-white/10">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-sans text-white/90 capitalize font-medium">
+                    {selectedItem.mode === 'inspiration' ? 'Inspiration Design' : formatLabel(selectedItem)}
+                  </p>
+                  <p className="text-xs font-sans text-white/30 mt-1">
+                    {formatDateLong(selectedItem.created_at)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Config details */}
+              {formatDetailRows(selectedItem).length > 0 && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-white/[0.06]">
+                  {formatDetailRows(selectedItem).map((row) => (
+                    <div key={row.label} className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-sans text-white/30 uppercase tracking-wider">
+                        {row.label}
+                      </span>
+                      <span className="text-xs font-sans text-white/60 capitalize">
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
-              <p className="text-xs font-sans text-white/30 mt-1">
-                {new Date(selectedItem.created_at).toLocaleDateString(undefined, {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </p>
             </div>
           </div>
         </div>

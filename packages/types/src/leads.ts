@@ -68,6 +68,7 @@ export interface GenerationRecord {
   originalImageUrl?: string;
   team?: string;
   userFingerprint?: string;
+  userId?: string;
 }
 
 // Issue report data (many per session)

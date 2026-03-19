@@ -14,7 +14,7 @@ import type {
   SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
-import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt } from '@repo/visualizer-core';
+import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt, isHeic, isSupportedImageType, convertHeicToJpeg } from '@repo/visualizer-core';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';
@@ -25,6 +25,7 @@ import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
 import { UsageCounter } from './UsageCounter';
 import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
+import { GeneratingOverlay } from './GeneratingOverlay';
 import { createClient } from '../lib/supabase/client';
 import Link from 'next/link';
 
@@ -227,7 +228,23 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setUserFingerprint(fp);
   }, []);
 
-  // Fetch current usage count and past visualizations once fingerprint is available
+  // Helper: fetch past visualizations using the right strategy (auth vs fingerprint)
+  const refreshPastVisualizations = useCallback(() => {
+    const url = authUser
+      ? '/api/my-visualizations'
+      : userFingerprint
+        ? `/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`
+        : null;
+    if (!url) return;
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
+      })
+      .catch(() => {});
+  }, [authUser, userFingerprint]);
+
+  // Fetch usage count + past visualizations for anonymous users
   useEffect(() => {
     if (!userFingerprint || authUser) return;
 
@@ -239,13 +256,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       })
       .catch(() => {});
 
-    fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
-      })
-      .catch(() => {});
-  }, [userFingerprint, authUser]);
+    refreshPastVisualizations();
+  }, [userFingerprint, authUser, refreshPastVisualizations]);
+
+  // Fetch past visualizations for authenticated users
+  useEffect(() => {
+    if (!authUser) return;
+    refreshPastVisualizations();
+  }, [authUser, refreshPastVisualizations]);
 
   // Check Supabase auth state on mount
   useEffect(() => {
@@ -300,7 +318,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   ];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'target' | 'inspiration') => {
-    const file = e.target.files?.[0] || null;
+    let file = e.target.files?.[0] || null;
     console.log('[FILE UPLOAD] File selected:', file?.name, file?.size, file?.type);
     
     if (!file) {
@@ -311,6 +329,27 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     if (file.size > 10 * 1024 * 1024) {
       console.error('[FILE UPLOAD] File too large:', file.size);
       setError("Image size should be less than 10MB.");
+      return;
+    }
+
+    // Convert HEIC/HEIF (common on iPhones) to JPEG before processing
+    if (isHeic(file)) {
+      setValidating(type);
+      setError(null);
+      try {
+        console.log('[FILE UPLOAD] Converting HEIC to JPEG...');
+        file = await convertHeicToJpeg(file);
+        console.log('[FILE UPLOAD] HEIC conversion complete:', file.name, file.type);
+      } catch (err) {
+        console.error('[FILE UPLOAD] HEIC conversion failed:', err);
+        setError("We couldn't process this HEIC image. Please convert it to JPEG or PNG and try again.");
+        setValidating(null);
+        return;
+      }
+    }
+
+    if (!isSupportedImageType(file)) {
+      setError("This image format isn't supported. Please upload a JPEG, PNG, or WebP photo.");
       return;
     }
 
@@ -478,28 +517,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         const vizUploadData = await vizUploadResponse.json();
         console.log('[AUTO-SAVE] Visualization image uploaded:', vizUploadData.url);
         
-        // Upload original image to Supabase Storage (only on first generation)
-        let originalImageUrl: string | null = null;
-        if (nextGenIndex === 1) {
-          const originalImageData = await fileToBase64Data(imageFile);
-          const originalUploadResponse = await fetch('/api/upload-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imageData: `data:${originalImageData.mimeType};base64,${originalImageData.data}`,
-              fileName: `original_${sessionId}.${originalImageData.mimeType.split('/')[1]}`
-            })
-          });
-          
-          if (!originalUploadResponse.ok) {
-            throw new Error('Failed to upload original image');
-          }
-          
-          const originalUploadData = await originalUploadResponse.json();
-          originalImageUrl = originalUploadData.url;
-          console.log('[AUTO-SAVE] Original image uploaded:', originalImageUrl);
-        }
-        
         // Save visualization data — upserts session record + inserts generation row
         await fetch('/api/save-visualization', {
           method: 'POST',
@@ -513,12 +530,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             hardwareFinish: form.hardware_finish,
             handleStyle: form.handle_style,
             showerShape: form.shower_shape,
-            // Door sub-option configs — whichever is active gets stored
             hingedConfig: form.hinged_config ?? null,
             pivotConfig: form.pivot_config ?? null,
             slidingConfig: form.sliding_config ?? null,
             visualizationImage: vizUploadData.url,
-            ...(originalImageUrl ? { originalImage: originalImageUrl } : {}),
             team: result.teamLocationId || teamUtm || null,
             userFingerprint: userFingerprint || null,
           })
@@ -526,15 +541,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         
         console.log('[AUTO-SAVE] Visualization data saved successfully (generation #', nextGenIndex, ')');
 
-        // Refresh the past visualizations list
-        if (userFingerprint) {
-          fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
-            .then((res) => res.json())
-            .then((data) => {
-              if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
-            })
-            .catch(() => {});
-        }
+        refreshPastVisualizations();
       } catch (saveError) {
         // Log error but don't block user flow
         console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
@@ -554,7 +561,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -720,6 +727,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
             onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
             onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
+            isTeamMember={!!authUser}
+            usageCount={usageCount}
+            usageLimit={usageLimit}
           />
         );
 
@@ -740,45 +750,45 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   return (
     <div className="mx-auto">
-      {/* Auth badge / usage counter bar */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <div className="flex-1 min-w-0">
-          {authUser ? (
-            <div className="flex items-center gap-2">
-              <UserIcon className="w-3.5 h-3.5 text-brand-gold" />
-              <span className="text-xs font-sans text-brand-gold truncate">
-                {authUser.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-1"
-              >
-                <LogOut className="w-3 h-3" />
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <UsageCounter
-              usageCount={usageCount}
-              limit={usageLimit}
-              isRateLimited={isRateLimited}
-            />
-          )}
-        </div>
-        {!authUser && (
-          <Link
-            href="/login"
-            className="text-[11px] font-sans text-white/30 hover:text-white/60 tracking-wide transition-colors ml-4 shrink-0"
-          >
-            Team Login
-          </Link>
-        )}
-      </div>
+      {/* Full-screen generation loading overlay */}
+      <GeneratingOverlay visible={loading} />
 
-      {/* Past visualizations strip */}
-      {pastVisualizations.length > 0 && (
-        <PastVisualizations items={pastVisualizations} />
+      {/* Team Login / Auth badge */}
+      {authUser ? (
+        <div className="flex items-center justify-between bg-brand-black/40 border border-white/[0.06] px-4 py-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <UserIcon className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+            <span className="text-xs font-sans text-brand-gold truncate">
+              {authUser.email}
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-3 shrink-0"
+          >
+            <LogOut className="w-3 h-3" />
+            Sign out
+          </button>
+        </div>
+      ) : (
+        <UsageCounter
+          usageCount={usageCount}
+          limit={usageLimit}
+          isRateLimited={isRateLimited}
+          loginSlot={
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-brand-gold transition-colors"
+            >
+              <UserIcon className="w-3 h-3" />
+              Team Login
+            </Link>
+          }
+        />
       )}
+
+      {/* Past visualizations */}
+      <PastVisualizations items={pastVisualizations} />
 
       {/* Main Card with Current Step */}
       <Card className="shadow-none bg-brand-brown border-0">
@@ -801,6 +811,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         onGenerate={onGenerate}
         showGenerateButton={showGenerateButton}
         isResultStep={isResultStep}
+        isTeamMember={!!authUser}
+        usageCount={usageCount}
+        usageLimit={usageLimit}
       />
 
       {/* Contact Form Modal */}

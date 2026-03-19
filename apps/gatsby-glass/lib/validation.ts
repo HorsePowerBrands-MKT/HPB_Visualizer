@@ -43,8 +43,8 @@ export const LeadSubmissionSchema = z.object({
   zipCode: z.string().min(5, 'Invalid zip code').max(10, 'Invalid zip code'),
   
   // Visualization details
-  visualizationImage: z.string().min(100, 'Visualization image required'),
-  originalImage: z.string().min(100, 'Original image required'),
+  visualizationImage: z.string().optional(),
+  originalImage: z.string().optional(),
   doorType: z.string().optional(),
   finish: z.string().optional(),
   hardware: z.string().optional(),

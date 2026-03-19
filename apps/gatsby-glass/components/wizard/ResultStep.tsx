@@ -130,6 +130,9 @@ interface ResultStepProps {
   onPivotConfigChange?: (config: PivotConfig) => void;
   onSlidingConfigChange?: (config: SlidingConfig) => void;
   team?: string | null;
+  isTeamMember?: boolean;
+  usageCount?: number;
+  usageLimit?: number;
 }
 
 // Generate marketing description based on selections
@@ -237,6 +240,9 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   onPivotConfigChange,
   onSlidingConfigChange,
   team,
+  isTeamMember = false,
+  usageCount = 0,
+  usageLimit = 10,
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -276,7 +282,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               <img 
                 src={resultUrl} 
                 alt="After" 
-                className="w-full max-h-[600px] object-contain block transition-opacity duration-500" 
+                className="w-full max-h-[60vh] object-contain block transition-opacity duration-500" 
                 style={{ opacity: showResult ? 1 : 0 }}
               />
             )}
@@ -294,33 +300,51 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               <img 
                 src={previewUrl} 
                 alt="Before" 
-                className="w-full max-h-[600px] object-contain block" 
+                className="w-full max-h-[60vh] object-contain block" 
               />
             )}
           </div>
 
           {/* AI Disclaimer */}
           {resultUrl && (
-            <p className="text-[11px] text-gray-500 text-center px-4 pt-2 leading-relaxed">
-              This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
-            </p>
+            <div className="text-center px-4 pt-2 space-y-1">
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
+              </p>
+              <p className="text-[10px] text-gray-600 leading-relaxed">
+                Your generated visualization is available for 30 days. Request a quote to have it shared with your local Gatsby Glass professional.
+              </p>
+            </div>
           )}
 
-          {/* Before/After Toggle - directly under image */}
+          {/* Before/After Toggle */}
           {resultUrl && (
-            <div className="flex justify-center items-center gap-4 bg-brand-brown-hover px-6 py-3">
-              <span className={`text-sm font-medium transition-colors ${!showResult ? 'text-brand-gold' : 'text-gray-400'}`}>Before</span>
-              <div 
-                onClick={onToggleView}
-                className="relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer border border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                style={{backgroundColor: showResult ? '#e4bf6e' : '#6b7280'}}
-              >
-                <span 
-                  className="inline-block h-6 w-6 transform bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  style={{transform: showResult ? 'translateX(1.75rem)' : 'translateX(0rem)'}}
+            <div className="flex justify-center py-4">
+              <div className="relative inline-flex rounded-full bg-brand-black/60 border border-white/[0.08] p-0.5">
+                <div
+                  className="absolute top-0.5 bottom-0.5 rounded-full bg-brand-gold/90 transition-all duration-300 ease-in-out"
+                  style={{
+                    width: 'calc(50% - 2px)',
+                    left: showResult ? 'calc(50% + 2px)' : '2px',
+                  }}
                 />
+                <button
+                  onClick={() => showResult && onToggleView()}
+                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                    !showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
+                  }`}
+                >
+                  Before
+                </button>
+                <button
+                  onClick={() => !showResult && onToggleView()}
+                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                    showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
+                  }`}
+                >
+                  After
+                </button>
               </div>
-              <span className={`text-sm font-medium transition-colors ${showResult ? 'text-brand-gold' : 'text-gray-400'}`}>After</span>
             </div>
           )}
 
@@ -408,7 +432,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
               {/* Change Options accordion */}
               {form?.mode === 'configure' && enclosureOptions && (
-                <div className="border border-white/30 overflow-hidden">
+                <div className="border border-white/30">
                   <button
                     onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                     className="w-full flex items-center justify-center gap-2 h-9 text-sm font-medium text-white bg-transparent hover:bg-white/10 transition-all duration-300"
@@ -417,11 +441,8 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                     {isOptionsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
 
-                  <div
-                    className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-                    style={{ gridTemplateRows: isOptionsOpen ? '1fr' : '0fr' }}
-                  >
-                    <div className="overflow-hidden">
+                  {isOptionsOpen && (
+                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="border-t border-white/20 p-5 space-y-4">
                         <div className="space-y-3">
                           {onEnclosureChange && (
@@ -523,13 +544,13 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                               className="inline-flex items-center justify-center gap-2 px-4 h-9 text-sm font-medium bg-brand-gold text-brand-brown hover:bg-brand-gold/90 transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none"
                             >
                               <Sparkles size={16} />
-                              {loading ? 'Generating...' : 'Re-Generate'}
+                              {loading ? 'Generating...' : isTeamMember ? 'Re-Generate' : `Re-Generate (${usageCount + 1} of ${usageLimit})`}
                             </button>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 

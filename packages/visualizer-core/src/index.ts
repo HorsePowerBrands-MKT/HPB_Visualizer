@@ -17,3 +17,9 @@ export {
   buildVisualizationPrompt,
   buildInspirationPrompt
 } from './utils/promptBuilder';
+
+export {
+  isHeic,
+  isSupportedImageType,
+  convertHeicToJpeg
+} from './utils/heicConvert';
