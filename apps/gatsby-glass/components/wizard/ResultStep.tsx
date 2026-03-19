@@ -319,19 +319,27 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 
           {/* Before/After Toggle - directly under image */}
           {resultUrl && (
-            <div className="flex justify-center items-center gap-4 bg-brand-brown-hover px-6 py-3">
-              <span className={`text-sm font-medium transition-colors ${!showResult ? 'text-brand-gold' : 'text-gray-400'}`}>Before</span>
-              <div 
+            <div className="flex justify-center items-center gap-4 px-6 py-3">
+              <span className={`text-sm font-medium transition-colors duration-200 ${!showResult ? 'text-brand-gold' : 'text-gray-500'}`}>Before</span>
+              <button 
                 onClick={onToggleView}
-                className="relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer border border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                style={{backgroundColor: showResult ? '#e4bf6e' : '#6b7280'}}
+                className={`relative inline-flex h-7 w-[52px] flex-shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/50 ${
+                  showResult ? 'bg-brand-gold' : 'bg-white/15'
+                }`}
+                role="switch"
+                aria-checked={showResult}
+                aria-label="Toggle before and after view"
               >
                 <span 
-                  className="inline-block h-6 w-6 transform bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  style={{transform: showResult ? 'translateX(1.75rem)' : 'translateX(0rem)'}}
+                  className="pointer-events-none inline-block h-6 w-6 rounded-full shadow-lg ring-0"
+                  style={{
+                    transform: showResult ? 'translateX(22px)' : 'translateX(0px)',
+                    backgroundColor: showResult ? '#231f20' : '#ffffff',
+                    transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
                 />
-              </div>
-              <span className={`text-sm font-medium transition-colors ${showResult ? 'text-brand-gold' : 'text-gray-400'}`}>After</span>
+              </button>
+              <span className={`text-sm font-medium transition-colors duration-200 ${showResult ? 'text-brand-gold' : 'text-gray-500'}`}>After</span>
             </div>
           )}
 
