@@ -10,8 +10,6 @@ export {
   submitLead,
   getLeadsByZipCode,
   updateLeadStatus,
-  saveVisualization,
-  reportIssue,
   type SupabaseConfig
 } from './supabase';
 
