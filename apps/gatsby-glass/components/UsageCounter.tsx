@@ -7,12 +7,14 @@ interface UsageCounterProps {
   usageCount: number;
   limit: number;
   isRateLimited: boolean;
+  loginSlot?: React.ReactNode;
 }
 
 export const UsageCounter: React.FC<UsageCounterProps> = ({
   usageCount,
   limit,
   isRateLimited,
+  loginSlot,
 }) => {
   const remaining = Math.max(0, limit - usageCount);
   const percentage = Math.min(100, (usageCount / limit) * 100);
@@ -68,9 +70,17 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
             Free AI Visualizations
           </span>
         </div>
-        <span className={`text-xs font-sans font-semibold tabular-nums ${textTone}`}>
-          {remaining} remaining
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`text-xs font-sans font-semibold tabular-nums ${textTone}`}>
+            {remaining} remaining
+          </span>
+          {loginSlot && (
+            <>
+              <span className="w-px h-3 bg-white/10" />
+              {loginSlot}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="h-2 bg-white/[0.08] rounded-full overflow-hidden">

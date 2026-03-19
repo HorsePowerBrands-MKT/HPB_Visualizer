@@ -771,22 +771,20 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           </button>
         </div>
       ) : (
-        <>
-          <div className="flex justify-end mb-2 px-1">
+        <UsageCounter
+          usageCount={usageCount}
+          limit={usageLimit}
+          isRateLimited={isRateLimited}
+          loginSlot={
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-[11px] font-sans text-white/40 hover:text-brand-gold border border-white/[0.08] hover:border-brand-gold/30 px-3 py-1.5 transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-brand-gold transition-colors"
             >
               <UserIcon className="w-3 h-3" />
               Team Login
             </Link>
-          </div>
-          <UsageCounter
-            usageCount={usageCount}
-            limit={usageLimit}
-            isRateLimited={isRateLimited}
-          />
-        </>
+          }
+        />
       )}
 
       {/* Past visualizations */}
