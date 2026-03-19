@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveVisualization, saveGeneration } from '@repo/api-handlers/supabase';
+import { saveGeneration } from '@repo/api-handlers/supabase';
 import { createClient } from '../../../lib/supabase/server';
-import type { VisualizationData, GenerationRecord } from '@repo/types';
+import type { GenerationRecord } from '@repo/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,24 +40,6 @@ export async function POST(request: NextRequest) {
 
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
 
-    // Upsert the session-level lead record (first gen creates it, re-gens update it)
-    const visualizationData: VisualizationData = {
-      sessionId: body.sessionId,
-      mode: body.mode,
-      enclosureType: body.enclosureType,
-      glassStyle: body.glassStyle,
-      hardwareFinish: body.hardwareFinish,
-      handleStyle: body.handleStyle,
-      trackPreference: body.trackPreference,
-      showerShape: body.showerShape,
-      visualizationImage: body.visualizationImage,
-      source: 'Gatsby Glass Visualizer',
-      team: body.team || null,
-    };
-
-    const sessionResult = await saveVisualization(supabaseConfig, visualizationData);
-
-    // Always insert a new row into visualizations for every generation event
     const generationRecord: GenerationRecord = {
       sessionId: body.sessionId,
       generationIndex: body.generationIndex || 1,
@@ -79,7 +61,7 @@ export async function POST(request: NextRequest) {
     const genResult = await saveGeneration(supabaseConfig, generationRecord);
     console.log('[SAVE-VIZ API] Generation record saved:', genResult.id);
 
-    return NextResponse.json({ ...sessionResult, generationId: genResult.id });
+    return NextResponse.json({ success: true, generationId: genResult.id });
   } catch (error) {
     console.error('[SAVE-VIZ API] Error:', error);
     return NextResponse.json(
