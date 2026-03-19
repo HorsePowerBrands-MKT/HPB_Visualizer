@@ -228,7 +228,23 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setUserFingerprint(fp);
   }, []);
 
-  // Fetch current usage count and past visualizations once fingerprint is available
+  // Helper: fetch past visualizations using the right strategy (auth vs fingerprint)
+  const refreshPastVisualizations = useCallback(() => {
+    const url = authUser
+      ? '/api/my-visualizations'
+      : userFingerprint
+        ? `/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`
+        : null;
+    if (!url) return;
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
+      })
+      .catch(() => {});
+  }, [authUser, userFingerprint]);
+
+  // Fetch usage count + past visualizations for anonymous users
   useEffect(() => {
     if (!userFingerprint || authUser) return;
 
@@ -240,13 +256,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       })
       .catch(() => {});
 
-    fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
-      })
-      .catch(() => {});
-  }, [userFingerprint, authUser]);
+    refreshPastVisualizations();
+  }, [userFingerprint, authUser, refreshPastVisualizations]);
+
+  // Fetch past visualizations for authenticated users
+  useEffect(() => {
+    if (!authUser) return;
+    refreshPastVisualizations();
+  }, [authUser, refreshPastVisualizations]);
 
   // Check Supabase auth state on mount
   useEffect(() => {
@@ -524,15 +541,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         
         console.log('[AUTO-SAVE] Visualization data saved successfully (generation #', nextGenIndex, ')');
 
-        // Refresh the past visualizations list
-        if (userFingerprint) {
-          fetch(`/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`)
-            .then((res) => res.json())
-            .then((data) => {
-              if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
-            })
-            .catch(() => {});
-        }
+        refreshPastVisualizations();
       } catch (saveError) {
         // Log error but don't block user flow
         console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
@@ -552,7 +561,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -744,7 +753,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       {/* Full-screen generation loading overlay */}
       <GeneratingOverlay visible={loading} />
 
-      {/* Auth badge / usage counter */}
+      {/* Team Login / Auth badge */}
       {authUser ? (
         <div className="flex items-center justify-between bg-brand-black/40 border border-white/[0.06] px-4 py-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -762,19 +771,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           </button>
         </div>
       ) : (
-        <UsageCounter
-          usageCount={usageCount}
-          limit={usageLimit}
-          isRateLimited={isRateLimited}
-          loginSlot={
+        <>
+          <div className="flex justify-end mb-2 px-1">
             <Link
               href="/login"
-              className="text-[10px] font-sans text-white/25 hover:text-white/50 tracking-wide transition-colors"
+              className="inline-flex items-center gap-1.5 text-[11px] font-sans text-white/40 hover:text-brand-gold border border-white/[0.08] hover:border-brand-gold/30 px-3 py-1.5 transition-colors"
             >
+              <UserIcon className="w-3 h-3" />
               Team Login
             </Link>
-          }
-        />
+          </div>
+          <UsageCounter
+            usageCount={usageCount}
+            limit={usageLimit}
+            isRateLimited={isRateLimited}
+          />
+        </>
       )}
 
       {/* Past visualizations */}

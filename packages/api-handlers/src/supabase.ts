@@ -383,6 +383,7 @@ export async function saveGeneration(
       original_image_url: null,
       team: record.team || null,
       user_fingerprint: record.userFingerprint || null,
+      user_id: record.userId || null,
     }])
     .select('id')
     .single();
@@ -519,6 +520,32 @@ export async function getVisualizationsByFingerprint(
 
   if (error) {
     console.error('[getVisualizationsByFingerprint] Database error:', error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+/**
+ * Fetch past visualizations for an authenticated user, most recent first.
+ */
+export async function getVisualizationsByUserId(
+  config: SupabaseConfig,
+  userId: string,
+  limit = 50
+): Promise<PastVisualization[]> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('visualizations')
+    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at')
+    .eq('user_id', userId)
+    .not('visualization_image_url', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[getVisualizationsByUserId] Database error:', error);
     return [];
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Clock, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 export interface PastVisualizationItem {
   id: string;
@@ -58,7 +58,9 @@ function formatDateLong(iso: string): string {
 
 export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items }) => {
   const [selectedItem, setSelectedItem] = useState<PastVisualizationItem | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -70,6 +72,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
   };
 
   useEffect(() => {
+    if (!isOpen) return;
     updateScrollState();
     const el = scrollRef.current;
     if (!el) return;
@@ -80,7 +83,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
       el.removeEventListener('scroll', updateScrollState);
       observer.disconnect();
     };
-  }, [items]);
+  }, [items, isOpen]);
 
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
@@ -89,95 +92,101 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
     el.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="bg-brand-black/20 border border-dashed border-white/[0.06] px-4 py-3 mb-3 flex items-center gap-2">
-        <ImageIcon className="w-3.5 h-3.5 text-white/20 shrink-0" />
-        <span className="text-[11px] font-sans text-white/25">
-          Your past visualizations will appear here
-        </span>
-      </div>
-    );
-  }
+  if (items.length === 0) return null;
 
   return (
     <>
       <div className="mb-3 relative">
-        {/* Header */}
-        <div className="flex items-center gap-1.5 mb-2 px-1">
+        {/* Accordion trigger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full flex items-center gap-1.5 px-3 py-2.5 border border-white/[0.08] hover:border-brand-gold/30 bg-brand-black/30 transition-all duration-200 group/trigger"
+        >
           <Clock className="w-3 h-3 text-brand-gold/50" />
           <span className="text-[11px] font-sans text-white/40 tracking-wide uppercase">
             Your Visualizations
           </span>
-          <span className="text-[10px] font-sans text-white/20 ml-auto">
-            {items.length} design{items.length !== 1 ? 's' : ''}
+          <span className="text-[10px] font-sans text-white/20 ml-1">
+            ({items.length})
           </span>
-        </div>
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-white/30 ml-auto transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
 
-        {/* Scroll container with fade edges */}
-        <div className="relative group">
-          {/* Left fade + arrow */}
-          {canScrollLeft && (
-            <>
-              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-brand-brown to-transparent z-10 pointer-events-none" />
-              <button
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            </>
-          )}
+        {/* Collapsible content */}
+        <div
+          ref={contentRef}
+          className="overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            maxHeight: isOpen ? `${contentRef.current?.scrollHeight ?? 200}px` : '0px',
+            opacity: isOpen ? 1 : 0,
+          }}
+        >
+          <div className="pt-2 relative group">
+            {/* Left fade + arrow */}
+            {canScrollLeft && (
+              <>
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-brand-brown to-transparent z-10 pointer-events-none" />
+                <button
+                  onClick={() => scroll('left')}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </>
+            )}
 
-          {/* Right fade + arrow */}
-          {canScrollRight && (
-            <>
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-brand-brown to-transparent z-10 pointer-events-none" />
-              <button
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </>
-          )}
+            {/* Right fade + arrow */}
+            {canScrollRight && (
+              <>
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-brand-brown to-transparent z-10 pointer-events-none" />
+                <button
+                  onClick={() => scroll('right')}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-brand-black/80 border border-white/10 text-white/60 hover:text-white hover:border-brand-gold/30 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
 
-          <div
-            ref={scrollRef}
-            className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
-          >
-            {items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className="shrink-0 group/card focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-gold/50"
-              >
-                <div className="w-32 bg-brand-black/60 border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-200 overflow-hidden hover:shadow-lg hover:shadow-brand-gold/5">
-                  {item.visualization_image_url ? (
-                    <img
-                      src={item.visualization_image_url}
-                      alt={formatLabel(item)}
-                      className="w-32 h-24 object-cover group-hover/card:scale-[1.02] transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-32 h-24 bg-white/[0.03] flex items-center justify-center">
-                      <ImageIcon className="w-5 h-5 text-white/10" />
+            <div
+              ref={scrollRef}
+              className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
+            >
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className="shrink-0 group/card focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-gold/50"
+                >
+                  <div className="w-32 bg-brand-black/60 border border-white/[0.08] hover:border-brand-gold/30 transition-all duration-200 overflow-hidden hover:shadow-lg hover:shadow-brand-gold/5">
+                    {item.visualization_image_url ? (
+                      <img
+                        src={item.visualization_image_url}
+                        alt={formatLabel(item)}
+                        className="w-32 h-24 object-cover group-hover/card:scale-[1.02] transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-32 h-24 bg-white/[0.03] flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-white/10" />
+                      </div>
+                    )}
+                    <div className="px-2 py-1.5 border-t border-white/[0.04]">
+                      <p className="text-[11px] font-sans text-white/60 truncate capitalize leading-tight">
+                        {formatLabel(item)}
+                      </p>
+                      <p className="text-[10px] font-sans text-white/25 mt-0.5">
+                        {formatDate(item.created_at)}
+                      </p>
                     </div>
-                  )}
-                  <div className="px-2 py-1.5 border-t border-white/[0.04]">
-                    <p className="text-[11px] font-sans text-white/60 truncate capitalize leading-tight">
-                      {formatLabel(item)}
-                    </p>
-                    <p className="text-[10px] font-sans text-white/25 mt-0.5">
-                      {formatDate(item.created_at)}
-                    </p>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

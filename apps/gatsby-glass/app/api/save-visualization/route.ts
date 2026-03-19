@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveVisualization, saveGeneration } from '@repo/api-handlers/supabase';
+import { createClient } from '../../../lib/supabase/server';
 import type { VisualizationData, GenerationRecord } from '@repo/types';
 
 export async function POST(request: NextRequest) {
@@ -25,6 +26,16 @@ export async function POST(request: NextRequest) {
         { error: 'Server configuration error' },
         { status: 500 }
       );
+    }
+
+    // Read authenticated user (if any) from the Supabase session cookie
+    let authUserId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) authUserId = user.id;
+    } catch {
+      // Not authenticated — proceed without user_id
     }
 
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
@@ -62,6 +73,7 @@ export async function POST(request: NextRequest) {
       visualizationImageUrl: body.visualizationImage,
       team: body.team || null,
       userFingerprint: body.userFingerprint || null,
+      userId: authUserId,
     };
 
     const genResult = await saveGeneration(supabaseConfig, generationRecord);
