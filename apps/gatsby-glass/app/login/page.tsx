@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { createClient } from '../../lib/supabase/client';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -9,6 +9,18 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'unauthorized') {
+      setStatus('error');
+      setErrorMessage('This email is not authorized. Only registered Gatsby Glass locations can sign in.');
+    } else if (error === 'auth') {
+      setStatus('error');
+      setErrorMessage('Authentication failed. Please try again.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,17 +30,17 @@ export default function LoginPage() {
     setErrorMessage('');
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const res = await fetch('/api/auth/send-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
 
-      if (error) {
+      const data = await res.json();
+
+      if (!res.ok) {
         setStatus('error');
-        setErrorMessage(error.message);
+        setErrorMessage(data.error || 'Something went wrong. Please try again.');
         return;
       }
 
