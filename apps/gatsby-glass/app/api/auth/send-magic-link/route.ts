@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
+/**
+ * Validates that the email belongs to an active team_locations entry.
+ * Does NOT send the magic link -- the client handles that so PKCE
+ * code_verifier cookies are stored in the browser correctly.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
@@ -46,27 +51,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const origin = request.headers.get('origin') || request.nextUrl.origin;
-
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback`,
-        shouldCreateUser: true,
-      },
-    });
-
-    if (otpError) {
-      console.error('Magic link error:', otpError);
-      return NextResponse.json(
-        { error: 'Failed to send login link. Please try again.' },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Send magic link error:', error);
+    console.error('Validate email error:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred.' },
       { status: 500 }

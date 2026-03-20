@@ -4,6 +4,7 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '../../lib/supabase/client';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -30,6 +31,7 @@ function LoginForm() {
     setErrorMessage('');
 
     try {
+      // Step 1: Server validates the email is in team_locations
       const res = await fetch('/api/auth/send-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,6 +43,21 @@ function LoginForm() {
       if (!res.ok) {
         setStatus('error');
         setErrorMessage(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      // Step 2: Client sends the magic link (keeps PKCE code_verifier in cookies)
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        setStatus('error');
+        setErrorMessage(error.message);
         return;
       }
 
