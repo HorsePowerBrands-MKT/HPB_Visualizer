@@ -19,19 +19,9 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
   const remaining = Math.max(0, limit - usageCount);
   const percentage = Math.min(100, (usageCount / limit) * 100);
 
-  const barColor =
-    percentage >= 100
-      ? 'bg-red-500'
-      : percentage >= 70
-        ? 'bg-amber-400'
-        : 'bg-brand-gold';
+  const barColor = percentage >= 100 ? 'bg-red-500' : 'bg-brand-gold';
 
-  const textTone =
-    percentage >= 100
-      ? 'text-red-400'
-      : percentage >= 70
-        ? 'text-amber-400'
-        : 'text-brand-gold';
+  const textTone = percentage >= 100 ? 'text-red-400' : 'text-brand-gold';
 
   if (isRateLimited) {
     return (
@@ -95,7 +85,7 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
           {usageCount} of {limit} used this month
         </span>
         {percentage >= 70 && percentage < 100 && (
-          <span className="text-[10px] font-sans text-amber-400/80">
+          <span className="text-[10px] font-sans text-brand-gold/80">
             Running low
           </span>
         )}
