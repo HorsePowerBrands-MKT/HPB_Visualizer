@@ -10,7 +10,7 @@ let watermarkBuffer: Buffer | null = null;
 async function getWatermarkBuffer(): Promise<Buffer> {
   if (watermarkBuffer) return watermarkBuffer;
 
-  const watermarkPath = path.join(process.cwd(), 'public', 'watermark-logo.png');
+  const watermarkPath = path.join(process.cwd(), 'public', 'watermark-logo-white.png');
   watermarkBuffer = fs.readFileSync(watermarkPath);
   return watermarkBuffer;
 }
