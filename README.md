@@ -1,14 +1,24 @@
 # HPB Visualizer
 
-A multi-brand AI-powered shower visualizer platform built with Next.js, TypeScript, and Google Gemini AI.
+A multi-brand AI-powered visualizer platform built with Next.js, TypeScript, and Google Gemini AI.
 
 ## Overview
 
-HPB Visualizer is a monorepo that enables multiple brands to offer AI-powered bathroom visualization tools to their customers. The platform uses Google's Gemini AI to generate photorealistic visualizations of custom shower configurations.
+HPB Visualizer is a monorepo that enables multiple Horse Power Brands to offer AI-powered product visualization tools to their customers. Each brand gets its own Next.js app with brand-specific products, prompts, and UI, while sharing common infrastructure (AI integration, template engine, image utilities, database clients).
+
+### Current Brands
+
+- **Gatsby Glass** (`apps/gatsby-glass/`) -- Shower glass visualization
+
+### Planned Brands
+
+- Stand Strong Fencing
+- Bumble Bee Blinds
+- Groovy Hues Painting
 
 ### Key Features
 
-- **AI-Powered Visualization**: Upload a bathroom photo and instantly see it with different shower configurations
+- **AI-Powered Visualization**: Upload a photo and instantly see it with different product configurations
 - **Multi-Brand Support**: Shared codebase with brand-specific customization
 - **Real-Time Validation**: AI validates uploaded images to ensure quality results
 - **Lead Generation**: Built-in contact form for customer inquiries
@@ -43,37 +53,39 @@ The application will be available at `http://localhost:3000`
 
 ```
 HPB_Visualizer/
-├── packages/              # Shared code for all brands
-│   ├── api-handlers/     # AI/API integrations
-│   ├── prompt-templates/ # Template engine
-│   ├── types/            # Shared TypeScript types
-│   └── visualizer-core/  # Core utilities
+├── packages/                # Shared code for ALL brands
+│   ├── api-handlers/       # Gemini AI + Supabase clients
+│   ├── prompt-templates/   # Template engine (processor, cache, registry)
+│   ├── types/              # Generic types (ImageData, GenericLead, etc.)
+│   └── visualizer-core/    # Image utils, HEIC conversion, base64
 │
-├── apps/                  # Brand-specific applications
-│   └── gatsby-glass/     # Gatsby Glass brand
-│       ├── lib/          # Brand code & constants
-│       ├── prompts/      # Brand prompts
-│       ├── app/          # Next.js routes
-│       └── components/   # UI components
+├── apps/                    # Brand-specific applications
+│   └── gatsby-glass/       # Gatsby Glass brand
+│       ├── app/            # Next.js routes + API endpoints
+│       ├── components/     # UI components + wizard steps
+│       ├── hooks/          # Brand-specific React hooks
+│       ├── lib/            # Product types, catalog, config
+│       ├── prompts/        # AI prompt templates + product descriptions
+│       └── public/         # Static assets (logos, fonts)
 │
-├── ARCHITECTURE.md        # Detailed architecture docs
-└── CONTRIBUTING.md        # Contribution guidelines
+├── supabase/                # Database migrations
+├── ARCHITECTURE.md          # Detailed architecture docs
+└── CONTRIBUTING.md          # Contribution guidelines
 ```
 
 ## Available Scripts
 
 ```bash
 # Development
-pnpm dev              # Start dev server
+pnpm dev              # Start Gatsby Glass dev server (default)
+pnpm dev:gatsby       # Start Gatsby Glass dev server (explicit)
 
 # Building
 pnpm build            # Build all packages and apps
-
-# Type checking
-pnpm typecheck        # Run TypeScript compiler
+pnpm build:gatsby     # Build Gatsby Glass only
 
 # Linting
-pnpm lint             # Run ESLint
+pnpm lint             # Run ESLint across all packages
 
 # Cleaning
 pnpm clean            # Remove build artifacts
@@ -103,19 +115,23 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed information.
 - **Package Manager**: pnpm (workspaces)
 - **Validation**: Zod
 
-## Key Packages
+## Shared Packages
 
 ### @repo/api-handlers
-Generic API integrations for AI and database operations.
+
+Generic API integrations: Gemini AI client, Supabase database client, image storage, validation.
 
 ### @repo/prompt-templates
-JSON-based prompt template system for easy customization.
+
+Template engine with variable interpolation, conditional sections, caching. Brands register their templates via `registerBrandTemplates()`.
 
 ### @repo/visualizer-core
-Core React hooks and utilities for visualizer functionality.
+
+Image processing utilities: base64 conversion, compression, HEIC-to-JPEG conversion, file validation.
 
 ### @repo/types
-Shared TypeScript types across the monorepo.
+
+Generic TypeScript types (`ImageData`, `GenericLead`, `GenericGenerationRecord`, `APIError`, etc.) plus backward-compatible re-exports of Gatsby Glass types.
 
 ## Environment Variables
 
@@ -140,14 +156,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Adding a New Brand
 
-To add a new brand:
+1. **Create the app directory**: `apps/<brand-name>/`
+2. **Set up Next.js**: `package.json` with workspace dependencies (`@repo/api-handlers`, `@repo/prompt-templates`, `@repo/visualizer-core`, `@repo/types`)
+3. **Define product types**: `lib/<brand>-types.ts` with brand-specific product options
+4. **Create product catalog**: `lib/<brand>-constants/` with product names, descriptions, and config
+5. **Write prompt templates**: `prompts/<brand>-templates.ts` describing how AI should visualize the brand's products
+6. **Build wizard UI**: `hooks/useVisualizerState.ts` and `components/` with brand-specific wizard flow
+7. **Add deployment config**: `vercel.json` with `--filter <brand-name>` build command
+8. **Add root scripts**: `dev:<brand>` and `build:<brand>` to root `package.json`
 
-1. Create folder: `apps/new-brand/`
-2. Copy structure from `apps/gatsby-glass/`
-3. Customize brand-specific code in `lib/` and `prompts/`
-4. Update configuration and deploy
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed instructions.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a full example with file tree and dependency diagram.
 
 ## Documentation
 
