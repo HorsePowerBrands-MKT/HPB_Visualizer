@@ -103,10 +103,10 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
           className="w-full flex items-center gap-1.5 px-3 py-2.5 border border-white/[0.08] hover:border-brand-gold/30 bg-brand-black/30 transition-all duration-200 group/trigger"
         >
           <Clock className="w-3 h-3 text-brand-gold/50" />
-          <span className="text-[11px] font-sans text-white/40 tracking-wide uppercase">
+          <span className="text-[11px] font-sans text-white/40 tracking-wide uppercase leading-none">
             Your Visualizations
           </span>
-          <span className="text-[10px] font-sans text-white/20 ml-1">
+          <span className="text-[10px] font-sans text-white/20 ml-1 leading-none">
             ({items.length})
           </span>
           <ChevronDown

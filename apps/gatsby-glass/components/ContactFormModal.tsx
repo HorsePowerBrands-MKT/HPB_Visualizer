@@ -17,6 +17,7 @@ interface ContactFormModalProps {
     configs: Payload;
   };
   mode: 'save' | 'quote';
+  userFingerprint?: string;
 }
 
 function formatPhone(raw: string): string {
@@ -36,11 +37,14 @@ function stripPhoneFormatting(formatted: string): string {
   return formatted.replace(/\D/g, '');
 }
 
+const TCPA_CONSENT_TEXT = 'I agree to receive calls and/or text messages from Gatsby Glass and its local franchisees at the phone number provided. I understand that consent is not a condition of purchase. Message & data rates may apply. Reply STOP to opt out at any time.';
+
 export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   isOpen,
   onClose,
   visualizationData,
-  mode
+  mode,
+  userFingerprint,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -125,6 +129,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           sessionId: visualizationData.configs.session_id,
           source: 'Gatsby Glass Visualizer',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
+          tcpaConsentText: tcpaRequired && tcpaConsent ? TCPA_CONSENT_TEXT : undefined,
+          consentUserAgent: tcpaRequired && tcpaConsent ? navigator.userAgent : undefined,
+          userFingerprint: userFingerprint || undefined,
         })
       });
 
@@ -330,7 +337,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                       )}
                     </span>
                     <span className="text-xs text-white/70 leading-relaxed select-none">
-                      I agree to receive calls and/or text messages from Gatsby Glass and its local franchisees at the phone number provided. I understand that consent is not a condition of purchase. Message &amp; data rates may apply. Reply STOP to opt out at any time.
+                      {TCPA_CONSENT_TEXT}
                     </span>
                   </label>
                   {errors.tcpa && (

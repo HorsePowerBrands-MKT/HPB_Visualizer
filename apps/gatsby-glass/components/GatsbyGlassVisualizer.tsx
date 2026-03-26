@@ -804,6 +804,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             configs: form
           }}
           mode={contactModalMode}
+          userFingerprint={userFingerprint}
         />
       )}
     </div>

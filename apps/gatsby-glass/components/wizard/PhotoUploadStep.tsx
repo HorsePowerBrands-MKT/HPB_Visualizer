@@ -138,7 +138,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         </div>
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are sent to an AI service (Google Gemini) to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
+          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are processed by an AI service to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
           <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
           for details.
         </p>
@@ -174,7 +174,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         />
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is sent to an AI service (Google Gemini) to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
+          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is processed by an AI service to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
           <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
           for details on how your data is used and your rights.
         </p>

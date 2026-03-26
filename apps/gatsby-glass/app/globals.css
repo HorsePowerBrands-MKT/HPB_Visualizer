@@ -128,3 +128,16 @@
     scrollbar-width: none;
   }
 }
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px 0 rgba(196, 170, 113, 0.3), 0 0 20px 0 rgba(196, 170, 113, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(196, 170, 113, 0.5), 0 0 32px 8px rgba(196, 170, 113, 0.2);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}

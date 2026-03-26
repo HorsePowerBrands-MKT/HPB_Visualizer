@@ -56,12 +56,12 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-3.5 h-3.5 text-brand-gold/70" />
-          <span className="text-xs font-sans text-white/60">
+          <span className="text-xs font-sans text-white/60 leading-none">
             Free AI Visualizations
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`text-xs font-sans font-semibold tabular-nums ${textTone}`}>
+          <span className={`text-xs font-sans font-semibold tabular-nums leading-none ${textTone}`}>
             {remaining} remaining
           </span>
           {loginSlot && (

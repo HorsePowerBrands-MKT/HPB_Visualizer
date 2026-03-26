@@ -30,8 +30,23 @@ export async function applyWatermark(base64DataUrl: string): Promise<string> {
 
   const logoRaw = await getWatermarkBuffer();
 
-  // Scale logo to ~25% of image width, preserving aspect ratio
-  const logoTargetWidth = Math.round(imgWidth * 0.25);
+  // Determine logo's native aspect ratio to pick the constraining dimension
+  const logoMeta = await sharp(logoRaw).metadata();
+  const logoNativeW = logoMeta.width || 748;
+  const logoNativeH = logoMeta.height || 972;
+  const logoAspect = logoNativeW / logoNativeH;
+  const imgAspect = imgWidth / imgHeight;
+
+  // Scale logo to 85% of whichever dimension is the constraining factor
+  let logoTargetWidth: number;
+  if (imgAspect > logoAspect) {
+    // Image is wider than logo — height is the constraint
+    logoTargetWidth = Math.round(imgHeight * 0.85 * logoAspect);
+  } else {
+    // Image is taller/equal — width is the constraint
+    logoTargetWidth = Math.round(imgWidth * 0.85);
+  }
+
   const logo = await sharp(logoRaw)
     .resize({ width: logoTargetWidth })
     .ensureAlpha()

@@ -43,6 +43,43 @@ async function retainVisualizationImages(
 }
 
 /**
+ * Collect all visualization URLs for a user across all sessions.
+ * Prefers user_id (authenticated), falls back to user_fingerprint, then session_id.
+ */
+async function collectAllVisualizationUrls(
+  supabase: ReturnType<typeof getSupabaseClient>,
+  identifiers: { sessionId?: string; userId?: string; userFingerprint?: string }
+): Promise<{ watermarked: string | null; original: string | null; created_at: string }[]> {
+  const { sessionId, userId, userFingerprint } = identifiers;
+
+  let query = supabase
+    .from('visualizations')
+    .select('visualization_image_url, original_image_url, created_at')
+    .not('visualization_image_url', 'is', null)
+    .order('created_at', { ascending: true });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else if (userFingerprint) {
+    query = query.eq('user_fingerprint', userFingerprint);
+  } else if (sessionId) {
+    query = query.eq('session_id', sessionId);
+  } else {
+    return [];
+  }
+
+  const { data: vizRows } = await query;
+
+  return vizRows
+    ? vizRows.map(r => ({
+        watermarked: r.visualization_image_url,
+        original: r.original_image_url,
+        created_at: r.created_at,
+      }))
+    : [];
+}
+
+/**
  * Submit a lead to the database
  * If sessionId is provided, updates existing record; otherwise creates new one
  */
@@ -67,6 +104,11 @@ export async function submitLead(
     sessionId,
     source = 'Visualizer',
     tcpaConsent,
+    tcpaConsentText,
+    consentIp,
+    consentUserAgent,
+    userFingerprint,
+    userId,
   } = leadData;
 
   // Validate required fields
@@ -85,21 +127,7 @@ export async function submitLead(
       .single();
 
     if (!findError && existing) {
-      // Collect all visualization URLs for this session
-      const { data: vizRows } = await supabase
-        .from('visualizations')
-        .select('visualization_image_url, original_image_url, created_at')
-        .eq('session_id', sessionId)
-        .not('visualization_image_url', 'is', null)
-        .order('created_at', { ascending: true });
-
-      const vizUrls = vizRows
-        ? vizRows.map(r => ({
-            watermarked: r.visualization_image_url,
-            original: r.original_image_url,
-            created_at: r.created_at,
-          }))
-        : [];
+      const vizUrls = await collectAllVisualizationUrls(supabase, { sessionId, userId, userFingerprint });
 
       const { data, error } = await supabase
         .from('leads')
@@ -113,6 +141,9 @@ export async function submitLead(
           all_visualization_urls: vizUrls.length > 0 ? vizUrls : null,
           tcpa_consent: tcpaConsent || false,
           tcpa_consent_at: tcpaConsent ? new Date().toISOString() : null,
+          tcpa_consent_text: tcpaConsentText || null,
+          consent_ip: consentIp || null,
+          consent_user_agent: consentUserAgent || null,
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
@@ -134,24 +165,7 @@ export async function submitLead(
     }
   }
 
-  // Collect all visualization URLs for this session
-  let allVisualizationUrls: { watermarked: string | null; original: string | null; created_at: string }[] = [];
-  if (sessionId) {
-    const { data: vizRows } = await supabase
-      .from('visualizations')
-      .select('visualization_image_url, original_image_url, created_at')
-      .eq('session_id', sessionId)
-      .not('visualization_image_url', 'is', null)
-      .order('created_at', { ascending: true });
-
-    if (vizRows) {
-      allVisualizationUrls = vizRows.map(r => ({
-        watermarked: r.visualization_image_url,
-        original: r.original_image_url,
-        created_at: r.created_at,
-      }));
-    }
-  }
+  const allVisualizationUrls = await collectAllVisualizationUrls(supabase, { sessionId, userId, userFingerprint });
 
   // Create new record (fallback or no sessionId)
   const { data, error } = await supabase
@@ -179,6 +193,9 @@ export async function submitLead(
         all_visualization_urls: allVisualizationUrls.length > 0 ? allVisualizationUrls : null,
         tcpa_consent: tcpaConsent || false,
         tcpa_consent_at: tcpaConsent ? new Date().toISOString() : null,
+        tcpa_consent_text: tcpaConsentText || null,
+        consent_ip: consentIp || null,
+        consent_user_agent: consentUserAgent || null,
       }
     ])
     .select()
