@@ -3,6 +3,9 @@
  * 
  * Loads JSON templates and resolves them into final prompt strings.
  * Supports variable interpolation, catalog lookups, and conditional sections.
+ *
+ * Brand apps register their templates via registerBrandTemplates() at startup.
+ * If no brand templates are registered, falls back to the built-in defaults.
  */
 
 import type {
@@ -12,17 +15,37 @@ import type {
   TemplateCondition,
   ProcessedPrompt,
   ProcessorOptions,
+  PromptTemplateRegistry,
 } from './types';
 
-// Import templates from TypeScript definitions (better bundler compatibility)
-import { templates, registryData } from './templates';
+// Built-in default templates (Gatsby Glass -- kept for backward compatibility)
+import {
+  templates as defaultTemplates,
+  registryData as defaultRegistryData,
+} from './templates';
+
+// Active template store -- brands override these via registerBrandTemplates()
+let activeTemplateMap: Record<string, PromptTemplate> = defaultTemplates;
+let activeRegistryData: PromptTemplateRegistry = defaultRegistryData;
+
+/**
+ * Register brand-specific templates.
+ * Call this at app startup to replace the built-in defaults with your brand's templates.
+ */
+export function registerBrandTemplates(
+  brandTemplates: Record<string, PromptTemplate>,
+  brandRegistry: PromptTemplateRegistry
+): void {
+  activeTemplateMap = brandTemplates;
+  activeRegistryData = brandRegistry;
+}
 
 /**
  * Get the active template for a given type
  */
 export function getActiveTemplate(type: PromptTemplateType): PromptTemplate {
-  const templateId = registryData.activeTemplates[type];
-  const template = templates[templateId];
+  const templateId = activeRegistryData.activeTemplates[type];
+  const template = activeTemplateMap[templateId];
   
   if (!template) {
     throw new Error(`No active template found for type: ${type}`);
@@ -35,7 +58,7 @@ export function getActiveTemplate(type: PromptTemplateType): PromptTemplate {
  * Get a template by its ID
  */
 export function getTemplateById(id: string): PromptTemplate {
-  const template = templates[id];
+  const template = activeTemplateMap[id];
   
   if (!template) {
     throw new Error(`Template not found: ${id}`);
@@ -48,14 +71,14 @@ export function getTemplateById(id: string): PromptTemplate {
  * Get all available templates
  */
 export function getAllTemplates(): PromptTemplate[] {
-  return Object.values(templates);
+  return Object.values(activeTemplateMap);
 }
 
 /**
  * Get the template registry
  */
 export function getRegistry() {
-  return registryData;
+  return activeRegistryData;
 }
 
 /**
@@ -301,13 +324,15 @@ export function processTemplate(
 }
 
 /**
- * Build a visualization prompt from a Payload
+ * Build a visualization prompt from a Payload.
+ * Optionally pass an explicit template; defaults to the active visualization template.
  */
 export function buildVisualizationPromptFromTemplate(
   config: Record<string, unknown>,
-  options: ProcessorOptions = {}
+  options: ProcessorOptions = {},
+  template?: PromptTemplate
 ): ProcessedPrompt {
-  const template = getActiveTemplate('visualization');
+  const tmpl = template ?? getActiveTemplate('visualization');
   
   // Prepare variables from config
   const variables: Record<string, unknown> = {
@@ -339,39 +364,45 @@ export function buildVisualizationPromptFromTemplate(
     variables.sliding_direction = String(slidingConfig.direction || '').replace('_', ' ');
   }
   
-  return processTemplate(template, variables, options);
+  return processTemplate(tmpl, variables, options);
 }
 
 /**
- * Build an inspiration prompt from shower shape
+ * Build an inspiration prompt from shower shape.
+ * Optionally pass an explicit template; defaults to the active inspiration template.
  */
 export function buildInspirationPromptFromTemplate(
   showerShape: string,
-  options: ProcessorOptions = {}
+  options: ProcessorOptions = {},
+  template?: PromptTemplate
 ): ProcessedPrompt {
-  const template = getActiveTemplate('inspiration');
+  const tmpl = template ?? getActiveTemplate('inspiration');
   
-  return processTemplate(template, { shower_shape: showerShape }, options);
+  return processTemplate(tmpl, { shower_shape: showerShape }, options);
 }
 
 /**
- * Get the system prompt
+ * Get the system prompt.
+ * Optionally pass an explicit template; defaults to the active system template.
  */
 export function getSystemPromptFromTemplate(
-  options: ProcessorOptions = {}
+  options: ProcessorOptions = {},
+  template?: PromptTemplate
 ): ProcessedPrompt {
-  const template = getActiveTemplate('system');
+  const tmpl = template ?? getActiveTemplate('system');
   
-  return processTemplate(template, {}, options);
+  return processTemplate(tmpl, {}, options);
 }
 
 /**
- * Get the validation prompt
+ * Get the validation prompt.
+ * Optionally pass an explicit template; defaults to the active validation template.
  */
 export function getValidationPromptFromTemplate(
-  options: ProcessorOptions = {}
+  options: ProcessorOptions = {},
+  template?: PromptTemplate
 ): ProcessedPrompt {
-  const template = getActiveTemplate('validation');
+  const tmpl = template ?? getActiveTemplate('validation');
   
-  return processTemplate(template, {}, options);
+  return processTemplate(tmpl, {}, options);
 }

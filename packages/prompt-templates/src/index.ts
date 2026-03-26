@@ -45,6 +45,9 @@ export type {
 
 // Export processor functions
 export {
+  // Brand registration (call at app startup to inject brand-specific templates)
+  registerBrandTemplates,
+
   // Template access
   getActiveTemplate,
   getTemplateById,
