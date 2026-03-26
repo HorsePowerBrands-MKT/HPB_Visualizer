@@ -141,3 +141,26 @@
 .animate-pulse-glow {
   animation: pulse-glow 2.5s ease-in-out infinite;
 }
+
+/* Legal content typography */
+.legal-content h3 {
+  @apply text-brand-gold font-display uppercase text-lg tracking-wide mt-6 mb-3;
+}
+.legal-content h4 {
+  @apply text-white font-semibold text-base mt-4 mb-2;
+}
+.legal-content p {
+  @apply text-gray-300 text-sm leading-relaxed mb-3;
+}
+.legal-content ul {
+  @apply list-disc list-outside ml-5 mb-3 space-y-1;
+}
+.legal-content li {
+  @apply text-gray-300 text-sm leading-relaxed;
+}
+.legal-content a {
+  @apply text-brand-gold underline hover:text-white transition-colors;
+}
+.legal-content strong {
+  @apply text-white font-semibold;
+}

@@ -7,6 +7,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { useLegalModal } from './legal/LegalModalProvider';
 
 interface ContactFormModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   mode,
   userFingerprint,
 }) => {
+  const { openPrivacyPolicy } = useLegalModal();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -377,7 +379,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 All visualization images generated during your session will be retained and shared with the franchisee serving your area to assist with your consultation.{' '}
                 Your information will not be sold to third parties.{' '}
                 View our{' '}
-                <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>.
+                <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>.
               </p>
             </form>
           )}

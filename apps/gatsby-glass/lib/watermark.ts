@@ -10,7 +10,7 @@ let watermarkBuffer: Buffer | null = null;
 async function getWatermarkBuffer(): Promise<Buffer> {
   if (watermarkBuffer) return watermarkBuffer;
 
-  const watermarkPath = path.join(process.cwd(), 'public', 'watermark-logo-white.png');
+  const watermarkPath = path.join(process.cwd(), 'public', 'watermark-logo.png');
   watermarkBuffer = fs.readFileSync(watermarkPath);
   return watermarkBuffer;
 }
@@ -41,10 +41,10 @@ export async function applyWatermark(base64DataUrl: string): Promise<string> {
   let logoTargetWidth: number;
   if (imgAspect > logoAspect) {
     // Image is wider than logo — height is the constraint
-    logoTargetWidth = Math.round(imgHeight * 0.85 * logoAspect);
+    logoTargetWidth = Math.round(imgHeight * 0.70 * logoAspect);
   } else {
     // Image is taller/equal — width is the constraint
-    logoTargetWidth = Math.round(imgWidth * 0.85);
+    logoTargetWidth = Math.round(imgWidth * 0.70);
   }
 
   const logo = await sharp(logoRaw)
