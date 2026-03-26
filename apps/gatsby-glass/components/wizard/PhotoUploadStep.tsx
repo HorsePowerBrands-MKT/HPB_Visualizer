@@ -3,6 +3,7 @@
 import React from 'react';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import { Input } from '../ui/Input';
+import { useLegalModal } from '../legal/LegalModalProvider';
 
 interface SingleUploadProps {
   file: File | null;
@@ -100,6 +101,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   onInspirationRemove,
   error,
 }) => {
+  const { openPrivacyPolicy } = useLegalModal();
   if (type === 'both') {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
@@ -138,8 +140,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         </div>
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are sent to an AI service (Google Gemini) to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
-          <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
+          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are processed by an AI service to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
+          <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
           for details.
         </p>
       </div>
@@ -174,8 +176,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         />
 
         <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is sent to an AI service (Google Gemini) to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
-          <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>{' '}
+          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is processed by an AI service to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
+          <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
           for details on how your data is used and your rights.
         </p>
       </div>

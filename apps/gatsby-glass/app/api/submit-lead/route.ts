@@ -4,6 +4,7 @@ import { validateLeadData } from '@repo/api-handlers/validation';
 import type { Lead } from '@repo/types';
 import { LeadSubmissionSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
+import { createClient } from '../../../lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const clientIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
+    let authUserId: string | undefined;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) authUserId = user.id;
+    } catch { /* not authenticated */ }
+
     const leadData: Lead = {
       name: validatedData.name,
       email: validatedData.email,
@@ -52,7 +65,13 @@ export async function POST(request: NextRequest) {
       mode: validatedData.mode as any,
       showerShape: validatedData.showerShape as any,
       sessionId: validatedData.sessionId,
-      source: 'Gatsby Glass Visualizer'
+      source: validatedData.source || 'Gatsby Glass Visualizer',
+      tcpaConsent: validatedData.tcpaConsent,
+      tcpaConsentText: validatedData.tcpaConsentText,
+      consentIp: clientIp,
+      consentUserAgent: validatedData.consentUserAgent,
+      userFingerprint: validatedData.userFingerprint,
+      userId: authUserId,
     };
 
     const result = await submitLead(

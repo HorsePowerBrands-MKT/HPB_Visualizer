@@ -6,10 +6,12 @@ import {
   getTeamLocation,
   MONTHLY_GENERATION_LIMIT,
 } from '@repo/api-handlers/supabase';
+import { uploadImage } from '@repo/api-handlers/storage';
 import type { VisualizationRequest } from '@repo/types';
 import { VisualizationRequestSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
+import { applyWatermark } from '../../../lib/watermark';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -100,8 +102,44 @@ export async function POST(request: NextRequest) {
       usageCount += 1;
     }
 
+    // --- Watermark + upload (non-blocking for the client response) ---
+    let watermarkedImage = result.image;
+    let originalUrl: string | null = null;
+    let watermarkedUrl: string | null = null;
+
+    if (sbConfig) {
+      const sessionId = body.sessionId || 'unknown';
+      const genIndex = body.generationIndex || 1;
+      const fileName = `visualization_${sessionId}_${genIndex}.png`;
+
+      try {
+        // Upload clean original to private bucket
+        originalUrl = await uploadImage(
+          sbConfig,
+          result.image,
+          fileName,
+          'visualizations_private'
+        );
+
+        // Apply watermark
+        watermarkedImage = await applyWatermark(result.image);
+
+        // Upload watermarked to public bucket
+        watermarkedUrl = await uploadImage(
+          sbConfig,
+          watermarkedImage,
+          fileName,
+          'visualizations'
+        );
+      } catch (uploadErr) {
+        console.error('[GENERATE] Watermark/upload failed:', uploadErr);
+      }
+    }
+
     return NextResponse.json({
-      ...result,
+      image: watermarkedImage,
+      originalUrl,
+      watermarkedUrl,
       usageCount,
       limit: MONTHLY_GENERATION_LIMIT,
       ...(teamLocationId ? { teamLocationId } : {}),

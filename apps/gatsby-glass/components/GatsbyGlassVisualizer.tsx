@@ -441,11 +441,16 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         ? buildVisualizationPrompt(form)
         : buildInspirationPrompt(form.shower_shape);
 
+      const sessionId = form.session_id || uuidv4();
+      const nextGenIndex = generationIndex + 1;
+
       const requestBody: any = {
         bathroomImage: bathroomImageData,
         prompt,
         targetWidth: bathroomImageData.width,
         targetHeight: bathroomImageData.height,
+        sessionId,
+        generationIndex: nextGenIndex,
         ...(userFingerprint ? { userFingerprint } : {}),
       };
 
@@ -473,14 +478,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       if (typeof result.usageCount === 'number') {
         setUsageCount(result.usageCount);
       }
-      
-      // Generate session_id if not already set
-      const sessionId = form.session_id || uuidv4();
-      
-      // Update form with session_id
+
       const updatedForm = { ...form, session_id: sessionId };
       setForm(updatedForm);
-      
+
       const newHistoryItem: HistoryItem = {
         id: uuidv4(),
         timestamp: Date.now(),
@@ -489,35 +490,13 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         payload: updatedForm
       };
 
-      const nextGenIndex = generationIndex + 1;
       setGenerationIndex(nextGenIndex);
-
       setResultUrl(result.image);
       addHistoryItem(newHistoryItem);
       setShowResult(true);
-      
-      // Auto-save visualization data to Supabase
+
+      // Save visualization record (images already uploaded by generate endpoint)
       try {
-        console.log('[AUTO-SAVE] Starting image uploads...');
-        
-        // Upload visualization image to Supabase Storage
-        const vizUploadResponse = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageData: result.image,
-            fileName: `visualization_${sessionId}_${nextGenIndex}.png`
-          })
-        });
-        
-        if (!vizUploadResponse.ok) {
-          throw new Error('Failed to upload visualization image');
-        }
-        
-        const vizUploadData = await vizUploadResponse.json();
-        console.log('[AUTO-SAVE] Visualization image uploaded:', vizUploadData.url);
-        
-        // Save visualization data — upserts session record + inserts generation row
         await fetch('/api/save-visualization', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -533,18 +512,16 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             hingedConfig: form.hinged_config ?? null,
             pivotConfig: form.pivot_config ?? null,
             slidingConfig: form.sliding_config ?? null,
-            visualizationImage: vizUploadData.url,
+            visualizationImage: result.watermarkedUrl || null,
+            originalImageUrl: result.originalUrl || null,
             team: result.teamLocationId || teamUtm || null,
             userFingerprint: userFingerprint || null,
           })
         });
-        
-        console.log('[AUTO-SAVE] Visualization data saved successfully (generation #', nextGenIndex, ')');
 
         refreshPastVisualizations();
       } catch (saveError) {
-        // Log error but don't block user flow
-        console.error('[AUTO-SAVE] Failed to auto-save visualization:', saveError);
+        console.error('[AUTO-SAVE] Failed to save visualization:', saveError);
       }
       
       // Auto-advance to result step
@@ -827,6 +804,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             configs: form
           }}
           mode={contactModalMode}
+          userFingerprint={userFingerprint}
         />
       )}
     </div>

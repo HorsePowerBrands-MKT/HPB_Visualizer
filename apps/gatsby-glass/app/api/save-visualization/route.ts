@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       pivotConfig: body.pivotConfig,
       slidingConfig: body.slidingConfig,
       visualizationImageUrl: body.visualizationImage,
+      originalImageUrl: body.originalImageUrl || null,
       team: body.team || null,
       userFingerprint: body.userFingerprint || null,
       userId: authUserId,

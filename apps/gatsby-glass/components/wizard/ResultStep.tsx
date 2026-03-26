@@ -330,7 +330,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                 />
                 <button
                   onClick={() => showResult && onToggleView()}
-                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                  className={`relative z-10 px-6 py-2 rounded-full text-xs font-semibold tracking-wide uppercase leading-none transition-colors duration-300 ${
                     !showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
                   }`}
                 >
@@ -338,7 +338,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                 </button>
                 <button
                   onClick={() => !showResult && onToggleView()}
-                  className={`relative z-10 px-6 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                  className={`relative z-10 px-6 py-2 rounded-full text-xs font-semibold tracking-wide uppercase leading-none transition-colors duration-300 ${
                     showResult ? 'text-brand-brown' : 'text-white/50 hover:text-white/70'
                   }`}
                 >
@@ -417,17 +417,17 @@ export const ResultStep: React.FC<ResultStepProps> = ({
             <div className="space-y-2">
               <Button
                 variant="primary"
-                className="w-full"
-                onClick={onSave}
+                className="w-full animate-pulse-glow"
+                onClick={onRequestQuote}
               >
-                Save & Send to Me
+                Request a Quote
               </Button>
               <Button
                 variant="secondary"
                 className="w-full"
-                onClick={onRequestQuote}
+                onClick={onSave}
               >
-                Request Quote
+                Save & Send to Me
               </Button>
 
               {/* Change Options accordion */}

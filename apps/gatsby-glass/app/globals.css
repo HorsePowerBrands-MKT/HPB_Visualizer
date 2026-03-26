@@ -128,3 +128,39 @@
     scrollbar-width: none;
   }
 }
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px 0 rgba(196, 170, 113, 0.3), 0 0 20px 0 rgba(196, 170, 113, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(196, 170, 113, 0.5), 0 0 32px 8px rgba(196, 170, 113, 0.2);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Legal content typography */
+.legal-content h3 {
+  @apply text-brand-gold font-display uppercase text-lg tracking-wide mt-6 mb-3;
+}
+.legal-content h4 {
+  @apply text-white font-semibold text-base mt-4 mb-2;
+}
+.legal-content p {
+  @apply text-gray-300 text-sm leading-relaxed mb-3;
+}
+.legal-content ul {
+  @apply list-disc list-outside ml-5 mb-3 space-y-1;
+}
+.legal-content li {
+  @apply text-gray-300 text-sm leading-relaxed;
+}
+.legal-content a {
+  @apply text-brand-gold underline hover:text-white transition-colors;
+}
+.legal-content strong {
+  @apply text-white font-semibold;
+}

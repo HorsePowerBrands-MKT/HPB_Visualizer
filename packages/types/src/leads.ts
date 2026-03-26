@@ -25,6 +25,12 @@ export interface Lead extends ContactFormData {
   issueReported?: boolean;
   issueMessage?: string;
   contactSubmitted?: boolean;
+  tcpaConsent?: boolean;
+  tcpaConsentText?: string;
+  consentIp?: string;
+  consentUserAgent?: string;
+  userFingerprint?: string;
+  userId?: string;
 }
 
 // Lead submission response

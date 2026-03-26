@@ -53,6 +53,11 @@ export const LeadSubmissionSchema = z.object({
   mode: z.string().optional(),
   showerShape: z.string().optional(),
   sessionId: z.string().optional(),
+  source: z.string().optional(),
+  tcpaConsent: z.boolean().optional(),
+  tcpaConsentText: z.string().optional(),
+  consentUserAgent: z.string().optional(),
+  userFingerprint: z.string().optional(),
 });
 
 // Export types
