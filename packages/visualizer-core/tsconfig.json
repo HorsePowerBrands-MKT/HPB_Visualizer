@@ -9,6 +9,6 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../types" },
-    { "path": "../constants" }
+    { "path": "../prompt-templates" }
   ]
 }
