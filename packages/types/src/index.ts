@@ -26,6 +26,8 @@ export type {
   ContactFormData,
   Lead,
   LeadSubmissionResponse,
+  GenerationRecord,
+  IssueReport,
 } from './leads';
 
 // API types

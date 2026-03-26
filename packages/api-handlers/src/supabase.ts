@@ -65,7 +65,8 @@ export async function submitLead(
     handleStyle,
     mode,
     sessionId,
-    source = 'Visualizer'
+    source = 'Visualizer',
+    tcpaConsent,
   } = leadData;
 
   // Validate required fields
@@ -84,6 +85,22 @@ export async function submitLead(
       .single();
 
     if (!findError && existing) {
+      // Collect all visualization URLs for this session
+      const { data: vizRows } = await supabase
+        .from('visualizations')
+        .select('visualization_image_url, original_image_url, created_at')
+        .eq('session_id', sessionId)
+        .not('visualization_image_url', 'is', null)
+        .order('created_at', { ascending: true });
+
+      const vizUrls = vizRows
+        ? vizRows.map(r => ({
+            watermarked: r.visualization_image_url,
+            original: r.original_image_url,
+            created_at: r.created_at,
+          }))
+        : [];
+
       const { data, error } = await supabase
         .from('leads')
         .update({
@@ -93,6 +110,9 @@ export async function submitLead(
           zip_code: zipCode,
           contact_submitted: true,
           images_retained: true,
+          all_visualization_urls: vizUrls.length > 0 ? vizUrls : null,
+          tcpa_consent: tcpaConsent || false,
+          tcpa_consent_at: tcpaConsent ? new Date().toISOString() : null,
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
@@ -111,6 +131,25 @@ export async function submitLead(
         message: 'Your information has been submitted successfully',
         leadId: data.id
       };
+    }
+  }
+
+  // Collect all visualization URLs for this session
+  let allVisualizationUrls: { watermarked: string | null; original: string | null; created_at: string }[] = [];
+  if (sessionId) {
+    const { data: vizRows } = await supabase
+      .from('visualizations')
+      .select('visualization_image_url, original_image_url, created_at')
+      .eq('session_id', sessionId)
+      .not('visualization_image_url', 'is', null)
+      .order('created_at', { ascending: true });
+
+    if (vizRows) {
+      allVisualizationUrls = vizRows.map(r => ({
+        watermarked: r.visualization_image_url,
+        original: r.original_image_url,
+        created_at: r.created_at,
+      }));
     }
   }
 
@@ -136,7 +175,10 @@ export async function submitLead(
         status: 'new',
         source,
         images_retained: true,
-        contact_submitted: true
+        contact_submitted: true,
+        all_visualization_urls: allVisualizationUrls.length > 0 ? allVisualizationUrls : null,
+        tcpa_consent: tcpaConsent || false,
+        tcpa_consent_at: tcpaConsent ? new Date().toISOString() : null,
       }
     ])
     .select()
@@ -227,7 +269,7 @@ export async function saveGeneration(
       pivot_config: record.pivotConfig || null,
       sliding_config: record.slidingConfig || null,
       visualization_image_url: record.visualizationImageUrl || null,
-      original_image_url: null,
+      original_image_url: record.originalImageUrl || null,
       team: record.team || null,
       user_fingerprint: record.userFingerprint || null,
       user_id: record.userId || null,

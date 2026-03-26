@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
       mode: validatedData.mode as any,
       showerShape: validatedData.showerShape as any,
       sessionId: validatedData.sessionId,
-      source: 'Gatsby Glass Visualizer'
+      source: validatedData.source || 'Gatsby Glass Visualizer',
+      tcpaConsent: validatedData.tcpaConsent,
     };
 
     const result = await submitLead(

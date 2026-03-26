@@ -19,6 +19,23 @@ interface ContactFormModalProps {
   mode: 'save' | 'quote';
 }
 
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function formatZip(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 9);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+function stripPhoneFormatting(formatted: string): string {
+  return formatted.replace(/\D/g, '');
+}
+
 export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   isOpen,
   onClose,
@@ -31,11 +48,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     phone: '',
     zipCode: ''
   });
+  const [tcpaConsent, setTcpaConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  const phoneRequired = mode === 'quote';
+  const hasPhone = stripPhoneFormatting(formData.phone).length > 0;
+  const tcpaRequired = phoneRequired || hasPhone;
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -47,13 +69,25 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!formData.zipCode.trim()) {
+    const phoneDigits = stripPhoneFormatting(formData.phone);
+    if (phoneRequired && phoneDigits.length === 0) {
+      newErrors.phone = 'Phone number is required for a quote request';
+    } else if (phoneDigits.length > 0 && phoneDigits.length < 10) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number';
+    }
+
+    const zipDigits = formData.zipCode.replace(/\D/g, '');
+    if (!zipDigits) {
       newErrors.zipCode = 'Zip code is required';
-    } else if (!/^\d{5}(-\d{4})?$/.test(formData.zipCode)) {
+    } else if (zipDigits.length !== 5 && zipDigits.length !== 9) {
       newErrors.zipCode = 'Please enter a valid US zip code';
+    }
+
+    if (tcpaRequired && !tcpaConsent) {
+      newErrors.tcpa = 'Consent is required to proceed';
     }
 
     setErrors(newErrors);
@@ -70,14 +104,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     setSubmitting(true);
 
     try {
+      const phoneDigits = stripPhoneFormatting(formData.phone);
+
       const response = await fetch('/api/submit-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || undefined,
-          zipCode: formData.zipCode,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: phoneDigits || undefined,
+          zipCode: formData.zipCode.replace(/[^\d-]/g, ''),
           visualizationImage: visualizationData.resultUrl,
           doorType: visualizationData.configs.enclosure_type,
           finish: visualizationData.configs.glass_style,
@@ -87,7 +123,8 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           mode: visualizationData.configs.mode,
           showerShape: visualizationData.configs.shower_shape,
           sessionId: visualizationData.configs.session_id,
-          source: 'Gatsby Glass Visualizer'
+          source: 'Gatsby Glass Visualizer',
+          tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
         })
       });
 
@@ -98,10 +135,10 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
       setSuccess(true);
 
-      // Auto-close after 3 seconds on success
       setTimeout(() => {
         onClose();
         setFormData({ name: '', email: '', phone: '', zipCode: '' });
+        setTcpaConsent(false);
         setSuccess(false);
       }, 3000);
 
@@ -115,11 +152,22 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let formatted = value;
+    if (field === 'phone') formatted = formatPhone(value);
+    if (field === 'zipCode') formatted = formatZip(value);
+
+    setFormData(prev => ({ ...prev, [field]: formatted }));
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
+        return newErrors;
+      });
+    }
+    if (field === 'phone' && errors.tcpa) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.tcpa;
         return newErrors;
       });
     }
@@ -131,7 +179,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-brand-gold">
-              {mode === 'save' ? 'Save & Send to Me' : 'Request Quote'}
+              {mode === 'save' ? 'Save & Send to Me' : 'Request a Quote'}
             </CardTitle>
             <button
               onClick={onClose}
@@ -161,7 +209,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               <p className="text-sm text-gray-400 mb-4">
                 {mode === 'save'
                   ? 'Enter your information to receive your visualization via email.'
-                  : 'Provide your details and we\'ll connect you with a local Gatsby Glass franchisee.'}
+                  : 'Provide your details and we\'ll connect you with a local Gatsby Glass professional.'}
               </p>
 
               {errors.submit && (
@@ -171,15 +219,17 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 </div>
               )}
 
+              {/* Name */}
               <div>
-                <Label htmlFor="name" className="text-white">Name *</Label>
+                <Label htmlFor="name" className="text-white">Full Name *</Label>
                 <Input
                   id="name"
                   type="text"
+                  autoComplete="name"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   className={`mt-1 ${errors.name ? 'border-red-500' : ''}`}
-                  placeholder="John Doe"
+                  placeholder="Jane Doe"
                   disabled={submitting}
                 />
                 {errors.name && (
@@ -187,15 +237,18 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 )}
               </div>
 
+              {/* Email */}
               <div>
                 <Label htmlFor="email" className="text-white">Email *</Label>
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   className={`mt-1 ${errors.email ? 'border-red-500' : ''}`}
-                  placeholder="john@example.com"
+                  placeholder="jane@example.com"
                   disabled={submitting}
                 />
                 {errors.email && (
@@ -203,38 +256,88 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 )}
               </div>
 
+              {/* Phone */}
               <div>
-                <Label htmlFor="phone" className="text-white">Phone (Optional)</Label>
+                <Label htmlFor="phone" className="text-white">
+                  Phone{phoneRequired ? ' *' : ' (Optional)'}
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
-                  className="mt-1"
+                  className={`mt-1 ${errors.phone ? 'border-red-500' : ''}`}
                   placeholder="(555) 123-4567"
                   disabled={submitting}
                 />
+                {errors.phone && (
+                  <p className="text-xs text-red-400 mt-1">{errors.phone}</p>
+                )}
               </div>
 
+              {/* Zip Code */}
               <div>
                 <Label htmlFor="zipCode" className="text-white">Zip Code *</Label>
                 <Input
                   id="zipCode"
                   type="text"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
                   value={formData.zipCode}
                   onChange={(e) => handleChange('zipCode', e.target.value)}
                   className={`mt-1 ${errors.zipCode ? 'border-red-500' : ''}`}
                   placeholder="12345"
-                  maxLength={10}
                   disabled={submitting}
                 />
                 {errors.zipCode && (
                   <p className="text-xs text-red-400 mt-1">{errors.zipCode}</p>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  We&apos;ll connect you with your local Gatsby Glass franchisee
-                </p>
               </div>
+
+              {/* TCPA Consent — visible whenever phone is required or provided */}
+              {tcpaRequired && (
+                <div className="pt-1">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <span className="relative flex-shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={tcpaConsent}
+                        onChange={(e) => {
+                          setTcpaConsent(e.target.checked);
+                          if (errors.tcpa) {
+                            setErrors(prev => {
+                              const n = { ...prev };
+                              delete n.tcpa;
+                              return n;
+                            });
+                          }
+                        }}
+                        disabled={submitting}
+                        className="sr-only peer"
+                      />
+                      <span className={`
+                        block w-[18px] h-[18px] border-2 transition-colors
+                        ${errors.tcpa
+                          ? 'border-red-500'
+                          : 'border-white/40 group-hover:border-brand-gold/70'}
+                        peer-checked:bg-brand-gold peer-checked:border-brand-gold
+                        peer-focus-visible:ring-2 peer-focus-visible:ring-brand-gold/50
+                      `} />
+                      {tcpaConsent && (
+                        <Check className="absolute inset-0 w-[18px] h-[18px] text-brand-black p-[2px] pointer-events-none" />
+                      )}
+                    </span>
+                    <span className="text-xs text-white/70 leading-relaxed select-none">
+                      I agree to receive calls and/or text messages from Gatsby Glass and its local franchisees at the phone number provided. I understand that consent is not a condition of purchase. Message &amp; data rates may apply. Reply STOP to opt out at any time.
+                    </span>
+                  </label>
+                  {errors.tcpa && (
+                    <p className="text-xs text-red-400 mt-1.5 ml-[30px]">{errors.tcpa}</p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2 pt-4">
                 <Button
@@ -263,9 +366,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               </div>
 
               <p className="text-[11px] text-gray-500 leading-relaxed pt-2">
-                By submitting this form, you consent to being contacted by a local Gatsby Glass franchisee via email{formData.phone ? ', phone, and/or text message' : ' or phone'} regarding your inquiry. If a phone number is provided, message and data rates may apply; reply STOP to opt out of texts at any time.{' '}
-                All visualization images generated during your session will be retained and shared with the franchisee serving your area to assist with your consultation and quote.{' '}
-                Your information will be used to process your request and may be shared with the Gatsby Glass franchisee serving your area. We will not sell your personal information to third parties.{' '}
+                By submitting this form you consent to being contacted by Gatsby Glass or a local Gatsby Glass franchisee via email regarding your inquiry.{' '}
+                All visualization images generated during your session will be retained and shared with the franchisee serving your area to assist with your consultation.{' '}
+                Your information will not be sold to third parties.{' '}
                 View our{' '}
                 <a href="https://www.horsepowerbrands.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">Privacy Policy</a>.
               </p>

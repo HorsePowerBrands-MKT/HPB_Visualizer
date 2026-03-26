@@ -87,11 +87,14 @@ export async function generateVisualization(
   });
 
   // Extract the generated image
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) {
-      const base64ImageBytes: string = part.inlineData.data;
+  const candidates = response.candidates;
+  if (!candidates?.[0]?.content?.parts) {
+    throw new Error("No candidates returned by the model.");
+  }
+  for (const part of candidates[0].content.parts) {
+    if (part.inlineData?.data) {
       return {
-        image: `data:image/png;base64,${base64ImageBytes}`
+        image: `data:image/png;base64,${part.inlineData.data}`
       };
     }
   }
