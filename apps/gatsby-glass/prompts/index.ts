@@ -15,10 +15,19 @@ export {
   getOptionDescription,
 } from './gatsby-options';
 
-// Prompt templates (moved from packages/prompt-templates/templates/)
-// These will be loaded by the template system
-export { default as visualizationTemplate } from './templates/visualization-v1.json';
-export { default as inspirationTemplate } from './templates/inspiration-v1.json';
-export { default as systemTemplate } from './templates/system-v1.json';
-export { default as validationTemplate } from './templates/validation-v1.json';
-export { default as registry } from './templates/registry.json';
+// Brand-specific TypeScript template objects (canonical source for the processor)
+export {
+  visualizationTemplate,
+  inspirationTemplate,
+  systemTemplate,
+  validationTemplate,
+  gatsbyGlassRegistry,
+  gatsbyGlassTemplates,
+} from './gatsby-templates';
+
+// Legacy JSON template re-exports (kept for reference / tooling)
+export { default as visualizationTemplateJson } from './templates/visualization-v1.json';
+export { default as inspirationTemplateJson } from './templates/inspiration-v1.json';
+export { default as systemTemplateJson } from './templates/system-v1.json';
+export { default as validationTemplateJson } from './templates/validation-v1.json';
+export { default as registryJson } from './templates/registry.json';

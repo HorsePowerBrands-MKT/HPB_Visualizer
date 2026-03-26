@@ -10,20 +10,27 @@ This monorepo supports multiple brands, each with their own products, services, 
 HPB_Visualizer/
 ├── packages/                    # SHARED CODE - Used by ALL brands
 │   ├── api-handlers/           # AI/API integrations (Gemini, Supabase)
-│   ├── prompt-templates/       # Generic prompt template system
-│   ├── types/                  # Shared types (API, ImageData, etc.)
-│   └── visualizer-core/        # Generic visualizer utilities
+│   ├── prompt-templates/       # Template engine + processor (no brand content)
+│   ├── types/                  # Shared generic types + brand-compat re-exports
+│   └── visualizer-core/        # Image utils, HEIC, base64 + brand-compat re-exports
 │
-└── apps/                        # BRAND-SPECIFIC APPS
-    └── gatsby-glass/           # Gatsby Glass brand
-        ├── app/                # Next.js app routes
-        ├── components/         # UI components
-        ├── lib/                # Brand-specific code
-        │   ├── gatsby-constants/  # Product catalog
-        │   └── gatsby-types.ts    # Product types
-        └── prompts/            # Brand-specific prompts
-            ├── gatsby-options.ts  # Product descriptions
-            └── templates/         # Prompt templates
+├── apps/                        # BRAND-SPECIFIC APPS
+│   └── gatsby-glass/           # Gatsby Glass brand
+│       ├── app/                # Next.js app routes
+│       ├── components/         # UI components
+│       ├── hooks/              # Brand-specific React hooks
+│       │   └── useVisualizerState.ts  # Shower wizard state
+│       ├── lib/                # Brand-specific code
+│       │   ├── gatsby-constants/  # Product catalog
+│       │   ├── gatsby-types.ts    # Product types (canonical source)
+│       │   └── promptBuilder.ts   # Brand prompt wrappers
+│       └── prompts/            # Brand-specific prompts
+│           ├── gatsby-options.ts     # Product descriptions for AI
+│           ├── gatsby-templates.ts   # Prompt template objects
+│           └── templates/            # JSON prompt templates (reference)
+│
+└── supabase/                    # Database migrations (per-brand tables)
+    └── migrations/
 ```
 
 ## What Goes Where?
@@ -39,79 +46,94 @@ Put code here if **ALL brands** will use it:
   - Generic, not product-specific
 
 - **`prompt-templates`**: Template engine
-  - Template processor
-  - Variable interpolation
+  - Template processor with variable interpolation
   - Conditional sections
   - Cache utilities
+  - `registerBrandTemplates()` for brand template injection
   - **NOT** the actual templates or product descriptions
 
-- **`types`**: Shared types only
-  - `ImageData`
-  - `VisualizationRequest`
-  - `ApiResponse`
-  - **NOT** product types like `GlassStyle` or `EnclosureType`
+- **`types`**: Shared generic types + backward-compat re-exports
+  - `ImageData`, `VisualizationRequest`, `APIError`
+  - `GenericLead`, `GenericGenerationRecord`, `GenericVisualizationData`
+  - `GenericImageValidationResponse`
+  - Re-exports Gatsby Glass types for backward compatibility
+  - **New brands** should use the `Generic*` types and define product types locally
 
-- **`visualizer-core`**: Generic utilities
+- **`visualizer-core`**: Generic image utilities + backward-compat re-exports
   - Image processing (resize, compress, base64)
-  - Generic React hooks
-  - **NOT** brand-specific business logic
+  - HEIC conversion
+  - Re-exports shower-specific hook/builders for backward compatibility
+  - **New brands** should only use image utilities and create their own hooks
 
 ### ✅ Brand Apps (`apps/gatsby-glass/`)
 
 Put code here if it's **specific to Gatsby Glass**:
 
-- **`lib/gatsby-constants/`**: Product catalog
-  - Glass styles (clear, low_iron, p516)
-  - Hardware finishes (chrome, brushed_nickel, etc.)
-  - Door types (hinged, pivot, sliding)
-  - Handle styles, framing options
-
-- **`lib/gatsby-types.ts`**: Product types
+- **`lib/gatsby-types.ts`**: Product types (canonical source)
   - `GlassStyle = 'clear' | 'low_iron' | 'p516'`
   - `HardwareFinish = 'chrome' | 'brushed_nickel' | ...`
   - `EnclosureType = 'hinged' | 'pivot' | 'sliding'`
-  - Product configuration interfaces
+  - `Payload`, `Configs`, `HistoryItem`, `SavedDesign`
 
-- **`prompts/gatsby-options.ts`**: Product descriptions
-  - How each door type looks
-  - How each glass style appears
-  - How each hardware finish should be rendered
-  - Visual descriptions for AI
+- **`lib/gatsby-constants/`**: Product catalog
+  - Glass styles, hardware finishes, door types
+  - Handle styles, framing options
+  - Brand configuration (`GATSBY_GLASS_CONFIG`)
 
-- **`prompts/templates/`**: Prompt templates
-  - Visualization prompts
-  - Inspiration prompts
-  - System prompts
-  - Validation prompts
+- **`lib/promptBuilder.ts`**: Prompt builder wrappers
+  - `buildVisualizationPrompt(config)` - uses Payload type
+  - `buildInspirationPrompt(showerShape)` - uses template engine
+
+- **`hooks/useVisualizerState.ts`**: Wizard state hook
+  - Shower glass product defaults
+  - Neo-angle compatibility rules
+  - 5-step configure / 3-step inspiration flow
+
+- **`prompts/gatsby-options.ts`**: Product descriptions for AI
+  - Door type, glass style, hardware, handle, framing descriptions
+
+- **`prompts/gatsby-templates.ts`**: Prompt template objects
+  - Visualization, inspiration, system, validation templates
+  - Brand registry for template processor
 
 - **`components/`**: Brand-specific UI
   - `GatsbyGlassVisualizer.tsx`
-  - Product selectors
+  - Product selectors, wizard steps
   - Custom layouts
 
 ## Example: Adding a New Brand
 
-To add "AcmeBath" brand:
+To add "Stand Strong Fencing" brand:
 
 ```
 apps/
-└── acmebath/
-    ├── app/                    # Next.js routes
-    ├── components/             # AcmeBath UI
+└── stand-strong-fencing/
+    ├── app/                       # Next.js routes
+    ├── components/                # SSF UI components
+    ├── hooks/
+    │   └── useVisualizerState.ts  # Fencing-specific wizard state
     ├── lib/
-    │   ├── acme-constants/    # AcmeBath's products
-    │   └── acme-types.ts      # AcmeBath's product types
-    └── prompts/
-        ├── acme-options.ts    # AcmeBath's product descriptions
-        └── templates/         # AcmeBath's prompt templates
+    │   ├── fencing-constants/     # Fence product catalog
+    │   ├── fencing-types.ts       # FenceStyle, Material, Height, etc.
+    │   └── promptBuilder.ts       # Brand prompt wrappers
+    ├── prompts/
+    │   ├── fencing-options.ts     # Fence product descriptions for AI
+    │   ├── fencing-templates.ts   # Prompt template objects
+    │   └── templates/             # JSON prompt templates
+    ├── public/                    # Static assets (logos, fonts)
+    ├── package.json               # @ssf/app with workspace deps
+    └── vercel.json                # Per-brand deployment config
 ```
 
-AcmeBath would:
-- Use the same `@repo/api-handlers` (Gemini, Supabase)
-- Use the same `@repo/prompt-templates` (template engine)
-- Define their own products (maybe bathtubs, vanities, tiles)
-- Define their own types (`BathtubStyle`, `VanityFinish`, etc.)
-- Create their own prompt templates
+Stand Strong Fencing would:
+
+- Import `@repo/api-handlers` (Gemini, Supabase clients)
+- Import `@repo/prompt-templates` (template engine, `registerBrandTemplates()`)
+- Import `@repo/visualizer-core` (image utils, HEIC conversion only)
+- Import `@repo/types` (`GenericLead`, `GenericGenerationRecord`, `ImageData`, etc.)
+- Define their own product types (`FenceStyle`, `Material`, `Height`, `Color`)
+- Create their own prompt templates describing fence products
+- Build their own wizard UI with fencing-specific steps
 
 ## Editing Prompts
 
@@ -124,7 +146,8 @@ Edit these files to change how the AI understands products:
    - Edit `doorTypeDescriptions`, `glassStyleDescriptions`, etc.
 
 2. **Prompt Templates** (Overall structure)
-   - `apps/gatsby-glass/prompts/templates/*.json`
+   - `apps/gatsby-glass/prompts/gatsby-templates.ts` (TypeScript objects used by processor)
+   - `apps/gatsby-glass/prompts/templates/*.json` (JSON reference copies)
    - Edit sections, add instructions, change flow
 
 3. **Product Catalog** (Display names, UI labels)
@@ -133,9 +156,9 @@ Edit these files to change how the AI understands products:
 
 ### Template System (Shared)
 
-Only edit these if changing how templates work for ALL brands:
+Only edit these if changing how the template engine works for ALL brands:
 
-- `packages/prompt-templates/src/processor.ts` - Template engine
+- `packages/prompt-templates/src/processor.ts` - Template engine + `registerBrandTemplates()`
 - `packages/prompt-templates/src/types.ts` - Template schema
 - `packages/prompt-templates/src/cache.ts` - Caching logic
 
@@ -178,22 +201,26 @@ Only edit these if changing how templates work for ALL brands:
 
 ## Migration Status
 
-Currently migrating from old structure to new architecture:
+Multi-brand architecture migration is complete:
 
-- ✅ Created `apps/gatsby-glass/prompts/` for brand prompts
-- ✅ Created `apps/gatsby-glass/lib/` for brand code
-- ✅ Moved option descriptions to gatsby-glass
-- ✅ Moved templates to gatsby-glass
-- ⏳ Need to update imports throughout codebase
-- ⏳ Need to remove brand-specific code from packages
-- ⏳ Need to make shared packages truly generic
+- ✅ Created `apps/gatsby-glass/lib/gatsby-types.ts` (canonical brand types)
+- ✅ Created `apps/gatsby-glass/hooks/useVisualizerState.ts` (brand-specific wizard)
+- ✅ Created `apps/gatsby-glass/lib/promptBuilder.ts` (brand prompt wrappers)
+- ✅ Created `apps/gatsby-glass/prompts/gatsby-templates.ts` (brand template objects)
+- ✅ Added `GenericLead`, `GenericGenerationRecord`, `GenericImageValidationResponse` to `@repo/types`
+- ✅ Added `registerBrandTemplates()` to `@repo/prompt-templates`
+- ✅ Shared packages re-export Gatsby Glass types for backward compatibility
+- ✅ Removed stray `gg-branding-hub 2/` directory
+
+### Backward Compatibility
+
+Existing `import from '@repo/types'` and `import from '@repo/visualizer-core'` still work
+for Gatsby Glass. The shared packages re-export brand-specific types and hooks. New brands
+should use the `Generic*` types from `@repo/types` and define their own product types locally.
 
 ## Next Steps
 
-1. Update all imports to use new structure
-2. Remove brand-specific code from `packages/constants`
-3. Remove brand-specific types from `packages/types`
-4. Update `packages/visualizer-core` to be generic
-5. Create clean exports from gatsby-glass
-6. Document API for each shared package
-7. Add tests for shared packages
+1. Add tests for shared packages
+2. Document API for each shared package
+3. Add CI/CD for multi-brand builds (per-app Vercel projects)
+4. Create first additional brand app (Stand Strong Fencing, Bumble Bee Blinds, etc.)

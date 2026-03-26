@@ -1,4 +1,5 @@
-// Visualizer types
+// Visualizer types (Gatsby Glass specific -- kept for backward compatibility)
+// New brands should define their own product types in their app directory.
 export type {
   DesignMode,
   EnclosureType,
@@ -21,7 +22,7 @@ export type {
   SavedDesign,
 } from './visualizer';
 
-// Lead types
+// Lead types (Gatsby Glass specific versions)
 export type {
   ContactFormData,
   Lead,
@@ -29,6 +30,14 @@ export type {
   GenerationRecord,
   IssueReport,
 } from './leads';
+
+// Generic lead types (for new brands -- use these instead of the above)
+export type {
+  GenericContactFormData,
+  GenericLead,
+  GenericGenerationRecord,
+  GenericVisualizationData,
+} from './generic-leads';
 
 // API types
 export type {
@@ -38,3 +47,8 @@ export type {
   VisualizationResponse,
   APIError,
 } from './api';
+
+// Generic API types (for new brands -- use these instead of the above)
+export type {
+  GenericImageValidationResponse,
+} from './generic-api';

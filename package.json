@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter gatsby-glass dev",
+    "dev:gatsby": "pnpm --filter gatsby-glass dev",
     "build": "pnpm -r build",
+    "build:gatsby": "pnpm --filter gatsby-glass build",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean"
   },

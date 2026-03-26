@@ -25,12 +25,12 @@ AI-powered shower glass visualization tool for Gatsby Glass franchisees and cust
 - **UI Components**: Custom components with Lucide icons
 - **AI**: Google Gemini 2.5 Flash (image generation and validation)
 - **Database**: Supabase (lead storage)
-- **State Management**: Custom React hooks from `@repo/visualizer-core`
+- **State Management**: Custom React hooks
 - **Shared Packages**:
-  - `@repo/types` - Type definitions
-  - `@repo/constants` - Product catalogs
-  - `@repo/api-handlers` - API integrations
-  - `@repo/visualizer-core` - Core logic
+  - `@repo/types` - Generic type definitions
+  - `@repo/api-handlers` - Gemini AI + Supabase clients
+  - `@repo/prompt-templates` - Template engine
+  - `@repo/visualizer-core` - Image utilities
 
 ## Local Development
 
@@ -233,7 +233,7 @@ colors: {
 
 ### Product Catalog
 
-Modify `packages/constants/src/catalog.ts` to update product options.
+Modify `lib/gatsby-constants/src/catalog.ts` to update product options.
 
 ### Custom Icons
 
