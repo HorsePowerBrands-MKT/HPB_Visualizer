@@ -107,20 +107,25 @@ const ConsentCheckboxes: React.FC<{
         className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
       />
       <span className="text-xs text-gray-300 leading-relaxed group-hover:text-gray-200 transition-colors">
-        I confirm that I own this image or have permission to use it, and I consent to its use for AI-generated visualizations.
+        I confirm that I own this image or have permission to use it, and I consent to its use for AI-generated visualizations. <span className="text-gray-500">(required)</span>
       </span>
     </label>
-    <label className="flex items-start gap-3 cursor-pointer group">
-      <input
-        type="checkbox"
-        checked={marketingConsent}
-        onChange={(e) => onMarketingConsentChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
-      />
-      <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-        I consent to Gatsby Glass using my before/after images for marketing purposes, including social media and website content.
-      </span>
-    </label>
+    <div className="space-y-1.5">
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <input
+          type="checkbox"
+          checked={marketingConsent}
+          onChange={(e) => onMarketingConsentChange(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
+        />
+        <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+          I grant permission for my uploaded and AI-generated images to be used for marketing, sales and promotional purposes.
+        </span>
+      </label>
+      <p className="text-[10px] text-gray-600 leading-relaxed ml-7">
+        By selecting this option, you grant Gatsby Glass an exclusive, royalty-free, perpetual, and irrevocable license to use, reproduce, modify, display, and distribute your uploaded and AI-generated images for marketing, sales, and promotional purposes in any media. You understand that these images may be used publicly and waive any claims for compensation or approval rights. These images may also be used to produce estimates with sales representatives who may reach out to you directly.
+      </p>
+    </div>
   </div>
 );
 
