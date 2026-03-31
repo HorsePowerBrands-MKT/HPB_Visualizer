@@ -1,6 +1,6 @@
 # GatsbyView Security Overview
 
-**Document Date:** March 26, 2026
+**Document Date:** March 31, 2026
 **Application:** GatsbyView (Gatsby Glass AI Shower Visualizer)
 **Maintained by:** Horse Power Brands, LLC
 
@@ -18,15 +18,16 @@
 8. [Secret & Key Management](#8-secret--key-management)
 9. [Session Management](#9-session-management)
 10. [Data Retention & Automated Cleanup](#10-data-retention--automated-cleanup)
-11. [TCPA Compliance & Consent Evidence](#11-tcpa-compliance--consent-evidence)
-12. [Privacy & Legal Compliance](#12-privacy--legal-compliance)
-13. [Intellectual Property Protection](#13-intellectual-property-protection)
-14. [Third-Party Service Security](#14-third-party-service-security)
-15. [Deployment & Infrastructure Security](#15-deployment--infrastructure-security)
-16. [File Upload Security](#16-file-upload-security)
-17. [Cron Job Security](#17-cron-job-security)
-18. [Client-Side Security](#18-client-side-security)
-19. [Known Considerations & Future Improvements](#19-known-considerations--future-improvements)
+11. [Photo Storage Consent](#11-photo-storage-consent)
+12. [TCPA Compliance & Consent Evidence](#12-tcpa-compliance--consent-evidence)
+13. [Privacy & Legal Compliance](#13-privacy--legal-compliance)
+14. [Intellectual Property Protection](#14-intellectual-property-protection)
+15. [Third-Party Service Security](#15-third-party-service-security)
+16. [Deployment & Infrastructure Security](#16-deployment--infrastructure-security)
+17. [File Upload Security](#17-file-upload-security)
+18. [Cron Job Security](#18-cron-job-security)
+19. [Client-Side Security](#19-client-side-security)
+20. [Known Considerations & Future Improvements](#20-known-considerations--future-improvements)
 
 ---
 
@@ -153,14 +154,18 @@ API routes use try/catch blocks that:
 
 ### Storage Bucket Separation
 
-Images are stored in two separate Supabase Storage buckets:
+Images are stored across four Supabase Storage buckets:
 
-| Bucket | Access | Contents |
-|--------|--------|----------|
-| `visualizations_private` | Private | Original (unwatermarked) generated images |
-| `visualizations` | Public | Watermarked versions only |
+| Bucket | Access | Contents | Retention |
+|--------|--------|----------|-----------|
+| `visualizations_private` | Private | Original (unwatermarked) AI-generated images | 30-day expiry |
+| `visualizations` | Public | Watermarked AI-generated images (also referenced by submissions) | 30-day expiry |
+| `visualizer-uploads` | Public | User-uploaded original bathroom photos (consent-gated) | 30-day expiry |
+| `visualizer-results` | Public | Reserved for future use | N/A |
 
-Only watermarked images are accessible via public URLs. Original unwatermarked images are stored in the private bucket.
+Only watermarked images are accessible via public URLs in the `visualizations` bucket. Original unwatermarked images are stored in the `visualizations_private` bucket.
+
+The `visualizer-uploads` and `visualizer-results` buckets support the consent-driven photo storage flow. URLs are non-guessable (timestamped with randomized filenames) and auto-purge after 30 days. The `visualizer_submissions` database table — which stores the URL references — is protected by RLS with no anon/authenticated policies, so the URLs can only be discovered via the team-authenticated admin API.
 
 ### Database Access Pattern
 
@@ -185,14 +190,26 @@ Before any visualization is generated, uploaded images are validated by **Google
 
 The file input only accepts: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `image/heif`. HEIC/HEIF are converted to JPEG client-side (via `heic2any`) before server transmission.
 
-### No Permanent Storage of Raw Uploads
+### Consent-Gated Photo Storage
 
-User-uploaded bathroom and inspiration photos are:
-1. Transmitted to the server as base64
-2. Sent to Google Gemini for processing
-3. **Not stored** in our database or file storage after the session (only the AI-generated result is stored)
+User-uploaded bathroom photos are stored only when the user checks the required upload consent checkbox. The storage flow is:
 
-The only stored images are the AI-generated visualizations (watermarked in the public bucket, originals in the private bucket).
+1. User uploads a photo and checks the **Upload & Storage Consent** checkbox (required to proceed)
+2. Optionally checks the **Marketing Use Consent** checkbox (controls whether the marketing team can access the images)
+3. On generation, the original photo is uploaded to `visualizer-uploads` and a `visualizer_submissions` row is created with consent flags
+4. The AI-generated result is uploaded to `visualizer-results` and linked to the submission
+5. All files and database rows auto-expire and are purged after 30 days
+
+The upload endpoint (`POST /api/upload-submission`) validates:
+- Base64 data URL format and MIME type (JPEG, PNG, WebP only)
+- Payload size (capped at ~10 MB)
+- Metadata whitelist (only known configuration keys accepted, each truncated)
+- `sourceUrl` truncated to 500 characters
+
+The update endpoint (`PATCH /api/upload-submission`) validates:
+- UUID format for submission IDs
+- URL origin must match the app's Supabase storage hostname (prevents injection of external URLs)
+- Can only set `generated_image_path` once (rows with an existing value are not overwritten)
 
 ---
 
@@ -237,11 +254,10 @@ The middleware matcher excludes static assets (`_next/static`, `_next/image`, fa
 
 - Every saved visualization receives an `expires_at` timestamp (approximately **30 days** from creation).
 - A **Vercel cron job** runs daily at 3:00 AM UTC, hitting `/api/cron/cleanup-images`.
-- The cron job:
-  1. Queries for `visualizations` rows where `expires_at < now()` and `visualization_image_url IS NOT NULL`
-  2. Deletes the watermarked image from Supabase Storage
-  3. Nulls out the `visualization_image_url` in the database
-  4. Processes in batches of 50 to avoid timeout
+- The cron job runs two cleanup phases:
+  1. **Visualizations cleanup:** Queries `visualizations` rows where `expires_at < now()`, deletes watermarked images from Supabase Storage, and nulls out image URLs in the database.
+  2. **Submissions cleanup:** Queries `visualizer_submissions` rows where `expires_at < now()`, deletes original photos from `visualizer-uploads`, and then deletes the database rows entirely. (The generated image referenced by each submission lives in the `visualizations` bucket and is already cleaned up by Phase 1.)
+- Both phases process in batches of 50 to avoid timeout.
 
 ### Image Retention on Lead Submission
 
@@ -253,7 +269,36 @@ Lead contact information is retained as needed for business operations and legal
 
 ---
 
-## 11. TCPA Compliance & Consent Evidence
+## 11. Photo Storage Consent
+
+### Consent Model
+
+User-uploaded photos are stored only with explicit consent, collected via two checkboxes on the upload step:
+
+| Checkbox | Required | Effect |
+|----------|----------|--------|
+| **Upload & Storage Consent** | Yes (blocks progression) | Photo is stored in `visualizer-uploads`; a `visualizer_submissions` row is created |
+| **Marketing Use Consent** | No (optional) | Sets `marketing_consent = true`, allowing the marketing team to access images via the admin UI |
+
+### Consent Evidence
+
+| Field | Storage Column | Value |
+|-------|---------------|-------|
+| Upload consent | `visualizer_submissions.upload_consent` | Always `true` (enforced by UI + server validation) |
+| Marketing consent | `visualizer_submissions.marketing_consent` | `true` or `false` based on checkbox |
+| Consent timestamp | `visualizer_submissions.created_at` | Server-side `now()` at insert time |
+
+### Admin Access Control
+
+The admin submissions grid (`/admin/submissions`) is protected by:
+1. Client-side auth check (redirects unauthenticated users to login)
+2. Server-side double gate on `GET /api/admin/submissions`: Supabase session verification + `team_locations` table lookup
+3. Default filter shows only `marketing_consent = true` submissions
+4. Row Level Security on `visualizer_submissions` with no anon/authenticated policies
+
+---
+
+## 12. TCPA Compliance & Consent Evidence
 
 When a user provides a phone number (required for quote requests, optional for saves), the system collects and stores comprehensive consent evidence:
 
@@ -271,7 +316,7 @@ This evidence chain meets TCPA documentation requirements by recording who conse
 
 ---
 
-## 12. Privacy & Legal Compliance
+## 13. Privacy & Legal Compliance
 
 ### In-App Legal Documents
 
@@ -301,7 +346,7 @@ The application does not sell personal information to third parties. This is sta
 
 ---
 
-## 13. Intellectual Property Protection
+## 14. Intellectual Property Protection
 
 ### Watermarking System
 
@@ -318,7 +363,7 @@ Storage file paths are prefixed with Unix timestamps (`${Date.now()}_${sanitized
 
 ---
 
-## 14. Third-Party Service Security
+## 15. Third-Party Service Security
 
 ### Google Gemini
 
@@ -342,7 +387,7 @@ Storage file paths are prefixed with Unix timestamps (`${Date.now()}_${sanitized
 
 ---
 
-## 15. Deployment & Infrastructure Security
+## 16. Deployment & Infrastructure Security
 
 ### Vercel Deployment
 
@@ -365,7 +410,7 @@ The pnpm monorepo isolates concerns:
 
 ---
 
-## 16. File Upload Security
+## 17. File Upload Security
 
 ### Upload Restrictions
 
@@ -385,7 +430,7 @@ The pnpm monorepo isolates concerns:
 
 ---
 
-## 17. Cron Job Security
+## 18. Cron Job Security
 
 The `/api/cron/cleanup-images` endpoint is protected by an optional `CRON_SECRET`:
 
@@ -395,7 +440,7 @@ The `/api/cron/cleanup-images` endpoint is protected by an optional `CRON_SECRET
 
 ---
 
-## 18. Client-Side Security
+## 19. Client-Side Security
 
 ### No Direct External API Calls
 
@@ -424,7 +469,7 @@ The `frame-ancestors` CSP directive prevents the application from being embedded
 
 ---
 
-## 19. Known Considerations & Future Improvements
+## 20. Known Considerations & Future Improvements
 
 The following items represent areas for potential future enhancement:
 
@@ -434,8 +479,8 @@ The following items represent areas for potential future enhancement:
 | Full CSP policy | Only `frame-ancestors` is set | Low | Consider adding `default-src`, `script-src`, `style-src` directives |
 | HSTS header | Relies on Vercel's default HTTPS | Low | Consider adding explicit `Strict-Transport-Security` header |
 | Cookie consent banner | Not present (only functional cookies used) | Low | Consider adding for extra compliance margin |
-| API route authentication | Public routes validate input but don't require auth | Medium | Consider adding request signing or CSRF tokens for write endpoints |
-| RLS policies | Service role bypasses RLS; access controlled at app level | Low | Consider adding RLS as defense-in-depth |
+| CSRF on write endpoints | Evaluated — not applicable | None | All write endpoints are anonymous (no session to hijack). The only session-gated benefit is rate-limit bypass on `generate-visualization`, but exploiting this requires constructing a valid base64 image that passes Gemini AI validation — not a realistic attack. JSON `Content-Type` requirements also block simple form-based CSRF. No action needed. |
+| RLS policies | Enabled on `visualizer_submissions`; other tables rely on service role access control | Low | Consider enabling RLS on remaining tables as defense-in-depth |
 
 ---
 

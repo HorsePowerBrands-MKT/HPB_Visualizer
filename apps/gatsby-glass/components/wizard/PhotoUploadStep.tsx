@@ -22,6 +22,11 @@ interface PhotoUploadStepProps extends SingleUploadProps {
   onInspirationFileChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onInspirationRemove?: () => void;
   error?: string | null;
+  // Consent props
+  uploadConsent?: boolean;
+  marketingConsent?: boolean;
+  onUploadConsentChange?: (value: boolean) => void;
+  onMarketingConsentChange?: (value: boolean) => void;
 }
 
 const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; tall?: boolean }> = ({
@@ -87,6 +92,46 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
   </div>
 );
 
+const ConsentCheckboxes: React.FC<{
+  uploadConsent: boolean;
+  marketingConsent: boolean;
+  onUploadConsentChange: (value: boolean) => void;
+  onMarketingConsentChange: (value: boolean) => void;
+}> = ({ uploadConsent, marketingConsent, onUploadConsentChange, onMarketingConsentChange }) => (
+  <div className="space-y-3 mt-4 px-1">
+    <label className="flex items-start gap-3 cursor-pointer group">
+      <input
+        type="checkbox"
+        checked={uploadConsent}
+        onChange={(e) => onUploadConsentChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
+      />
+      <span className="text-xs text-gray-300 leading-relaxed group-hover:text-gray-200 transition-colors">
+        I confirm that I own this image or have permission to use it, and I consent to its use for AI-generated visualizations.
+      </span>
+    </label>
+    <label className="flex items-start gap-3 cursor-pointer group">
+      <input
+        type="checkbox"
+        checked={marketingConsent}
+        onChange={(e) => onMarketingConsentChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
+      />
+      <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+        I consent to Gatsby Glass using my before/after images for marketing purposes, including social media and website content.
+      </span>
+    </label>
+  </div>
+);
+
+const DisclaimerText: React.FC<{ openPrivacyPolicy: () => void }> = ({ openPrivacyPolicy }) => (
+  <p className="text-xs text-gray-500 text-center mt-4 px-4">
+    By uploading this image, you represent that you have the legal right to use and submit it. You acknowledge that the image will be processed by an AI service to generate visualizations. Uploaded images are retained for up to 30 days and then permanently deleted. Do not upload images containing visible people, personal information, illegal or inappropriate content, or content you do not have permission to use. See our{' '}
+    <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
+    for details on how your data is used and your rights.
+  </p>
+);
+
 export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   type,
   file,
@@ -100,8 +145,15 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   onInspirationFileChange,
   onInspirationRemove,
   error,
+  uploadConsent = false,
+  marketingConsent = false,
+  onUploadConsentChange,
+  onMarketingConsentChange,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
+
+  const hasFile = previewUrl !== null;
+
   if (type === 'both') {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
@@ -139,11 +191,16 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           />
         </div>
 
-        <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photos are <strong className="text-gray-400">not stored</strong> &mdash; they are processed by an AI service to generate your visualization and are discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
-          <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
-          for details.
-        </p>
+        {hasFile && onUploadConsentChange && onMarketingConsentChange && (
+          <ConsentCheckboxes
+            uploadConsent={uploadConsent}
+            marketingConsent={marketingConsent}
+            onUploadConsentChange={onUploadConsentChange}
+            onMarketingConsentChange={onMarketingConsentChange}
+          />
+        )}
+
+        <DisclaimerText openPrivacyPolicy={openPrivacyPolicy} />
       </div>
     );
   }
@@ -175,11 +232,16 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           onRemove={onRemove}
         />
 
-        <p className="text-xs text-gray-500 text-center mt-4 px-4">
-          Your uploaded photo is <strong className="text-gray-400">not stored</strong> &mdash; it is processed by an AI service to generate your visualization and is discarded after your session. Do not upload images containing visible people or personal information. See our{' '}
-          <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
-          for details on how your data is used and your rights.
-        </p>
+        {hasFile && onUploadConsentChange && onMarketingConsentChange && (
+          <ConsentCheckboxes
+            uploadConsent={uploadConsent}
+            marketingConsent={marketingConsent}
+            onUploadConsentChange={onUploadConsentChange}
+            onMarketingConsentChange={onMarketingConsentChange}
+          />
+        )}
+
+        <DisclaimerText openPrivacyPolicy={openPrivacyPolicy} />
       </div>
     </div>
   );

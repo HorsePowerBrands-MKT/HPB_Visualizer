@@ -153,6 +153,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     infoMessage,
     currentStep,
     maxStepReached,
+    uploadConsent,
+    marketingConsent,
     setImageFile,
     setInspirationFile,
     setPreviewUrl,
@@ -165,6 +167,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setError,
     setShowResult,
     setInfoMessage,
+    setUploadConsent,
+    setMarketingConsent,
     handleEnclosureChange,
     updateFormField,
     resetAll,
@@ -213,6 +217,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   // --- Past visualizations state ---
   const [pastVisualizations, setPastVisualizations] = useState<PastVisualizationItem[]>([]);
+
+  // --- Submission tracking state ---
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   // --- Auth state ---
   const [authUser, setAuthUser] = useState<{ email: string; locationName: string | null } | null>(null);
@@ -444,6 +451,40 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       const sessionId = form.session_id || uuidv4();
       const nextGenIndex = generationIndex + 1;
 
+      // Upload original photo and create submission record
+      let currentSubmissionId = submissionId;
+      try {
+        const imageDataUrl = `data:${bathroomImageData.mimeType || 'image/png'};base64,${bathroomImageData.data}`;
+        const submissionRes = await fetch('/api/upload-submission', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageData: imageDataUrl,
+            uploadConsent: true,
+            marketingConsent,
+            sourceUrl: typeof window !== 'undefined' ? window.location.href : null,
+            metadata: {
+              mode: form.mode,
+              enclosureType: form.enclosure_type,
+              framingStyle: form.track_preference,
+              hardwareFinish: form.hardware_finish,
+              handleStyle: form.handle_style,
+              showerShape: form.shower_shape,
+              hingedConfig: form.hinged_config ?? null,
+              pivotConfig: form.pivot_config ?? null,
+              slidingConfig: form.sliding_config ?? null,
+            },
+          }),
+        });
+        if (submissionRes.ok) {
+          const submissionData = await submissionRes.json();
+          currentSubmissionId = submissionData.submissionId;
+          setSubmissionId(currentSubmissionId);
+        }
+      } catch (subErr) {
+        console.error('[SUBMISSION] Failed to create submission:', subErr);
+      }
+
       const requestBody: any = {
         bathroomImage: bathroomImageData,
         prompt,
@@ -477,6 +518,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
       if (typeof result.usageCount === 'number') {
         setUsageCount(result.usageCount);
+      }
+
+      // Update submission with the generated image URL
+      if (currentSubmissionId && (result.watermarkedUrl || result.originalUrl)) {
+        try {
+          await fetch('/api/upload-submission', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              submissionId: currentSubmissionId,
+              generatedImageUrl: result.watermarkedUrl || result.originalUrl,
+            }),
+          });
+        } catch (patchErr) {
+          console.error('[SUBMISSION] Failed to update submission with generated image:', patchErr);
+        }
       }
 
       const updatedForm = { ...form, session_id: sessionId };
@@ -538,7 +595,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -567,8 +624,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                 setImageFile(null);
                 setPreviewUrl(null);
                 setError(null);
+                setUploadConsent(false);
+                setMarketingConsent(false);
               }}
               error={error}
+              uploadConsent={uploadConsent}
+              marketingConsent={marketingConsent}
+              onUploadConsentChange={setUploadConsent}
+              onMarketingConsentChange={setMarketingConsent}
             />
           );
         } else {
@@ -584,6 +647,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                 setImageFile(null);
                 setPreviewUrl(null);
                 setError(null);
+                setUploadConsent(false);
+                setMarketingConsent(false);
               }}
               inspirationFile={inspirationFile}
               inspirationPreviewUrl={inspirationPreviewUrl}
@@ -595,6 +660,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                 setError(null);
               }}
               error={error}
+              uploadConsent={uploadConsent}
+              marketingConsent={marketingConsent}
+              onUploadConsentChange={setUploadConsent}
+              onMarketingConsentChange={setMarketingConsent}
             />
           );
         }
@@ -739,13 +808,21 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               {authUser.email}
             </span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors ml-3 shrink-0"
-          >
-            <LogOut className="w-3 h-3" />
-            Sign out
-          </button>
+          <div className="flex items-center gap-3 ml-3 shrink-0">
+            <Link
+              href="/admin/submissions"
+              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+            >
+              Submissions
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors"
+            >
+              <LogOut className="w-3 h-3" />
+              Sign out
+            </button>
+          </div>
         </div>
       ) : (
         <UsageCounter
@@ -773,6 +850,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           {renderCurrentStep()}
         </CardContent>
       </Card>
+
+      <p className="text-[11px] text-gray-500 text-center mt-2 italic">
+        AI renderings are for illustrative purposes only and may not reflect final results nor be fully accurate.
+      </p>
 
       {/* Progress Indicator with Navigation */}
       <ProgressIndicator
