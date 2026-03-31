@@ -851,10 +851,6 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         </CardContent>
       </Card>
 
-      <p className="text-[11px] text-gray-500 text-center mt-2 italic">
-        AI renderings are for illustrative purposes only and may not reflect final results nor be fully accurate.
-      </p>
-
       {/* Progress Indicator with Navigation */}
       <ProgressIndicator
         currentStep={currentStep}
