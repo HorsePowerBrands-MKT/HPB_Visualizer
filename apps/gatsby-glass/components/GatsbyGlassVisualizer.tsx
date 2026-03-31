@@ -408,11 +408,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
           setTimeout(() => setInfoMessage(null), 8000);
         }
-        // Auto-advance for configure mode (single upload step)
-        if (form.mode === 'configure') {
-          console.log('[FILE UPLOAD] Auto-advancing to next step...');
-          setTimeout(() => goToNextStep(true), 500);
-        }
+        // No auto-advance: user must check the upload consent checkbox before proceeding
+
       } else {
         setInspirationFile(file);
         setInspirationPreviewUrl(URL.createObjectURL(file));
