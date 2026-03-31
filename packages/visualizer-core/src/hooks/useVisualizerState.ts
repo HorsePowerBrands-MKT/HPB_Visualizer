@@ -64,6 +64,8 @@ export interface VisualizerState {
   infoMessage: string | null;
   currentStep: number;
   maxStepReached: number;
+  uploadConsent: boolean;
+  marketingConsent: boolean;
 }
 
 export interface VisualizerActions {
@@ -86,6 +88,8 @@ export interface VisualizerActions {
   setError: (error: string | null) => void;
   setShowResult: (show: boolean) => void;
   setInfoMessage: (message: string | null) => void;
+  setUploadConsent: (value: boolean) => void;
+  setMarketingConsent: (value: boolean) => void;
   handleEnclosureChange: (value: EnclosureType) => void;
   resetAll: () => void;
   createHistoryLabel: (payload: Payload) => string;
@@ -112,6 +116,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [maxStepReached, setMaxStepReached] = useState<number>(1);
+  const [uploadConsent, setUploadConsent] = useState<boolean>(false);
+  const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
 
   const updateFormField = useCallback(<K extends keyof Payload>(field: K, value: Payload[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -174,11 +180,11 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     switch (currentStep) {
       case 1: // Mode selection
         return form.mode !== undefined;
-      case 2: // Upload photo(s)
+      case 2: // Upload photo(s) — upload consent checkbox required
         if (form.mode === 'configure') {
-          return imageFile !== null && previewUrl !== null;
+          return imageFile !== null && previewUrl !== null && uploadConsent;
         } else {
-          return imageFile !== null && previewUrl !== null
+          return imageFile !== null && previewUrl !== null && uploadConsent
             && inspirationFile !== null && inspirationPreviewUrl !== null;
         }
       case 3: // Enclosure type (configure only)
@@ -191,7 +197,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
       default:
         return false;
     }
-  }, [currentStep, form, imageFile, previewUrl, inspirationFile, inspirationPreviewUrl]);
+  }, [currentStep, form, imageFile, previewUrl, inspirationFile, inspirationPreviewUrl, uploadConsent]);
 
   const goToNextStep = useCallback((force: boolean = false) => {
     if (force || canProceedToNextStep()) {
@@ -233,6 +239,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     setInfoMessage(null);
     setCurrentStep(1);
     setMaxStepReached(1);
+    setUploadConsent(false);
+    setMarketingConsent(false);
   }, []);
 
   return {
@@ -251,6 +259,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     infoMessage,
     currentStep,
     maxStepReached,
+    uploadConsent,
+    marketingConsent,
     // Actions
     setForm,
     updateFormField,
@@ -267,6 +277,8 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     setError,
     setShowResult,
     setInfoMessage,
+    setUploadConsent,
+    setMarketingConsent,
     handleEnclosureChange,
     resetAll,
     createHistoryLabel,

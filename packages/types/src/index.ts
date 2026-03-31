@@ -29,6 +29,8 @@ export type {
   LeadSubmissionResponse,
   GenerationRecord,
   IssueReport,
+  VisualizerSubmission,
+  VisualizerSubmissionInput,
 } from './leads';
 
 // Generic lead types (for new brands -- use these instead of the above)

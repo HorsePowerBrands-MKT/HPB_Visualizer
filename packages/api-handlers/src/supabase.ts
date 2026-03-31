@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Lead, LeadSubmissionResponse, IssueReport, GenerationRecord } from '@repo/types';
+import type { Lead, LeadSubmissionResponse, IssueReport, GenerationRecord, VisualizerSubmission, VisualizerSubmissionInput } from '@repo/types';
 
 export interface SupabaseConfig {
   url: string;
@@ -500,4 +500,149 @@ export async function createIssueReport(
     message: 'Issue reported successfully',
     leadId: data.id
   };
+}
+
+// ---------------------------------------------------------------------------
+// Visualizer submissions (consent-driven photo storage)
+// ---------------------------------------------------------------------------
+
+/**
+ * Create a new visualizer submission (original photo + consent flags).
+ */
+export async function createSubmission(
+  config: SupabaseConfig,
+  input: VisualizerSubmissionInput
+): Promise<{ id: string }> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('visualizer_submissions')
+    .insert([{
+      original_photo_path: input.originalPhotoPath,
+      upload_consent: input.uploadConsent,
+      marketing_consent: input.marketingConsent,
+      source_url: input.sourceUrl || null,
+      metadata: input.metadata || {},
+    }])
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('[createSubmission] Database error:', error);
+    throw new Error('Failed to create submission record');
+  }
+
+  return { id: data.id };
+}
+
+/**
+ * Update a submission with the generated image path after AI completes.
+ * Only updates rows where generated_image_path is still null (prevents overwriting).
+ */
+export async function updateSubmissionGeneratedImage(
+  config: SupabaseConfig,
+  submissionId: string,
+  generatedImagePath: string
+): Promise<void> {
+  const supabase = getSupabaseClient(config);
+
+  const { error } = await supabase
+    .from('visualizer_submissions')
+    .update({ generated_image_path: generatedImagePath })
+    .eq('id', submissionId)
+    .is('generated_image_path', null);
+
+  if (error) {
+    console.error('[updateSubmissionGeneratedImage] Database error:', error);
+    throw new Error('Failed to update submission with generated image');
+  }
+}
+
+/**
+ * Fetch non-expired submissions for the admin UI.
+ */
+export async function getSubmissions(
+  config: SupabaseConfig,
+  options: { marketingOnly?: boolean; limit?: number } = {}
+): Promise<VisualizerSubmission[]> {
+  const { marketingOnly = false, limit = 50 } = options;
+  const supabase = getSupabaseClient(config);
+
+  let query = supabase
+    .from('visualizer_submissions')
+    .select('*')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (marketingOnly) {
+    query = query.eq('marketing_consent', true);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[getSubmissions] Database error:', error);
+    return [];
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    originalPhotoPath: row.original_photo_path,
+    generatedImagePath: row.generated_image_path,
+    uploadConsent: row.upload_consent,
+    marketingConsent: row.marketing_consent,
+    sourceUrl: row.source_url,
+    metadata: row.metadata || {},
+  }));
+}
+
+/**
+ * Query expired submission rows (for the purge cron).
+ * Returns the rows so the caller can delete storage files before removing DB rows.
+ */
+export async function getExpiredSubmissions(
+  config: SupabaseConfig,
+  limit = 50
+): Promise<{ id: string; originalPhotoPath: string; generatedImagePath: string | null }[]> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('visualizer_submissions')
+    .select('id, original_photo_path, generated_image_path')
+    .lt('expires_at', new Date().toISOString())
+    .limit(limit);
+
+  if (error) {
+    console.error('[getExpiredSubmissions] Database error:', error);
+    return [];
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    originalPhotoPath: row.original_photo_path,
+    generatedImagePath: row.generated_image_path,
+  }));
+}
+
+/**
+ * Delete submission rows by IDs (after storage files have been cleaned up).
+ */
+export async function deleteSubmissionRows(
+  config: SupabaseConfig,
+  ids: string[]
+): Promise<void> {
+  if (ids.length === 0) return;
+  const supabase = getSupabaseClient(config);
+
+  const { error } = await supabase
+    .from('visualizer_submissions')
+    .delete()
+    .in('id', ids);
+
+  if (error) {
+    console.error('[deleteSubmissionRows] Database error:', error);
+  }
 }

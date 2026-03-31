@@ -84,3 +84,25 @@ export interface IssueReport {
   visualizationImageUrl?: string;
   team?: string;
 }
+
+// Visualizer submission with consent-driven photo storage
+export interface VisualizerSubmission {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  originalPhotoPath: string;
+  generatedImagePath: string | null;
+  uploadConsent: boolean;
+  marketingConsent: boolean;
+  sourceUrl: string | null;
+  metadata: Record<string, unknown>;
+}
+
+// Data needed to create a new submission
+export interface VisualizerSubmissionInput {
+  originalPhotoPath: string;
+  uploadConsent: boolean;
+  marketingConsent: boolean;
+  sourceUrl?: string;
+  metadata?: Record<string, unknown>;
+}
