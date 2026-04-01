@@ -20,19 +20,25 @@ export interface SharpSpringLeadData {
   leadType?: 'SAS' | 'RAQ';
 }
 
+interface SharpSpringError {
+  code?: number;
+  message?: string;
+  data?: unknown;
+}
+
 interface SharpSpringResponse {
   result?: { creates?: Array<{ success: boolean; error?: unknown }> };
-  error?: { message?: string; code?: number } | null;
+  error?: SharpSpringError[] | SharpSpringError | null;
   id: string;
 }
 
 const API_URL = 'https://api.sharpspring.com/pubapi/v1.2/';
 
 const CUSTOM_FIELDS = {
-  leadSource: '300000000036543',
-  brandName: '300000000036541',
-  locationName: '300000000036545',
-  visualizerLeadType: '400000055554051',
+  leadSource: 'leadsource_6670699148d8a',
+  brandName: 'brand_name_6670693631e03',
+  locationName: 'location_name_667069b66d712',
+  visualizerLeadType: 'visualizer_lead_69cd376489e06',
 } as const;
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
@@ -103,8 +109,10 @@ export async function pushLeadToSharpSpring(
     const json: SharpSpringResponse = await response.json();
 
     if (json.error) {
-      console.error('[SHARPSPRING] API error:', json.error);
-      return { success: false, error: json.error.message || 'API error' };
+      const errArr = Array.isArray(json.error) ? json.error : [json.error];
+      console.error('[SHARPSPRING] API error:', JSON.stringify(errArr));
+      const msg = errArr.map((e) => e.message || 'Unknown').join('; ');
+      return { success: false, error: msg };
     }
 
     const createResult = json.result?.creates?.[0];
