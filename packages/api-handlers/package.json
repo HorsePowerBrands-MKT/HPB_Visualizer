@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./gemini": "./src/gemini.ts",
+    "./sharpspring": "./src/sharpspring.ts",
     "./supabase": "./src/supabase.ts",
     "./storage": "./src/storage.ts",
     "./validation": "./src/validation.ts"
