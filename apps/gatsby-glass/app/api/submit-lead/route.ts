@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitLead } from '@repo/api-handlers/supabase';
+import { submitLead, lookupLocationByZipcode } from '@repo/api-handlers/supabase';
+import { pushLeadToSharpSpring } from '@repo/api-handlers/sharpspring';
 import { validateLeadData } from '@repo/api-handlers/validation';
 import type { Lead } from '@repo/types';
 import { LeadSubmissionSchema } from '../../../lib/validation';
@@ -27,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Supabase credentials
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
@@ -72,12 +72,36 @@ export async function POST(request: NextRequest) {
       consentUserAgent: validatedData.consentUserAgent,
       userFingerprint: validatedData.userFingerprint,
       userId: authUserId,
+      leadType: validatedData.leadType,
     };
 
-    const result = await submitLead(
-      { url: supabaseUrl, serviceKey: supabaseKey },
-      leadData
-    );
+    const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
+
+    const result = await submitLead(supabaseConfig, leadData);
+
+    // Push to Constant Contact CRM (SharpSpring) -- fire-and-forget
+    const ssAccountId = process.env.SHARPSPRING_ACCOUNT_ID;
+    const ssSecretKey = process.env.SHARPSPRING_SECRET_KEY;
+
+    if (ssAccountId && ssSecretKey) {
+      const location = await lookupLocationByZipcode(supabaseConfig, validatedData.zipCode);
+
+      pushLeadToSharpSpring(
+        { accountId: ssAccountId, secretKey: ssSecretKey },
+        {
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          zipCode: validatedData.zipCode,
+          locationName: location.locationName,
+          leadType: validatedData.leadType,
+        },
+      ).catch((err) => {
+        console.error('[SUBMIT-LEAD] SharpSpring push failed:', err);
+      });
+    } else {
+      console.warn('[SUBMIT-LEAD] SharpSpring credentials not configured, skipping CRM push');
+    }
 
     return NextResponse.json(result);
   } catch (error) {

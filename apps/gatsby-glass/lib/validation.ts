@@ -58,6 +58,7 @@ export const LeadSubmissionSchema = z.object({
   tcpaConsentText: z.string().optional(),
   consentUserAgent: z.string().optional(),
   userFingerprint: z.string().optional(),
+  leadType: z.enum(['SAS', 'RAQ']).optional(),
 });
 
 // Export types

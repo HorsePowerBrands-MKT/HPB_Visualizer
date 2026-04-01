@@ -130,6 +130,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           showerShape: visualizationData.configs.shower_shape,
           sessionId: visualizationData.configs.session_id,
           source: 'Gatsby Glass Visualizer',
+          leadType: mode === 'save' ? 'SAS' : 'RAQ',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
           tcpaConsentText: tcpaRequired && tcpaConsent ? TCPA_CONSENT_TEXT : undefined,
           consentUserAgent: tcpaRequired && tcpaConsent ? navigator.userAgent : undefined,

@@ -118,6 +118,9 @@ export async function submitLead(
 
   const supabase = getSupabaseClient(config);
 
+  // Resolve franchise location from the lead's zip code
+  const resolvedLocation = await lookupLocationByZipcode(config, zipCode);
+
   // If sessionId provided, try to update existing record
   if (sessionId) {
     const { data: existing, error: findError } = await supabase
@@ -136,6 +139,8 @@ export async function submitLead(
           email,
           phone: phone || null,
           zip_code: zipCode,
+          location_id: resolvedLocation.locationId,
+          location_name: resolvedLocation.locationName,
           contact_submitted: true,
           images_retained: true,
           all_visualization_urls: vizUrls.length > 0 ? vizUrls : null,
@@ -176,6 +181,8 @@ export async function submitLead(
         email,
         phone: phone || null,
         zip_code: zipCode,
+        location_id: resolvedLocation.locationId,
+        location_name: resolvedLocation.locationName,
         visualization_image_url: visualizationImage || null,
         original_image_url: null,
         door_type: doorType || null,
@@ -362,6 +369,48 @@ export { MONTHLY_GENERATION_LIMIT };
 export interface TeamLocation {
   locationId: string;
   locationName: string | null;
+}
+
+/**
+ * Resolve a franchise location from a customer's zip code by querying
+ * the territory_zipcodes table (populated by sync_gatsby_glass_locations).
+ * Returns the first matching active location, or a placeholder when no
+ * territory covers the supplied zip.
+ */
+export async function lookupLocationByZipcode(
+  config: SupabaseConfig,
+  zipCode: string
+): Promise<{ locationId: string; locationName: string }> {
+  const supabase = getSupabaseClient(config);
+  const NO_TERRITORY = { locationId: 'NO_TERRITORY', locationName: 'No Territory' };
+
+  const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
+  if (cleanZip.length !== 5) return NO_TERRITORY;
+
+  const { data: zipRow, error: zipErr } = await supabase
+    .from('territory_zipcodes')
+    .select('location_id')
+    .eq('zip_code', cleanZip)
+    .order('location_id', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (zipErr || !zipRow) return NO_TERRITORY;
+
+  const { data: locRow } = await supabase
+    .from('team_locations')
+    .select('location_name')
+    .eq('location_id', zipRow.location_id)
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (!locRow) return NO_TERRITORY;
+
+  return {
+    locationId: zipRow.location_id,
+    locationName: locRow.location_name || zipRow.location_id,
+  };
 }
 
 /**

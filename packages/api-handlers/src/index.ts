@@ -9,6 +9,7 @@ export {
 export {
   submitLead,
   getLeadsByZipCode,
+  lookupLocationByZipcode,
   updateLeadStatus,
   type SupabaseConfig
 } from './supabase';
@@ -19,6 +20,13 @@ export {
   deleteImage,
   listImages
 } from './storage';
+
+// SharpSpring CRM handlers
+export {
+  pushLeadToSharpSpring,
+  type SharpSpringConfig,
+  type SharpSpringLeadData,
+} from './sharpspring';
 
 // Validation utilities
 export {
