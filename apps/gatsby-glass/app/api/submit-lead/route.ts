@@ -79,26 +79,34 @@ export async function POST(request: NextRequest) {
 
     const result = await submitLead(supabaseConfig, leadData);
 
-    // Push to Constant Contact CRM (SharpSpring) -- fire-and-forget
+    // Push to Constant Contact CRM (SharpSpring).
+    // Must be awaited -- Vercel terminates the function once the response is sent,
+    // so an unawaited fetch would be killed before completing.
     const ssAccountId = process.env.SHARPSPRING_ACCOUNT_ID;
     const ssSecretKey = process.env.SHARPSPRING_SECRET_KEY;
 
     if (ssAccountId && ssSecretKey) {
-      const location = await lookupLocationByZipcode(supabaseConfig, validatedData.zipCode);
+      try {
+        const location = await lookupLocationByZipcode(supabaseConfig, validatedData.zipCode);
 
-      pushLeadToSharpSpring(
-        { accountId: ssAccountId, secretKey: ssSecretKey },
-        {
-          name: validatedData.name,
-          email: validatedData.email,
-          phone: validatedData.phone,
-          zipCode: validatedData.zipCode,
-          locationName: location.locationName,
-          leadType: validatedData.leadType,
-        },
-      ).catch((err) => {
-        console.error('[SUBMIT-LEAD] SharpSpring push failed:', err);
-      });
+        const ssResult = await pushLeadToSharpSpring(
+          { accountId: ssAccountId, secretKey: ssSecretKey },
+          {
+            name: validatedData.name,
+            email: validatedData.email,
+            phone: validatedData.phone,
+            zipCode: validatedData.zipCode,
+            locationName: location.locationName,
+            leadType: validatedData.leadType,
+          },
+        );
+
+        if (!ssResult.success) {
+          console.error('[SUBMIT-LEAD] SharpSpring push returned error:', ssResult.error);
+        }
+      } catch (ssErr) {
+        console.error('[SUBMIT-LEAD] SharpSpring push failed:', ssErr);
+      }
     } else {
       console.warn('[SUBMIT-LEAD] SharpSpring credentials not configured, skipping CRM push');
     }
