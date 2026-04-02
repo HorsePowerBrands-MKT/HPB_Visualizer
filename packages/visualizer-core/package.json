@@ -17,6 +17,7 @@
   "dependencies": {
     "@repo/prompt-templates": "workspace:*",
     "@repo/types": "workspace:*",
+    "heic-to": "^1.4.2",
     "heic2any": "^0.0.4",
     "react": "^18.2.0",
     "uuid": "^9.0.1"

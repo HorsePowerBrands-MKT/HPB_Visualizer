@@ -371,7 +371,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         console.log('[FILE UPLOAD] HEIC conversion complete:', file.name, file.type);
       } catch (err) {
         console.error('[FILE UPLOAD] HEIC conversion failed:', err);
-        setError("We couldn't process this HEIC image. Please convert it to JPEG or PNG and try again.");
+        setError(
+          "Your photo is in HEIC format, which is hard to convert on a phone. " +
+          "Open the photo in your gallery, tap Share → Save as JPEG (or screenshot it), then upload the JPEG version."
+        );
         setValidating(null);
         return;
       }
