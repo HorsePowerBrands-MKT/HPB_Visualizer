@@ -812,6 +812,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             >
               Submissions
             </Link>
+            <Link
+              href="/admin/usage-report"
+              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+            >
+              Usage Report
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors"

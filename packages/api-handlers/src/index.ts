@@ -9,8 +9,15 @@ export {
 export {
   submitLead,
   getLeadsByZipCode,
+  lookupLocationByZipcode,
   updateLeadStatus,
-  type SupabaseConfig
+  getTeamLocationWithPermissions,
+  getUsageReport,
+  hasAccess,
+  type SupabaseConfig,
+  type AccessLevel,
+  type TeamLocationWithPermissions,
+  type UsageReportRow,
 } from './supabase';
 
 // Supabase Storage handlers
@@ -19,6 +26,13 @@ export {
   deleteImage,
   listImages
 } from './storage';
+
+// SharpSpring CRM handlers
+export {
+  pushLeadToSharpSpring,
+  type SharpSpringConfig,
+  type SharpSpringLeadData,
+} from './sharpspring';
 
 // Validation utilities
 export {

@@ -31,6 +31,9 @@ export interface Lead extends ContactFormData {
   consentUserAgent?: string;
   userFingerprint?: string;
   userId?: string;
+  locationId?: string;
+  locationName?: string;
+  leadType?: 'SAS' | 'RAQ';
 }
 
 // Lead submission response

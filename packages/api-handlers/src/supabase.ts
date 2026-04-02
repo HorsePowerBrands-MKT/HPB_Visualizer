@@ -118,6 +118,9 @@ export async function submitLead(
 
   const supabase = getSupabaseClient(config);
 
+  // Resolve franchise location from the lead's zip code
+  const resolvedLocation = await lookupLocationByZipcode(config, zipCode);
+
   // If sessionId provided, try to update existing record
   if (sessionId) {
     const { data: existing, error: findError } = await supabase
@@ -136,6 +139,8 @@ export async function submitLead(
           email,
           phone: phone || null,
           zip_code: zipCode,
+          location_id: resolvedLocation.locationId,
+          location_name: resolvedLocation.locationName,
           contact_submitted: true,
           images_retained: true,
           all_visualization_urls: vizUrls.length > 0 ? vizUrls : null,
@@ -176,6 +181,8 @@ export async function submitLead(
         email,
         phone: phone || null,
         zip_code: zipCode,
+        location_id: resolvedLocation.locationId,
+        location_name: resolvedLocation.locationName,
         visualization_image_url: visualizationImage || null,
         original_image_url: null,
         door_type: doorType || null,
@@ -362,6 +369,48 @@ export { MONTHLY_GENERATION_LIMIT };
 export interface TeamLocation {
   locationId: string;
   locationName: string | null;
+}
+
+/**
+ * Resolve a franchise location from a customer's zip code by querying
+ * the territory_zipcodes table (populated by sync_gatsby_glass_locations).
+ * Returns the first matching active location, or a placeholder when no
+ * territory covers the supplied zip.
+ */
+export async function lookupLocationByZipcode(
+  config: SupabaseConfig,
+  zipCode: string
+): Promise<{ locationId: string; locationName: string }> {
+  const supabase = getSupabaseClient(config);
+  const NO_TERRITORY = { locationId: 'NO_TERRITORY', locationName: 'No Territory' };
+
+  const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
+  if (cleanZip.length !== 5) return NO_TERRITORY;
+
+  const { data: zipRow, error: zipErr } = await supabase
+    .from('territory_zipcodes')
+    .select('location_id')
+    .eq('zip_code', cleanZip)
+    .order('location_id', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (zipErr || !zipRow) return NO_TERRITORY;
+
+  const { data: locRow } = await supabase
+    .from('team_locations')
+    .select('location_name')
+    .eq('location_id', zipRow.location_id)
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (!locRow) return NO_TERRITORY;
+
+  return {
+    locationId: zipRow.location_id,
+    locationName: locRow.location_name || zipRow.location_id,
+  };
 }
 
 /**
@@ -645,4 +694,167 @@ export async function deleteSubmissionRows(
   if (error) {
     console.error('[deleteSubmissionRows] Database error:', error);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Team location permissions
+// ---------------------------------------------------------------------------
+
+export type AccessLevel = 'member' | 'social' | 'admin';
+
+const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
+  member: 0,
+  social: 1,
+  admin: 2,
+};
+
+export interface TeamLocationWithPermissions extends TeamLocation {
+  accessLevel: AccessLevel;
+}
+
+/**
+ * True when the user's access level is at least `required`.
+ * admin >= social >= member.
+ */
+export function hasAccess(
+  userLevel: AccessLevel,
+  required: AccessLevel
+): boolean {
+  return (ACCESS_HIERARCHY[userLevel] ?? 0) >= ACCESS_HIERARCHY[required];
+}
+
+/**
+ * Look up a team member by email and return location info plus their access
+ * level. Returns null when the email does not belong to an active location.
+ */
+export async function getTeamLocationWithPermissions(
+  config: SupabaseConfig,
+  email: string
+): Promise<TeamLocationWithPermissions | null> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select('location_id, location_name, access_level')
+    .eq('email', email.toLowerCase())
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    locationId: data.location_id,
+    locationName: data.location_name,
+    accessLevel: (data.access_level as AccessLevel) ?? 'member',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Usage report
+// ---------------------------------------------------------------------------
+
+export interface UsageReportRow {
+  locationId: string;
+  locationName: string;
+  dailyVisualizations: Record<string, number>;
+  dailyLeads: Record<string, number>;
+  totalVisualizations: number;
+  totalLeads: number;
+}
+
+/**
+ * Build a monthly usage report across all active locations.
+ *
+ * Returns one row per location that had any activity (visualizations or leads)
+ * during the requested calendar month, plus rows for locations with zero
+ * activity so the caller can show them as well.
+ */
+export async function getUsageReport(
+  config: SupabaseConfig,
+  { year, month }: { year: number; month: number }
+): Promise<UsageReportRow[]> {
+  const supabase = getSupabaseClient(config);
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString();
+
+  const [vizResult, leadsResult, locationsResult] = await Promise.all([
+    supabase
+      .from('visualizations')
+      .select('team, created_at')
+      .not('team', 'is', null)
+      .gte('created_at', monthStart)
+      .lt('created_at', nextMonthStart),
+
+    supabase
+      .from('leads')
+      .select('location_id, created_at')
+      .not('location_id', 'is', null)
+      .neq('location_id', 'NO_TERRITORY')
+      .gte('created_at', monthStart)
+      .lt('created_at', nextMonthStart),
+
+    supabase
+      .from('team_locations')
+      .select('location_id, location_name')
+      .eq('is_active', true),
+  ]);
+
+  const locationMap = new Map<string, UsageReportRow>();
+
+  for (const loc of locationsResult.data ?? []) {
+    locationMap.set(loc.location_id, {
+      locationId: loc.location_id,
+      locationName: loc.location_name ?? loc.location_id,
+      dailyVisualizations: {},
+      dailyLeads: {},
+      totalVisualizations: 0,
+      totalLeads: 0,
+    });
+  }
+
+  const toDateKey = (iso: string) => iso.slice(0, 10);
+
+  for (const row of vizResult.data ?? []) {
+    const locId = row.team as string;
+    const day = toDateKey(row.created_at);
+    let entry = locationMap.get(locId);
+    if (!entry) {
+      entry = {
+        locationId: locId,
+        locationName: locId,
+        dailyVisualizations: {},
+        dailyLeads: {},
+        totalVisualizations: 0,
+        totalLeads: 0,
+      };
+      locationMap.set(locId, entry);
+    }
+    entry.dailyVisualizations[day] = (entry.dailyVisualizations[day] ?? 0) + 1;
+    entry.totalVisualizations += 1;
+  }
+
+  for (const row of leadsResult.data ?? []) {
+    const locId = row.location_id as string;
+    const day = toDateKey(row.created_at);
+    let entry = locationMap.get(locId);
+    if (!entry) {
+      entry = {
+        locationId: locId,
+        locationName: locId,
+        dailyVisualizations: {},
+        dailyLeads: {},
+        totalVisualizations: 0,
+        totalLeads: 0,
+      };
+      locationMap.set(locId, entry);
+    }
+    entry.dailyLeads[day] = (entry.dailyLeads[day] ?? 0) + 1;
+    entry.totalLeads += 1;
+  }
+
+  return Array.from(locationMap.values()).sort(
+    (a, b) =>
+      b.totalVisualizations + b.totalLeads - (a.totalVisualizations + a.totalLeads)
+  );
 }
