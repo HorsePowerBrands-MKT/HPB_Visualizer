@@ -14,7 +14,7 @@ import type {
   SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
-import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt, isHeic, isSupportedImageType, convertHeicToJpeg } from '@repo/visualizer-core';
+import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt, isHeic, isSupportedImageType, convertHeicToJpeg, compressImage } from '@repo/visualizer-core';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';
@@ -104,6 +104,28 @@ const PlaceholderIcon = ({ icon: Icon, label }: { icon?: React.ElementType, labe
     {Icon ? <Icon className="text-brand-gold w-6 h-6" strokeWidth={1} /> : <span className="text-[10px] text-brand-gold font-bold uppercase">{label?.substring(0, 2)}</span>}
   </div>
 );
+
+/** Raw file size above which we resize before validate/generate to avoid Vercel ~4.5MB JSON body limits (base64 expands ~4/3). */
+const VALIDATE_COMPRESS_THRESHOLD_BYTES = 2.5 * 1024 * 1024;
+
+/** Maps browser fetch failures (Safari "Load failed", Chrome "Failed to fetch", etc.) to one clear message. */
+function userFacingValidationError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (
+    /load failed|failed to fetch|networkerror|network error|aborted|timeout|status 0|err_connection|err_network|net::/i.test(
+      raw
+    )
+  ) {
+    return (
+      "We couldn't reach the server to verify your photo. Check your connection (try Wi‑Fi if you're on mobile data). " +
+      'Large camera shots can also fail over slow links—try again (big images are resized automatically) or pick a smaller JPEG from your gallery or files app.'
+    );
+  }
+  if (/Failed to read file|Failed to load image/i.test(raw)) {
+    return "We couldn't read this image on your device. Try another photo or a JPEG exported from your gallery.";
+  }
+  return raw || 'Unable to verify image. Please try again.';
+}
 
 // Rich Select Option Interface (for step components)
 interface RichSelectOption {
@@ -365,8 +387,24 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     console.log('[FILE UPLOAD] Starting validation for:', type);
 
     try {
+      let fileForFlow = file;
+      if (fileForFlow.size > VALIDATE_COMPRESS_THRESHOLD_BYTES) {
+        try {
+          console.log('[FILE UPLOAD] Compressing large image before upload...');
+          fileForFlow = await compressImage(fileForFlow, 1920);
+        } catch (compressErr) {
+          console.error('[FILE UPLOAD] Compression failed:', compressErr);
+          setError(
+            "We couldn't resize this photo for upload. Try a smaller image or a JPEG from your gallery or files app."
+          );
+          e.target.value = '';
+          setValidating(null);
+          return;
+        }
+      }
+
       console.log('[FILE UPLOAD] Converting to base64...');
-      const imageData = await fileToBase64Data(file);
+      const imageData = await fileToBase64Data(fileForFlow);
       console.log('[FILE UPLOAD] Base64 conversion complete, data length:', imageData.data.length);
 
       console.log('[FILE UPLOAD] Calling validation API...');
@@ -377,9 +415,45 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       });
 
       console.log('[FILE UPLOAD] API response status:', response.status);
-      const result = await response.json();
+
+      if (!response.ok) {
+        let message = `Couldn't verify your photo (error ${response.status}). Please try again.`;
+        try {
+          const errJson = (await response.json()) as { reason?: string; error?: string };
+          if (typeof errJson.reason === 'string') message = errJson.reason;
+          else if (typeof errJson.error === 'string') message = errJson.error;
+        } catch {
+          /* non-JSON error body */
+        }
+        if (response.status === 413) {
+          message =
+            'This photo is too large to upload. Use a smaller export from your gallery or take a new picture at lower quality.';
+        } else if (response.status >= 500) {
+          message = `${message} If this keeps happening, try Wi‑Fi or again later.`;
+        }
+        setError(message);
+        e.target.value = '';
+        setValidating(null);
+        return;
+      }
+
+      let result: {
+        valid?: boolean;
+        reason?: string;
+        shape?: string;
+        detectedHardware?: string;
+        contentFlag?: string;
+      };
+      try {
+        result = await response.json();
+      } catch {
+        setError("The server sent an unexpected response. Please try again or use a different photo.");
+        e.target.value = '';
+        setValidating(null);
+        return;
+      }
       console.log('[FILE UPLOAD] API result:', result);
-      
+
       if (!result.valid) {
         console.warn('[FILE UPLOAD] Image validation failed:', result.reason);
         setError(result.reason || "The uploaded image does not appear to be a bathroom or shower. Please upload a valid photo.");
@@ -391,8 +465,8 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       console.log('[FILE UPLOAD] Validation successful, shape detected:', result.shape);
 
       if (type === 'target') {
-        setImageFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+        setImageFile(fileForFlow);
+        setPreviewUrl(URL.createObjectURL(fileForFlow));
         setResultUrl(null);
         setShowResult(false);
         
@@ -411,14 +485,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         // No auto-advance: user must check the upload consent checkbox before proceeding
 
       } else {
-        setInspirationFile(file);
-        setInspirationPreviewUrl(URL.createObjectURL(file));
+        setInspirationFile(fileForFlow);
+        setInspirationPreviewUrl(URL.createObjectURL(fileForFlow));
       }
     } catch (err) {
       console.error('[FILE UPLOAD] Error during validation:', err);
-      const errorMessage = err instanceof Error ? err.message : "Unable to verify image. Please try again.";
-      setError(errorMessage);
-      alert(`Upload Error: ${errorMessage}\n\nPlease check the browser console for more details.`);
+      setError(userFacingValidationError(err));
     } finally {
       setValidating(null);
       console.log('[FILE UPLOAD] Validation process complete');

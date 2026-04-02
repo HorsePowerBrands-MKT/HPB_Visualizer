@@ -55,7 +55,9 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
         <div className="absolute inset-0 z-20 bg-brand-brown/95 flex flex-col items-center justify-center text-brand-gold animate-in fade-in">
           <Loader2 className="h-12 w-12 animate-spin mb-4" />
           <span className="text-lg font-medium">Verifying &amp; Scanning Layout...</span>
-          <span className="text-sm text-white/40 mt-2">This may take a moment</span>
+          <span className="text-sm text-white/40 mt-2 text-center px-4 max-w-sm">
+            AI checks often take 30–90 seconds on a phone—keep this page open. Wi‑Fi is usually faster than cellular.
+          </span>
         </div>
       )}
 
@@ -119,7 +121,7 @@ const ConsentCheckboxes: React.FC<{
           className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
         />
         <span className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-          I grant permission for my uploaded and AI-generated images to be used for marketing, sales and promotional purposes.
+          I grant permission for my AI-generated and uploaded images to be used for sales and promotional purposes.
         </span>
       </label>
       <p className="text-[10px] text-gray-600 leading-relaxed ml-7">
@@ -168,8 +170,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
+            <p className="text-sm text-red-400 break-words">{error}</p>
           </div>
         )}
 
@@ -223,8 +225,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30">
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
+          <p className="text-sm text-red-400 break-words">{error}</p>
         </div>
       )}
 
