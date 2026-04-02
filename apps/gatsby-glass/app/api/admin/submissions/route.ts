@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSubmissions, getTeamLocation } from '@repo/api-handlers/supabase';
+import { getSubmissions, getTeamLocationWithPermissions, hasAccess } from '@repo/api-handlers/supabase';
 import { createClient } from '../../../../lib/supabase/server';
 
 function getSupabaseConfig() {
@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  // Verify the caller is an authenticated team member
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -24,9 +23,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const location = await getTeamLocation(sbConfig, user.email);
+    const location = await getTeamLocationWithPermissions(sbConfig, user.email);
     if (!location) {
       return NextResponse.json({ error: 'Team authorization required' }, { status: 403 });
+    }
+
+    if (!hasAccess(location.accessLevel, 'social')) {
+      return NextResponse.json({ error: 'You do not have permission to view submissions' }, { status: 403 });
     }
   } catch {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });

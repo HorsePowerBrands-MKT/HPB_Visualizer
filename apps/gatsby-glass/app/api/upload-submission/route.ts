@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImage } from '@repo/api-handlers/storage';
-import { createSubmission, updateSubmissionGeneratedImage } from '@repo/api-handlers/supabase';
+import { createSubmission, updateSubmissionGeneratedImage, logApiCall } from '@repo/api-handlers/supabase';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_BASE64_LENGTH = 15_000_000; // ~10 MB decoded
@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
       sourceUrl: typeof sourceUrl === 'string' ? sourceUrl.slice(0, 500) : null,
       metadata: safeMeta,
     });
+
+    logApiCall(sbConfig, 'image_upload');
 
     return NextResponse.json({ submissionId });
   } catch (error) {

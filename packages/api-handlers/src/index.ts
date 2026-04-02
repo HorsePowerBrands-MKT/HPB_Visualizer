@@ -14,10 +14,13 @@ export {
   getTeamLocationWithPermissions,
   getUsageReport,
   hasAccess,
+  logApiCall,
+  getApiCallReport,
   type SupabaseConfig,
   type AccessLevel,
   type TeamLocationWithPermissions,
   type UsageReportRow,
+  type ApiCallReportRow,
 } from './supabase';
 
 // Supabase Storage handlers

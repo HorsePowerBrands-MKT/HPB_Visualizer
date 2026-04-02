@@ -11,6 +11,7 @@ import {
   BarChart3,
   Users,
   Eye,
+  Activity,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
@@ -24,16 +25,32 @@ interface UsageReportRow {
   totalLeads: number;
 }
 
+interface ApiCallReportRow {
+  callType: string;
+  dailyCounts: Record<string, number>;
+  total: number;
+}
+
 interface ReportData {
   year: number;
   month: number;
   rows: UsageReportRow[];
+  apiCalls?: ApiCallReportRow[];
 }
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+
+const CALL_TYPE_LABELS: Record<string, string> = {
+  image_validation: 'Image Validation',
+  initial_generation: 'Initial Generation',
+  update_generation: 'Update Generation',
+  lead_submission: 'Lead Submission',
+  issue_report: 'Issue Report',
+  image_upload: 'Image Upload',
+};
 
 function getDaysInMonth(year: number, month: number): string[] {
   const count = new Date(year, month, 0).getDate();
@@ -49,6 +66,11 @@ function getDaysInMonth(year: number, month: number): string[] {
 function formatDay(dateKey: string): string {
   const [, , dd] = dateKey.split('-');
   return String(parseInt(dd, 10));
+}
+
+function formatDayLabel(dateKey: string): string {
+  const monthIdx = parseInt(dateKey.split('-')[1], 10) - 1;
+  return `${MONTH_NAMES[monthIdx]?.slice(0, 3)} ${formatDay(dateKey)}`;
 }
 
 function LocationRow({ row, days }: { row: UsageReportRow; days: string[] }) {
@@ -93,7 +115,7 @@ function LocationRow({ row, days }: { row: UsageReportRow; days: string[] }) {
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider text-white/30 font-sans">
                     <th className="py-2 px-4 text-left pl-12">Day</th>
-                    <th className="py-2 px-4 text-right">Visualizations</th>
+                    <th className="py-2 px-4 text-right">Team Visualizations</th>
                     <th className="py-2 px-4 text-right">Leads</th>
                     <th className="py-2 px-4 text-right">Total</th>
                   </tr>
@@ -118,8 +140,7 @@ function LocationRow({ row, days }: { row: UsageReportRow; days: string[] }) {
                           className="border-t border-white/[0.03] hover:bg-white/[0.02]"
                         >
                           <td className="py-1.5 px-4 pl-12 text-xs font-sans text-white/50">
-                            {MONTH_NAMES[(parseInt(day.split('-')[1], 10)) - 1]?.slice(0, 3)}{' '}
-                            {formatDay(day)}
+                            {formatDayLabel(day)}
                           </td>
                           <td className="py-1.5 px-4 text-xs font-sans text-right tabular-nums text-white/50">
                             {viz || '\u2014'}
@@ -134,6 +155,67 @@ function LocationRow({ row, days }: { row: UsageReportRow; days: string[] }) {
                       );
                     })
                   )}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function ApiCallRow({ row, days }: { row: ApiCallReportRow; days: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const activeDays = days.filter((d) => (row.dailyCounts[d] ?? 0) > 0);
+
+  return (
+    <>
+      <tr
+        className="border-b border-white/5 hover:bg-white/[0.02] cursor-pointer transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <td className="py-3 px-4 text-sm font-sans text-white/90">
+          <div className="flex items-center gap-2">
+            {expanded ? (
+              <ChevronUp className="w-3.5 h-3.5 text-white/30 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-white/30 shrink-0" />
+            )}
+            {CALL_TYPE_LABELS[row.callType] ?? row.callType}
+          </div>
+        </td>
+        <td className="py-3 px-4 text-sm font-sans text-right tabular-nums text-brand-gold">
+          {row.total}
+        </td>
+      </tr>
+
+      {expanded && (
+        <tr className="border-b border-white/5">
+          <td colSpan={2} className="p-0">
+            <div className="bg-white/[0.02] border-t border-white/5">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-white/30 font-sans">
+                    <th className="py-2 px-4 text-left pl-12">Day</th>
+                    <th className="py-2 px-4 text-right">Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeDays.map((day) => (
+                    <tr
+                      key={day}
+                      className="border-t border-white/[0.03] hover:bg-white/[0.02]"
+                    >
+                      <td className="py-1.5 px-4 pl-12 text-xs font-sans text-white/50">
+                        {formatDayLabel(day)}
+                      </td>
+                      <td className="py-1.5 px-4 text-xs font-sans text-right tabular-nums text-white/50">
+                        {row.dailyCounts[day] ?? 0}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -237,6 +319,8 @@ export default function UsageReportPage() {
     data?.rows.reduce((s, r) => s + r.totalVisualizations, 0) ?? 0;
   const totalLeads =
     data?.rows.reduce((s, r) => s + r.totalLeads, 0) ?? 0;
+  const totalApiCalls =
+    data?.apiCalls?.reduce((s, r) => s + r.total, 0) ?? 0;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -285,12 +369,12 @@ export default function UsageReportPage() {
 
       {/* Summary cards */}
       {!loading && data && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className={`grid gap-4 mb-6 ${data.apiCalls ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <div className="bg-brand-black/60 border border-brand-gold/10 p-4">
             <div className="flex items-center gap-2 mb-1">
               <Eye className="w-4 h-4 text-brand-gold/60" />
               <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">
-                Visualizations
+                Team Visualizations
               </span>
             </div>
             <span className="text-2xl font-display text-white tabular-nums">
@@ -321,6 +405,19 @@ export default function UsageReportPage() {
               ).length}
             </span>
           </div>
+          {data.apiCalls && (
+            <div className="bg-brand-black/60 border border-brand-gold/10 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="w-4 h-4 text-brand-gold/60" />
+                <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">
+                  API Calls
+                </span>
+              </div>
+              <span className="text-2xl font-display text-white tabular-nums">
+                {totalApiCalls}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -352,14 +449,14 @@ export default function UsageReportPage() {
         </div>
       )}
 
-      {/* Report table */}
+      {/* Location usage table */}
       {!loading && !error && data && data.rows.length > 0 && (
         <div className="bg-brand-black/60 border border-brand-gold/10 overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-brand-gold/10 text-[10px] uppercase tracking-wider text-white/40 font-sans">
                 <th className="py-3 px-4 text-left">Location</th>
-                <th className="py-3 px-4 text-right">Visualizations</th>
+                <th className="py-3 px-4 text-right">Team Visualizations</th>
                 <th className="py-3 px-4 text-right">Leads</th>
                 <th className="py-3 px-4 text-right">Total</th>
               </tr>
@@ -386,6 +483,40 @@ export default function UsageReportPage() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* API call breakdown (super_admin only) */}
+      {!loading && !error && data?.apiCalls && data.apiCalls.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-display font-bold text-brand-gold tracking-wider mb-4">
+            API CALL BREAKDOWN
+          </h3>
+          <div className="bg-brand-black/60 border border-brand-gold/10 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-brand-gold/10 text-[10px] uppercase tracking-wider text-white/40 font-sans">
+                  <th className="py-3 px-4 text-left">Call Type</th>
+                  <th className="py-3 px-4 text-right">Month Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.apiCalls.map((row) => (
+                  <ApiCallRow key={row.callType} row={row} days={days} />
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-brand-gold/20 bg-white/[0.02]">
+                  <td className="py-3 px-4 text-sm font-sans font-semibold text-white/70">
+                    All API Calls
+                  </td>
+                  <td className="py-3 px-4 text-sm font-sans text-right tabular-nums font-semibold text-brand-gold">
+                    {totalApiCalls}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
     </div>

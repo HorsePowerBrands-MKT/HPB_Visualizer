@@ -700,12 +700,13 @@ export async function deleteSubmissionRows(
 // Team location permissions
 // ---------------------------------------------------------------------------
 
-export type AccessLevel = 'member' | 'social' | 'admin';
+export type AccessLevel = 'member' | 'social' | 'admin' | 'super_admin';
 
 const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
   member: 0,
   social: 1,
   admin: 2,
+  super_admin: 3,
 };
 
 export interface TeamLocationWithPermissions extends TeamLocation {
@@ -857,4 +858,70 @@ export async function getUsageReport(
     (a, b) =>
       b.totalVisualizations + b.totalLeads - (a.totalVisualizations + a.totalLeads)
   );
+}
+
+// ---------------------------------------------------------------------------
+// API call logging
+// ---------------------------------------------------------------------------
+
+/**
+ * Fire-and-forget insert into api_call_log. Never throws so it won't
+ * break the parent request.
+ */
+export async function logApiCall(
+  config: SupabaseConfig,
+  callType: string
+): Promise<void> {
+  try {
+    const supabase = getSupabaseClient(config);
+    await supabase.from('api_call_log').insert([{ call_type: callType }]);
+  } catch {
+    // intentionally swallowed
+  }
+}
+
+export interface ApiCallReportRow {
+  callType: string;
+  dailyCounts: Record<string, number>;
+  total: number;
+}
+
+/**
+ * Aggregate api_call_log rows for a calendar month, grouped by call_type
+ * and day.
+ */
+export async function getApiCallReport(
+  config: SupabaseConfig,
+  { year, month }: { year: number; month: number }
+): Promise<ApiCallReportRow[]> {
+  const supabase = getSupabaseClient(config);
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString();
+
+  const { data, error } = await supabase
+    .from('api_call_log')
+    .select('call_type, created_at')
+    .gte('created_at', monthStart)
+    .lt('created_at', nextMonthStart);
+
+  if (error || !data) return [];
+
+  const toDateKey = (iso: string) => iso.slice(0, 10);
+
+  const map = new Map<string, ApiCallReportRow>();
+
+  for (const row of data) {
+    const ct = row.call_type as string;
+    const day = toDateKey(row.created_at);
+    let entry = map.get(ct);
+    if (!entry) {
+      entry = { callType: ct, dailyCounts: {}, total: 0 };
+      map.set(ct, entry);
+    }
+    entry.dailyCounts[day] = (entry.dailyCounts[day] ?? 0) + 1;
+    entry.total += 1;
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }

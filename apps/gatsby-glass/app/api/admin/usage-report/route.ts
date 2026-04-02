@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTeamLocationWithPermissions, getUsageReport, hasAccess } from '@repo/api-handlers/supabase';
+import {
+  getTeamLocationWithPermissions,
+  getUsageReport,
+  getApiCallReport,
+  hasAccess,
+} from '@repo/api-handlers/supabase';
 import { createClient } from '../../../../lib/supabase/server';
 
 function getSupabaseConfig() {
@@ -14,6 +19,8 @@ export async function GET(request: NextRequest) {
   if (!sbConfig) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
+
+  let isSuperAdmin = false;
 
   try {
     const supabase = await createClient();
@@ -31,6 +38,8 @@ export async function GET(request: NextRequest) {
     if (!hasAccess(location.accessLevel, 'admin')) {
       return NextResponse.json({ error: 'You do not have permission to view reports' }, { status: 403 });
     }
+
+    isSuperAdmin = hasAccess(location.accessLevel, 'super_admin');
   } catch {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
   }
@@ -42,5 +51,11 @@ export async function GET(request: NextRequest) {
 
   const rows = await getUsageReport(sbConfig, { year, month });
 
-  return NextResponse.json({ year, month, rows });
+  const response: Record<string, unknown> = { year, month, rows };
+
+  if (isSuperAdmin) {
+    response.apiCalls = await getApiCallReport(sbConfig, { year, month });
+  }
+
+  return NextResponse.json(response);
 }
