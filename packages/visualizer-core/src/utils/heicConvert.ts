@@ -18,13 +18,24 @@ export function isSupportedImageType(file: File): boolean {
   return SUPPORTED_TYPES.includes(file.type.toLowerCase());
 }
 
+const HEIC_CONVERT_TIMEOUT_MS = 30_000;
+
 /**
  * Convert a HEIC/HEIF file to JPEG. Returns a new File with the correct MIME type.
  * Uses a dynamic import so heic2any (which requires `window`) is never loaded on the server.
+ *
+ * NOTE: In most cases iOS/Chrome-on-iOS auto-convert HEIC→JPEG when the `<input accept>`
+ * does NOT list image/heic, so this is a fallback for edge cases (desktop, older Android).
  */
 export async function convertHeicToJpeg(file: File): Promise<File> {
   const heic2any = (await import('heic2any')).default;
-  const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+
+  const conversionPromise = heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+  const timeoutPromise = new Promise<never>((_r, reject) =>
+    setTimeout(() => reject(new Error('HEIC conversion timed out')), HEIC_CONVERT_TIMEOUT_MS),
+  );
+
+  const blob = await Promise.race([conversionPromise, timeoutPromise]);
   const result = Array.isArray(blob) ? blob[0] : blob;
   const name = file.name
     .replace(/\.heic$/i, '.jpg')
