@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitLead, lookupLocationByZipcode } from '@repo/api-handlers/supabase';
+import { submitLead, lookupLocationByZipcode, logApiCall } from '@repo/api-handlers/supabase';
 import { pushLeadToSharpSpring } from '@repo/api-handlers/sharpspring';
 import { validateLeadData } from '@repo/api-handlers/validation';
 import type { Lead } from '@repo/types';
@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
 
     const result = await submitLead(supabaseConfig, leadData);
+
+    logApiCall(supabaseConfig, 'lead_submission');
 
     // Push to Constant Contact CRM (SharpSpring).
     // Must be awaited -- Vercel terminates the function once the response is sent,

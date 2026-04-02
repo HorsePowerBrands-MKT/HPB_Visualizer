@@ -4,6 +4,7 @@ import {
   getMonthlyUsageCount,
   recordUsage,
   getTeamLocation,
+  logApiCall,
   MONTHLY_GENERATION_LIMIT,
 } from '@repo/api-handlers/supabase';
 import { uploadImage } from '@repo/api-handlers/storage';
@@ -94,6 +95,11 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await generateVisualization({ apiKey }, visualizationRequest);
+
+    if (sbConfig) {
+      const genIndex = body.generationIndex || 1;
+      logApiCall(sbConfig, genIndex > 1 ? 'update_generation' : 'initial_generation');
+    }
 
     // --- Record usage for rate limiting ---
     if (!isTeamMember && sbConfig && fingerprint) {

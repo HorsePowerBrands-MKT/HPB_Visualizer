@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createIssueReport } from '@repo/api-handlers/supabase';
+import { createIssueReport, logApiCall } from '@repo/api-handlers/supabase';
 import type { IssueReport } from '@repo/types';
 
 export async function POST(request: NextRequest) {
@@ -31,10 +31,11 @@ export async function POST(request: NextRequest) {
       team: body.team || null,
     };
 
-    const result = await createIssueReport(
-      { url: supabaseUrl, serviceKey: supabaseKey },
-      issueData
-    );
+    const sbConfig = { url: supabaseUrl, serviceKey: supabaseKey };
+
+    const result = await createIssueReport(sbConfig, issueData);
+
+    logApiCall(sbConfig, 'issue_report');
 
     return NextResponse.json(result);
   } catch (error) {

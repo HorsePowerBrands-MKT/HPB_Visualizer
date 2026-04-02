@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateImage } from '@repo/api-handlers/gemini';
+import { logApiCall } from '@repo/api-handlers/supabase';
 import type { ImageData } from '@repo/types';
 import { ValidationRequestSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey };
+}
 
 export async function POST(request: NextRequest) {
   console.log('[VALIDATE-IMAGE API] Request received');
@@ -38,6 +46,9 @@ export async function POST(request: NextRequest) {
     console.log('[VALIDATE-IMAGE API] Starting Gemini validation...');
     const result = await validateImage({ apiKey }, imageDataObj);
     console.log('[VALIDATE-IMAGE API] Validation result:', JSON.stringify(result));
+
+    const sbConfig = getSupabaseConfig();
+    if (sbConfig) logApiCall(sbConfig, 'image_validation');
 
     if (result.contentFlag && result.contentFlag !== 'safe') {
       console.warn(`[VALIDATE-IMAGE API] Content flagged as: ${result.contentFlag}`);
