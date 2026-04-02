@@ -106,23 +106,34 @@ export async function pushLeadToSharpSpring(
       return { success: false, error: `HTTP ${response.status}` };
     }
 
-    const json: SharpSpringResponse = await response.json();
+    const json = await response.json();
 
-    if (json.error) {
-      const errArr = Array.isArray(json.error) ? json.error : [json.error];
-      console.error('[SHARPSPRING] API error:', JSON.stringify(errArr));
-      const msg = errArr.map((e) => e.message || 'Unknown').join('; ');
+    console.log('[SHARPSPRING] Raw response:', JSON.stringify(json));
+
+    // SharpSpring returns "error": [] on success, so check for non-empty errors
+    const errors = Array.isArray(json.error)
+      ? json.error.filter((e: SharpSpringError) => e && e.message)
+      : json.error ? [json.error] : [];
+
+    if (errors.length > 0) {
+      console.error('[SHARPSPRING] API error:', JSON.stringify(errors));
+      const msg = errors.map((e: SharpSpringError) => e.message || 'Unknown').join('; ');
       return { success: false, error: msg };
     }
 
     const createResult = json.result?.creates?.[0];
     if (createResult && !createResult.success) {
-      console.error('[SHARPSPRING] Lead create failed:', createResult.error);
+      console.error('[SHARPSPRING] Lead create failed:', JSON.stringify(createResult.error));
       return { success: false, error: String(createResult.error || 'Create failed') };
     }
 
-    console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'})`);
-    return { success: true };
+    if (createResult?.success) {
+      console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'}, id: ${createResult.id})`);
+      return { success: true };
+    }
+
+    console.warn('[SHARPSPRING] Unexpected response shape:', JSON.stringify(json));
+    return { success: false, error: 'Unexpected response from API' };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[SHARPSPRING] Unexpected error:', msg);

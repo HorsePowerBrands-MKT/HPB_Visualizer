@@ -87,7 +87,9 @@ export async function POST(request: NextRequest) {
 
     if (ssAccountId && ssSecretKey) {
       try {
+        console.log('[SUBMIT-LEAD] Starting SharpSpring push for', validatedData.email);
         const location = await lookupLocationByZipcode(supabaseConfig, validatedData.zipCode);
+        console.log('[SUBMIT-LEAD] Resolved location:', location.locationName, 'leadType:', validatedData.leadType);
 
         const ssResult = await pushLeadToSharpSpring(
           { accountId: ssAccountId, secretKey: ssSecretKey },

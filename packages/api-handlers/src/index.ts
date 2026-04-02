@@ -11,7 +11,13 @@ export {
   getLeadsByZipCode,
   lookupLocationByZipcode,
   updateLeadStatus,
-  type SupabaseConfig
+  getTeamLocationWithPermissions,
+  getUsageReport,
+  hasAccess,
+  type SupabaseConfig,
+  type AccessLevel,
+  type TeamLocationWithPermissions,
+  type UsageReportRow,
 } from './supabase';
 
 // Supabase Storage handlers

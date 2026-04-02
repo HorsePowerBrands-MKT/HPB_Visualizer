@@ -695,3 +695,166 @@ export async function deleteSubmissionRows(
     console.error('[deleteSubmissionRows] Database error:', error);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Team location permissions
+// ---------------------------------------------------------------------------
+
+export type AccessLevel = 'member' | 'social' | 'admin';
+
+const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
+  member: 0,
+  social: 1,
+  admin: 2,
+};
+
+export interface TeamLocationWithPermissions extends TeamLocation {
+  accessLevel: AccessLevel;
+}
+
+/**
+ * True when the user's access level is at least `required`.
+ * admin >= social >= member.
+ */
+export function hasAccess(
+  userLevel: AccessLevel,
+  required: AccessLevel
+): boolean {
+  return (ACCESS_HIERARCHY[userLevel] ?? 0) >= ACCESS_HIERARCHY[required];
+}
+
+/**
+ * Look up a team member by email and return location info plus their access
+ * level. Returns null when the email does not belong to an active location.
+ */
+export async function getTeamLocationWithPermissions(
+  config: SupabaseConfig,
+  email: string
+): Promise<TeamLocationWithPermissions | null> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select('location_id, location_name, access_level')
+    .eq('email', email.toLowerCase())
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    locationId: data.location_id,
+    locationName: data.location_name,
+    accessLevel: (data.access_level as AccessLevel) ?? 'member',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Usage report
+// ---------------------------------------------------------------------------
+
+export interface UsageReportRow {
+  locationId: string;
+  locationName: string;
+  dailyVisualizations: Record<string, number>;
+  dailyLeads: Record<string, number>;
+  totalVisualizations: number;
+  totalLeads: number;
+}
+
+/**
+ * Build a monthly usage report across all active locations.
+ *
+ * Returns one row per location that had any activity (visualizations or leads)
+ * during the requested calendar month, plus rows for locations with zero
+ * activity so the caller can show them as well.
+ */
+export async function getUsageReport(
+  config: SupabaseConfig,
+  { year, month }: { year: number; month: number }
+): Promise<UsageReportRow[]> {
+  const supabase = getSupabaseClient(config);
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString();
+
+  const [vizResult, leadsResult, locationsResult] = await Promise.all([
+    supabase
+      .from('visualizations')
+      .select('team, created_at')
+      .not('team', 'is', null)
+      .gte('created_at', monthStart)
+      .lt('created_at', nextMonthStart),
+
+    supabase
+      .from('leads')
+      .select('location_id, created_at')
+      .not('location_id', 'is', null)
+      .neq('location_id', 'NO_TERRITORY')
+      .gte('created_at', monthStart)
+      .lt('created_at', nextMonthStart),
+
+    supabase
+      .from('team_locations')
+      .select('location_id, location_name')
+      .eq('is_active', true),
+  ]);
+
+  const locationMap = new Map<string, UsageReportRow>();
+
+  for (const loc of locationsResult.data ?? []) {
+    locationMap.set(loc.location_id, {
+      locationId: loc.location_id,
+      locationName: loc.location_name ?? loc.location_id,
+      dailyVisualizations: {},
+      dailyLeads: {},
+      totalVisualizations: 0,
+      totalLeads: 0,
+    });
+  }
+
+  const toDateKey = (iso: string) => iso.slice(0, 10);
+
+  for (const row of vizResult.data ?? []) {
+    const locId = row.team as string;
+    const day = toDateKey(row.created_at);
+    let entry = locationMap.get(locId);
+    if (!entry) {
+      entry = {
+        locationId: locId,
+        locationName: locId,
+        dailyVisualizations: {},
+        dailyLeads: {},
+        totalVisualizations: 0,
+        totalLeads: 0,
+      };
+      locationMap.set(locId, entry);
+    }
+    entry.dailyVisualizations[day] = (entry.dailyVisualizations[day] ?? 0) + 1;
+    entry.totalVisualizations += 1;
+  }
+
+  for (const row of leadsResult.data ?? []) {
+    const locId = row.location_id as string;
+    const day = toDateKey(row.created_at);
+    let entry = locationMap.get(locId);
+    if (!entry) {
+      entry = {
+        locationId: locId,
+        locationName: locId,
+        dailyVisualizations: {},
+        dailyLeads: {},
+        totalVisualizations: 0,
+        totalLeads: 0,
+      };
+      locationMap.set(locId, entry);
+    }
+    entry.dailyLeads[day] = (entry.dailyLeads[day] ?? 0) + 1;
+    entry.totalLeads += 1;
+  }
+
+  return Array.from(locationMap.values()).sort(
+    (a, b) =>
+      b.totalVisualizations + b.totalLeads - (a.totalVisualizations + a.totalLeads)
+  );
+}
