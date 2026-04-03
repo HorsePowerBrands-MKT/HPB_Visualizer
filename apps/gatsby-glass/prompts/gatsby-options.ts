@@ -178,32 +178,35 @@ export const framingDescriptions = {
   frameless: {
     name: "Frameless",
     description: `FRAMELESS glass installation.
-- NO metal frame around the glass edges
-- Glass panels joined with minimal hardware
-- Clean, modern, open appearance
-- Maximum visibility of tile work
-- Premium, high-end look
-- Glass appears to "float"`,
+- Offers a sleek and contemporary look with NO metal framing around the glass
+- Made of thicker tempered glass (3/8" to 1/2") for structural integrity without a frame
+- Provides an open, seamless appearance to create the illusion of a larger bathroom
+- Glass panels joined with minimal hardware — typically just hinges, clips, and clamps
+- ALL edges are flat and smooth with no metal surrounding any glass edge
+- Premium, high-end look where the glass appears to "float"`,
   },
 
   semi_frameless: {
     name: "Semi-Frameless",
     description: `SEMI-FRAMELESS installation.
-- Minimal framing, typically just on the header/track
-- Frame around fixed panels but not the door
-- Balance of support and aesthetics
-- More affordable than full frameless
-- Clean look with some structure`,
+- Combines elements of framed and frameless designs
+- Has metal framing around certain parts of the enclosure (fixed panels, header) but NOT around the door
+- The door panel itself is FRAMELESS with exposed glass edges for a sleek look
+- Fixed panels sit in slim metal U-channels (1" to 1.5" wide aluminum) along walls and base
+- Provides a streamlined look at an economical price compared to fully frameless options
+- Visual distinction: framed stationary sections with a floating, unframed door panel`,
   },
 
   framed: {
     name: "Framed",
     description: `FULLY FRAMED installation.
-- Metal frame surrounds all glass edges
-- Frame visible on all panels and door
-- Traditional, classic appearance
-- Maximum structural support
-- Frame finish should match hardware`,
+- Metal frame surrounds ALL glass edges on every panel including the door
+- Frame is 1.5" to 2" wide extruded aluminum in the specified hardware finish
+- Uses thinner tempered glass (1/4") since the frame provides structural support
+- Offers a classic, durable design with maximum structural integrity
+- Frame pieces meet at 45-degree mitered corner joints
+- All glass edges are hidden within frame channels — no exposed glass edges
+- Handle attaches to the frame rather than through the glass`,
   },
 };
 
