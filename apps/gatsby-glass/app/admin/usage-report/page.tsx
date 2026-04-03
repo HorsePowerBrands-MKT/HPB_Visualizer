@@ -12,6 +12,7 @@ import {
   Users,
   Eye,
   Activity,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
@@ -322,6 +323,46 @@ export default function UsageReportPage() {
   const totalApiCalls =
     data?.apiCalls?.reduce((s, r) => s + r.total, 0) ?? 0;
 
+  const exportCsv = () => {
+    if (!data) return;
+    const rows: string[][] = [];
+    rows.push(['Location', 'Team Visualizations', 'Leads', 'Total']);
+    for (const r of data.rows) {
+      rows.push([
+        r.locationName,
+        String(r.totalVisualizations),
+        String(r.totalLeads),
+        String(r.totalVisualizations + r.totalLeads),
+      ]);
+    }
+    rows.push([
+      'All Locations',
+      String(totalViz),
+      String(totalLeads),
+      String(totalViz + totalLeads),
+    ]);
+
+    if (data.apiCalls && data.apiCalls.length > 0) {
+      rows.push([]);
+      rows.push(['API Call Type', 'Month Total']);
+      for (const r of data.apiCalls) {
+        rows.push([CALL_TYPE_LABELS[r.callType] ?? r.callType, String(r.total)]);
+      }
+      rows.push(['All API Calls', String(totalApiCalls)]);
+    }
+
+    const csvContent = rows
+      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `usage-report-${MONTH_NAMES[month - 1]}-${year}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
@@ -418,6 +459,19 @@ export default function UsageReportPage() {
               </span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Export button */}
+      {!loading && data && data.rows.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-sans font-semibold uppercase tracking-wider text-brand-gold border border-brand-gold/20 bg-brand-black/60 hover:bg-brand-gold/10 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
         </div>
       )}
 

@@ -14,7 +14,8 @@ import type {
   SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
-import { useVisualizerState, fileToBase64Data, buildVisualizationPrompt, buildInspirationPrompt, isHeic, isSupportedImageType, convertHeicToJpeg, compressImage } from '@repo/visualizer-core';
+import { useVisualizerState, fileToBase64Data, isHeic, isSupportedImageType, convertHeicToJpeg, compressImage } from '@repo/visualizer-core';
+import { buildVisualizationPrompt, buildInspirationPrompt } from '../lib/promptBuilder';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';

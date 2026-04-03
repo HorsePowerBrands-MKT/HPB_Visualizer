@@ -342,6 +342,11 @@ export function buildVisualizationPromptFromTemplate(
     hardware_finish: config.hardware_finish,
     handle_style: config.handle_style,
     track_preference: config.track_preference,
+    door_type_description: config.door_type_description,
+    glass_style_description: config.glass_style_description,
+    hardware_finish_description: config.hardware_finish_description,
+    handle_style_description: config.handle_style_description,
+    framing_description: config.framing_description,
   };
   
   // Add hinged config if present
