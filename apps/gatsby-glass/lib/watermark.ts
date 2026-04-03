@@ -39,9 +39,9 @@ export async function applyWatermark(base64DataUrl: string): Promise<string> {
 
   let logoTargetWidth: number;
   if (imgAspect > logoAspect) {
-    logoTargetWidth = Math.round(imgHeight * 0.50 * logoAspect);
+    logoTargetWidth = Math.round(imgHeight * 0.35 * logoAspect);
   } else {
-    logoTargetWidth = Math.round(imgWidth * 0.50);
+    logoTargetWidth = Math.round(imgWidth * 0.35);
   }
 
   const logo = await sharp(logoRaw)
