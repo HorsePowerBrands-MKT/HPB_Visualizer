@@ -27,6 +27,7 @@ export type {
   ContactFormData,
   Lead,
   LeadSubmissionResponse,
+  VisualizationHistoryItem,
   GenerationRecord,
   IssueReport,
   VisualizerSubmission,

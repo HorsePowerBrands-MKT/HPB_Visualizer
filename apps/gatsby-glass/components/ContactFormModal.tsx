@@ -15,7 +15,7 @@ interface ContactFormModalProps {
   visualizationData: {
     resultUrl: string;
     uploadedImage: string;
-    configs: Payload;
+    configs: Partial<Payload>;
   };
   mode: 'save' | 'quote';
   userFingerprint?: string;

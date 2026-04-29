@@ -36,11 +36,29 @@ export interface Lead extends ContactFormData {
   leadType?: 'SAS' | 'RAQ';
 }
 
+// A single visualization image collected for a session/user, with the
+// configuration that produced it. Stored on the lead row and used when
+// composing the SAS email so each image can be labeled in the gallery.
+export interface VisualizationHistoryItem {
+  watermarked: string | null;
+  original: string | null;
+  created_at: string;
+  mode?: DesignMode | null;
+  enclosure_type?: EnclosureType | null;
+  framing_style?: TrackPreference | null;
+  hardware_finish?: HardwareFinish | null;
+  handle_style?: HandleStyle | null;
+}
+
 // Lead submission response
 export interface LeadSubmissionResponse {
   success: boolean;
   message: string;
   leadId?: string;
+  /** Full session/user visualization history (oldest first). Only populated
+   *  on successful submissions. Used by the route handler to compose the
+   *  customer-facing SAS email without a second DB round-trip. */
+  allVisualizationUrls?: VisualizationHistoryItem[];
 }
 
 // Visualization auto-save data (without contact info)
