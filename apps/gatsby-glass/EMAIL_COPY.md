@@ -16,7 +16,8 @@ Before the email will deliver in any environment:
    - `RESEND_FROM` — optional override of the sender address. Defaults to
      `Gatsby Glass <noreply@gatsbyglass.com>`. Must use a verified domain.
 3. The reply-to header is automatically set to `GATSBY_GLASS_CONFIG.supportEmail`
-   (`support@gatsbyglass.com`) so customer replies land in the brand inbox.
+   (`CustomerJourney@horsepowerbrands.com`) so customer replies land in the
+   brand monitoring inbox.
 
 The send is fully awaited inside `POST /api/submit-lead` (Vercel terminates
 the function after the response, so an unawaited fetch would be killed).
@@ -120,7 +121,7 @@ Sent to the **franchise location's shared inbox** when a customer clicks "Reques
 
 The `SharedInboxEmailAddress` (stored as `email` in `team_locations`) resolved by the customer's zip code through `territory_zipcodes` → `team_locations`.
 
-**No-territory fallback:** If the zip code does not match any franchise territory, send to `support@gatsbyglass.com` (the brand-level support inbox from `GATSBY_GLASS_CONFIG`).
+**No-territory fallback:** If the zip code does not match any franchise territory, send to `CustomerJourney@horsepowerbrands.com` (the brand-level monitoring inbox from `GATSBY_GLASS_CONFIG.supportEmail`).
 
 ### Available Data
 
@@ -198,7 +199,7 @@ DESIGN MODE
 
 ### 1. No-Territory Routing
 
-When a customer's zip code does not match any franchise territory, the `lookupLocationByZipcode` function returns `NO_TERRITORY`. The recommendation is to route RAQ emails for these leads to `support@gatsbyglass.com` so they are not lost.
+When a customer's zip code does not match any franchise territory, the `lookupLocationByZipcode` function returns `NO_TERRITORY`. The recommendation is to route RAQ emails for these leads to `CustomerJourney@horsepowerbrands.com` so they are not lost.
 
 ### 2. SAS Franchise Notification
 

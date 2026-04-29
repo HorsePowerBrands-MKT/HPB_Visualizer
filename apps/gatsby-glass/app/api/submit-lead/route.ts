@@ -7,7 +7,7 @@ import type { Lead, VisualizationHistoryItem, EnclosureType, TrackPreference, Ha
 import { LeadSubmissionSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
-import { CATALOG, GATSBY_GLASS_CONFIG } from '../../../lib/gatsby-constants/src';
+import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION } from '../../../lib/gatsby-constants/src';
 
 /**
  * Build a human-readable label for a visualization history item using the
@@ -59,6 +59,34 @@ function buildImageLabel(viz: VisualizationHistoryItem): string {
   }
 
   return parts.join(' · ');
+}
+
+/**
+ * Map a visualization history item to the structured Enclosure/Framing/
+ * Hardware/Handle fields the SAS email renders as a labeled list.
+ * Returns null for inspiration mode (the email shows a different block).
+ */
+function buildImageConfig(viz: VisualizationHistoryItem): {
+  enclosure?: string | null;
+  framing?: string | null;
+  hardware?: string | null;
+  handle?: string | null;
+} | null {
+  if (viz.mode === 'inspiration') return null;
+  return {
+    enclosure: viz.enclosure_type
+      ? CATALOG.enclosureTypes[viz.enclosure_type as EnclosureType]?.name ?? null
+      : null,
+    framing: viz.framing_style
+      ? CATALOG.trackPreferences[viz.framing_style as TrackPreference]?.name ?? null
+      : null,
+    hardware: viz.hardware_finish
+      ? CATALOG.hardwareFinishes[viz.hardware_finish as HardwareFinish]?.name ?? null
+      : null,
+    handle: viz.handle_style
+      ? CATALOG.handleStyles[viz.handle_style as HandleStyle]?.name ?? null
+      : null,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -243,6 +271,19 @@ export async function POST(request: NextRequest) {
               `[SUBMIT-LEAD] Sending SAS email to ${validatedData.email} (gallery items: ${galleryItems.length})`
             );
 
+            const heroConfig = hero
+              ? buildImageConfig(hero)
+              : buildImageConfig({
+                  watermarked: heroImageUrl,
+                  original: null,
+                  created_at: new Date().toISOString(),
+                  mode: (validatedData.mode as any) ?? null,
+                  enclosure_type: (validatedData.doorType as any) ?? null,
+                  framing_style: (validatedData.trackPreference as any) ?? null,
+                  hardware_finish: (validatedData.hardware as any) ?? null,
+                  handle_style: (validatedData.handleStyle as any) ?? null,
+                });
+
             const emailResult = await sendSasEmail(
               {
                 apiKey: resendApiKey,
@@ -254,6 +295,7 @@ export async function POST(request: NextRequest) {
                 firstName,
                 heroImageUrl,
                 heroLabel,
+                heroConfig: heroConfig ?? undefined,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
               }
@@ -326,12 +368,36 @@ export async function POST(request: NextRequest) {
                 label: buildImageLabel(v),
               }));
 
-            const fallbackInbox = GATSBY_GLASS_CONFIG.supportEmail || 'support@gatsbyglass.com';
-            const toEmail = resolvedLocation?.email || fallbackInbox;
-            const locationName = resolvedLocation?.email ? resolvedLocation.locationName : null;
+            // QA short-circuit: a designated non-real test zip routes the
+            // RAQ email to the Customer Journey QA inbox so we can exercise
+            // the end-to-end pipeline without spamming a real brand or
+            // franchise mailbox. See `TEST_LOCATION` in gatsby-constants.
+            //
+            // Gated on a signed-in Supabase session: anonymous visitors who
+            // happen to enter the test zip get the normal "no territory →
+            // brand inbox" fallback, so the test inbox only ever receives
+            // intentional test traffic from authenticated team members.
+            const normalizedZip = validatedData.zipCode.replace(/[^0-9]/g, '').slice(0, 5);
+            const isTestZip = normalizedZip === TEST_LOCATION.zipCode && !!authUserId;
+
+            if (normalizedZip === TEST_LOCATION.zipCode && !authUserId) {
+              console.warn(
+                '[SUBMIT-LEAD] Test zip submitted by an anonymous visitor; falling back to brand inbox.'
+              );
+            }
+
+            const fallbackInbox = GATSBY_GLASS_CONFIG.supportEmail || 'CustomerJourney@horsepowerbrands.com';
+            const toEmail = isTestZip
+              ? TEST_LOCATION.email
+              : resolvedLocation?.email || fallbackInbox;
+            const locationName = isTestZip
+              ? TEST_LOCATION.locationName
+              : resolvedLocation?.email
+              ? resolvedLocation.locationName
+              : null;
 
             console.log(
-              `[SUBMIT-LEAD] Sending RAQ email to ${toEmail} (location: ${locationName ?? 'NO_TERRITORY → fallback'}, gallery items: ${galleryItems.length})`
+              `[SUBMIT-LEAD] Sending RAQ email to ${toEmail} (location: ${locationName ?? 'NO_TERRITORY → fallback'}${isTestZip ? ' [TEST ZIP, auth user: ' + authUserId + ']' : ''}, gallery items: ${galleryItems.length})`
             );
 
             const emailResult = await sendRaqEmail(

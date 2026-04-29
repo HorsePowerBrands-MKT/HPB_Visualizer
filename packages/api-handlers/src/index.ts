@@ -41,6 +41,10 @@ export {
 export {
   sendSasEmail,
   sendRaqEmail,
+  renderRaqEmailHtml,
+  renderRaqEmailText,
+  renderSasEmailHtml,
+  renderSasEmailText,
   type ResendConfig,
   type SasEmailData,
   type SasGalleryItem,
