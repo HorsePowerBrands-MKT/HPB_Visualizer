@@ -15,7 +15,23 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs text-gray-500">
           <span>&copy; {new Date().getFullYear()} Gatsby Glass. A Horse Power Brands Company.</span>
           <span className="hidden sm:inline text-brand-gold/40">&bull;</span>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <a
+              href="https://www.gatsbyglass.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-300 transition-colors"
+            >
+              Gatsby Glass
+            </a>
+            <a
+              href="https://www.gatsbyglass.com/locations"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-300 transition-colors"
+            >
+              Find a Location
+            </a>
             <button
               onClick={openPrivacyPolicy}
               className="underline hover:text-gray-300 transition-colors"
