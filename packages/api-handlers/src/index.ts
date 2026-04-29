@@ -37,6 +37,16 @@ export {
   type SharpSpringLeadData,
 } from './sharpspring';
 
+// Resend transactional email handlers
+export {
+  sendSasEmail,
+  sendRaqEmail,
+  type ResendConfig,
+  type SasEmailData,
+  type SasGalleryItem,
+  type RaqEmailData,
+} from './resend';
+
 // Validation utilities
 export {
   validateEmail,

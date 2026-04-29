@@ -18,6 +18,8 @@ export interface PastVisualizationItem {
 
 interface PastVisualizationsProps {
   items: PastVisualizationItem[];
+  onSave?: (item: PastVisualizationItem) => void;
+  onRequestQuote?: (item: PastVisualizationItem) => void;
 }
 
 function formatLabel(item: PastVisualizationItem): string {
@@ -56,7 +58,7 @@ function formatDateLong(iso: string): string {
   });
 }
 
-export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items }) => {
+export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items, onSave, onRequestQuote }) => {
   const [selectedItem, setSelectedItem] = useState<PastVisualizationItem | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -246,6 +248,28 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items })
                       </span>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              {selectedItem.visualization_image_url && (onSave || onRequestQuote) && (
+                <div className="flex gap-2 mt-4 pt-3 border-t border-white/[0.06]">
+                  {onSave && (
+                    <button
+                      onClick={() => { onSave(selectedItem); setSelectedItem(null); }}
+                      className="flex-1 px-3 py-2 text-xs font-sans font-medium text-white/70 border border-white/20 hover:border-brand-gold/40 hover:text-white transition-colors duration-150"
+                    >
+                      Save &amp; Send to Me
+                    </button>
+                  )}
+                  {onRequestQuote && (
+                    <button
+                      onClick={() => { onRequestQuote(selectedItem); setSelectedItem(null); }}
+                      className="flex-1 px-3 py-2 text-xs font-sans font-medium bg-brand-gold text-brand-black hover:bg-brand-gold/90 transition-colors duration-150"
+                    >
+                      Request a Quote
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Lead, LeadSubmissionResponse, IssueReport, GenerationRecord, VisualizerSubmission, VisualizerSubmissionInput } from '@repo/types';
+import type { Lead, LeadSubmissionResponse, VisualizationHistoryItem, IssueReport, GenerationRecord, VisualizerSubmission, VisualizerSubmissionInput } from '@repo/types';
 
 export interface SupabaseConfig {
   url: string;
@@ -45,16 +45,20 @@ async function retainVisualizationImages(
 /**
  * Collect all visualization URLs for a user across all sessions.
  * Prefers user_id (authenticated), falls back to user_fingerprint, then session_id.
+ *
+ * Includes the configuration columns (mode/enclosure/framing/hardware/handle)
+ * so downstream consumers (e.g. the SAS email composer) can label each image
+ * with the design that produced it.
  */
 async function collectAllVisualizationUrls(
   supabase: ReturnType<typeof getSupabaseClient>,
   identifiers: { sessionId?: string; userId?: string; userFingerprint?: string }
-): Promise<{ watermarked: string | null; original: string | null; created_at: string }[]> {
+): Promise<VisualizationHistoryItem[]> {
   const { sessionId, userId, userFingerprint } = identifiers;
 
   let query = supabase
     .from('visualizations')
-    .select('visualization_image_url, original_image_url, created_at')
+    .select('visualization_image_url, original_image_url, created_at, mode, enclosure_type, framing_style, hardware_finish, handle_style')
     .not('visualization_image_url', 'is', null)
     .order('created_at', { ascending: true });
 
@@ -75,6 +79,11 @@ async function collectAllVisualizationUrls(
         watermarked: r.visualization_image_url,
         original: r.original_image_url,
         created_at: r.created_at,
+        mode: r.mode ?? null,
+        enclosure_type: r.enclosure_type ?? null,
+        framing_style: r.framing_style ?? null,
+        hardware_finish: r.hardware_finish ?? null,
+        handle_style: r.handle_style ?? null,
       }))
     : [];
 }
@@ -165,7 +174,8 @@ export async function submitLead(
       return {
         success: true,
         message: 'Your information has been submitted successfully',
-        leadId: data.id
+        leadId: data.id,
+        allVisualizationUrls: vizUrls,
       };
     }
   }
@@ -220,7 +230,8 @@ export async function submitLead(
   return {
     success: true,
     message: 'Your information has been submitted successfully',
-    leadId: data.id
+    leadId: data.id,
+    allVisualizationUrls,
   };
 }
 
@@ -376,13 +387,22 @@ export interface TeamLocation {
  * the territory_zipcodes table (populated by sync_gatsby_glass_locations).
  * Returns the first matching active location, or a placeholder when no
  * territory covers the supplied zip.
+ *
+ * `email` is the shared inbox address for the franchise location and is
+ * `null` when the zip is outside any active territory. Callers that need
+ * to send to the franchise (e.g. the RAQ email) should fall back to the
+ * brand support inbox in that case.
  */
 export async function lookupLocationByZipcode(
   config: SupabaseConfig,
   zipCode: string
-): Promise<{ locationId: string; locationName: string }> {
+): Promise<{ locationId: string; locationName: string; email: string | null }> {
   const supabase = getSupabaseClient(config);
-  const NO_TERRITORY = { locationId: 'NO_TERRITORY', locationName: 'No Territory' };
+  const NO_TERRITORY = {
+    locationId: 'NO_TERRITORY',
+    locationName: 'No Territory',
+    email: null,
+  };
 
   const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
   if (cleanZip.length !== 5) return NO_TERRITORY;
@@ -399,7 +419,7 @@ export async function lookupLocationByZipcode(
 
   const { data: locRow } = await supabase
     .from('team_locations')
-    .select('location_name')
+    .select('location_name, email')
     .eq('location_id', zipRow.location_id)
     .eq('is_active', true)
     .limit(1)
@@ -410,6 +430,7 @@ export async function lookupLocationByZipcode(
   return {
     locationId: zipRow.location_id,
     locationName: locRow.location_name || zipRow.location_id,
+    email: (locRow.email as string | null) || null,
   };
 }
 

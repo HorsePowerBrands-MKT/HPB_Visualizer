@@ -218,6 +218,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   const [contactModalOpen, setContactModalOpen] = useState<boolean>(false);
   const [contactModalMode, setContactModalMode] = useState<'save' | 'quote'>('save');
+  const [pastVizModalItem, setPastVizModalItem] = useState<PastVisualizationItem | null>(null);
 
   // UTM team param — read once on mount from the URL
   const [teamUtm, setTeamUtm] = useState<string | null>(null);
@@ -921,7 +922,19 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       )}
 
       {/* Past visualizations */}
-      <PastVisualizations items={pastVisualizations} />
+      <PastVisualizations
+        items={pastVisualizations}
+        onSave={(item) => {
+          setPastVizModalItem(item);
+          setContactModalMode('save');
+          setContactModalOpen(true);
+        }}
+        onRequestQuote={(item) => {
+          setPastVizModalItem(item);
+          setContactModalMode('quote');
+          setContactModalOpen(true);
+        }}
+      />
 
       {/* Main Card with Current Step */}
       <Card className="shadow-none bg-brand-brown border-0">
@@ -949,16 +962,34 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         usageLimit={usageLimit}
       />
 
-      {/* Contact Form Modal */}
-      {resultUrl && imageFile && (
+      {/* Contact Form Modal — works for both active session and past visualization actions */}
+      {(pastVizModalItem || (resultUrl && imageFile)) && (
         <ContactFormModal
           isOpen={contactModalOpen}
-          onClose={() => setContactModalOpen(false)}
-          visualizationData={{
-            resultUrl,
-            uploadedImage: previewUrl || '',
-            configs: form
+          onClose={() => {
+            setContactModalOpen(false);
+            setPastVizModalItem(null);
           }}
+          visualizationData={
+            pastVizModalItem
+              ? {
+                  resultUrl: pastVizModalItem.visualization_image_url || '',
+                  uploadedImage: pastVizModalItem.original_image_url || '',
+                  configs: {
+                    mode: pastVizModalItem.mode ?? undefined,
+                    enclosure_type: pastVizModalItem.enclosure_type ?? undefined,
+                    glass_style: pastVizModalItem.framing_style ?? undefined,
+                    hardware_finish: pastVizModalItem.hardware_finish ?? undefined,
+                    handle_style: pastVizModalItem.handle_style ?? undefined,
+                    shower_shape: pastVizModalItem.shower_shape ?? undefined,
+                  } as Partial<Payload>
+                }
+              : {
+                  resultUrl: resultUrl || '',
+                  uploadedImage: previewUrl || '',
+                  configs: form
+                }
+          }
           mode={contactModalMode}
           userFingerprint={userFingerprint}
         />
