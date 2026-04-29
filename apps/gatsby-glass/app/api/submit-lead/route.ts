@@ -61,6 +61,34 @@ function buildImageLabel(viz: VisualizationHistoryItem): string {
   return parts.join(' · ');
 }
 
+/**
+ * Map a visualization history item to the structured Enclosure/Framing/
+ * Hardware/Handle fields the SAS email renders as a labeled list.
+ * Returns null for inspiration mode (the email shows a different block).
+ */
+function buildImageConfig(viz: VisualizationHistoryItem): {
+  enclosure?: string | null;
+  framing?: string | null;
+  hardware?: string | null;
+  handle?: string | null;
+} | null {
+  if (viz.mode === 'inspiration') return null;
+  return {
+    enclosure: viz.enclosure_type
+      ? CATALOG.enclosureTypes[viz.enclosure_type as EnclosureType]?.name ?? null
+      : null,
+    framing: viz.framing_style
+      ? CATALOG.trackPreferences[viz.framing_style as TrackPreference]?.name ?? null
+      : null,
+    hardware: viz.hardware_finish
+      ? CATALOG.hardwareFinishes[viz.hardware_finish as HardwareFinish]?.name ?? null
+      : null,
+    handle: viz.handle_style
+      ? CATALOG.handleStyles[viz.handle_style as HandleStyle]?.name ?? null
+      : null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -243,6 +271,19 @@ export async function POST(request: NextRequest) {
               `[SUBMIT-LEAD] Sending SAS email to ${validatedData.email} (gallery items: ${galleryItems.length})`
             );
 
+            const heroConfig = hero
+              ? buildImageConfig(hero)
+              : buildImageConfig({
+                  watermarked: heroImageUrl,
+                  original: null,
+                  created_at: new Date().toISOString(),
+                  mode: (validatedData.mode as any) ?? null,
+                  enclosure_type: (validatedData.doorType as any) ?? null,
+                  framing_style: (validatedData.trackPreference as any) ?? null,
+                  hardware_finish: (validatedData.hardware as any) ?? null,
+                  handle_style: (validatedData.handleStyle as any) ?? null,
+                });
+
             const emailResult = await sendSasEmail(
               {
                 apiKey: resendApiKey,
@@ -254,6 +295,7 @@ export async function POST(request: NextRequest) {
                 firstName,
                 heroImageUrl,
                 heroLabel,
+                heroConfig: heroConfig ?? undefined,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
               }

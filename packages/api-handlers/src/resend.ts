@@ -23,7 +23,18 @@ export interface SasEmailData {
   toEmail: string;
   firstName: string;
   heroImageUrl: string;
+  /** Human-readable summary of the hero design. Used as the image caption
+   *  and (in inspiration mode) as the configuration block body. */
   heroLabel: string;
+  /** Structured configuration fields shown as a labeled list under the
+   *  hero image when in `configure` mode. Each field is optional; missing
+   *  fields are omitted from the rendered list. */
+  heroConfig?: {
+    enclosure?: string | null;
+    framing?: string | null;
+    hardware?: string | null;
+    handle?: string | null;
+  };
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
   /** Public marketing/landing site URL (used in the Quote CTA). */
@@ -62,10 +73,12 @@ const DEFAULT_BRAND_URL = 'https://www.gatsbyglass.com';
 const PRIVACY_POLICY_URL = 'https://www.horsepowerbrands.com/privacy-policy';
 const EMAIL_HEADER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/YourMagicLink.webp';
+const RAQ_EMAIL_HEADER_IMAGE_URL =
+  'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/NewQuote.webp';
 const EMAIL_FOOTER_BORDER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/GG%20Email%20Border%204.png';
 
-const SUBJECT_LINE = 'Your Gatsby Glass Shower Visualization';
+const SUBJECT_LINE = 'Your Gatsby Glass Design Preview';
 
 function escapeHtml(s: string): string {
   return s
@@ -82,14 +95,26 @@ function renderHtml(data: SasEmailData): string {
 
   const heroSection = `
               <tr>
-                <td style="padding:0 30px 8px 30px;">
-                  <img src="${escapeHtml(data.heroImageUrl)}" alt="Your selected shower visualization"
+                <td style="padding:0 30px 4px 30px;">
+                  <img src="${escapeHtml(data.heroImageUrl)}" alt="Your Gatsby Glass design preview"
                     style="display:block;width:100%;height:auto;border:1px solid #e4bf6e;" />
-                  <p style="margin:8px 0 0 0;font-family:Arial,sans-serif;font-size:12px;color:#ababab;text-align:center;font-style:italic;">
-                    ${escapeHtml(data.heroLabel)}
-                  </p>
                 </td>
               </tr>`;
+
+  const configRow = (label: string, value: string) => `
+                          <tr>
+                            <td style="padding:2px 0;font-family:Arial,sans-serif;font-size:13px;color:#d5d5d5;line-height:1.7;">
+                              <span style="color:#e4bf6e;font-weight:bold;letter-spacing:1px;text-transform:uppercase;font-size:11px;">${escapeHtml(label)}</span>
+                              <span style="color:#5c5450;">&nbsp;&nbsp;</span>
+                              ${escapeHtml(value)}
+                            </td>
+                          </tr>`;
+
+  const configRows: string[] = [];
+  if (data.heroConfig?.enclosure) configRows.push(configRow('Enclosure', data.heroConfig.enclosure));
+  if (data.heroConfig?.framing) configRows.push(configRow('Framing', data.heroConfig.framing));
+  if (data.heroConfig?.hardware) configRows.push(configRow('Hardware', data.heroConfig.hardware));
+  if (data.heroConfig?.handle) configRows.push(configRow('Handle', data.heroConfig.handle));
 
   const configBlock = isInspiration
     ? `
@@ -115,12 +140,15 @@ function renderHtml(data: SasEmailData): string {
                   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
                       <td style="background-color:#111111;border:1px solid #231f20;padding:18px;">
-                        <p style="margin:0 0 8px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+                        <p style="margin:0 0 10px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
                           Your Selected Configuration
                         </p>
-                        <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">
-                          ${escapeHtml(data.heroLabel)}
-                        </p>
+                        ${
+                          configRows.length > 0
+                            ? `<table role="presentation" border="0" cellspacing="0" cellpadding="0">${configRows.join('')}
+                        </table>`
+                            : `<p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">${escapeHtml(data.heroLabel)}</p>`
+                        }
                       </td>
                     </tr>
                   </table>
@@ -133,10 +161,10 @@ function renderHtml(data: SasEmailData): string {
               <tr>
                 <td style="padding:24px 30px 8px 30px;">
                   <p style="margin:0 0 6px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
-                    More Designs You Tried
+                    Other Previews From Your Session
                   </p>
                   <p style="margin:0 0 14px 0;color:#ababab;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">
-                    Other variations from this session, with the configuration that produced each one.
+                    Additional design variations you explored, each labeled with the configuration that produced it.
                   </p>
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     ${data.galleryItems
@@ -181,24 +209,24 @@ function renderHtml(data: SasEmailData): string {
                     <tr>
                         <td style="padding: 22px 30px 6px 30px; color: #ffffff; font-size: 14px; line-height: 1.7; font-family: Arial, sans-serif;">
                             <p style="margin: 0 0 8px 0;">Hi ${escapeHtml(data.firstName)},</p>
-                            <p style="margin: 0;">Thanks for using the Gatsby Glass Visualizer! Here's the custom shower design you created.</p>
+                            <p style="margin: 0;">Thank you for exploring GatsbyView. Your custom design preview is ready below for your review.</p>
                         </td>
                     </tr>
                     ${heroSection}
                     ${configBlock}
                     <tr>
                         <td style="padding: 16px 30px 0 30px; color: #777777; font-size: 12px; line-height: 1.6; font-family: Arial, sans-serif;">
-                            <p style="margin: 0;">This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary.</p>
+                            <p style="margin: 0;">This design preview is AI-generated and intended for illustrative purposes only. Final product appearance, dimensions, and finish may vary based on site conditions, measurements, and selected materials.</p>
                         </td>
                     </tr>
                     ${galleryRows}
                     <tr>
                         <td align="center" style="padding: 24px 30px 10px 30px;">
                             <p style="margin: 0 0 10px 0; color: #e4bf6e; font-size: 14px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif;">
-                                Ready to Bring This Design to Life?
+                                Ready to bring your design to life?
                             </p>
                             <p style="margin: 0 0 16px 0; color: #ababab; font-size: 12px; line-height: 1.6; font-family: Arial, sans-serif;">
-                                A local Gatsby Glass professional can walk you through your options, take measurements, and provide a detailed quote — all at no cost.
+                                A member of your local Gatsby Glass team can guide you through your options, take precise measurements, and provide a complimentary proposal tailored to your space.
                             </p>
                             <table border="0" cellpadding="0" cellspacing="0">
                                 <tr>
@@ -212,9 +240,20 @@ function renderHtml(data: SasEmailData): string {
                         </td>
                     </tr>
                     <tr>
-                        <td align="center" style="padding: 0 30px 18px 30px; color: #777777; font-size: 12px; line-height: 1.5;">
-                            <p style="margin: 0;">Your visualization will be available for 30 days.</p>
-                            <p style="margin: 8px 0 0 0;">You are receiving this email because you requested your shower visualization be sent to this address.</p>
+                        <td align="center" style="padding: 0 30px 6px 30px; color: #777777; font-size: 12px; line-height: 1.5;">
+                            <p style="margin: 0;">Your design preview will remain available for 30 days.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 14px 30px 18px 30px; color: #ababab; font-size: 12px; line-height: 1.6; font-family: Arial, sans-serif;">
+                            <p style="margin: 0 0 2px 0; color: #e4bf6e; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">Gatsby Glass</p>
+                            <p style="margin: 0; color: #ababab; font-style: italic; font-size: 11px; letter-spacing: 1px;">Elegant. Strong. Innovative.</p>
+                            <p style="margin: 6px 0 0 0;"><a href="${escapeHtml(brandUrl)}" target="_blank" style="color: #e4bf6e; text-decoration: underline;">www.gatsbyglass.com</a></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 0 30px 16px 30px; color: #777777; font-size: 11px; line-height: 1.5;">
+                            <p style="margin: 0;">You are receiving this email because a shower design preview was requested for this email address. If you believe this message was sent in error, you may simply disregard it.</p>
                         </td>
                     </tr>
                     <tr>
@@ -241,39 +280,53 @@ function renderText(data: SasEmailData): string {
   const lines: string[] = [];
   lines.push(`Hi ${data.firstName},`);
   lines.push('');
-  lines.push("Thanks for using the Gatsby Glass Visualizer! Here's the custom shower");
-  lines.push('design you created.');
+  lines.push('Thank you for exploring GatsbyView. Your custom design preview');
+  lines.push('is ready below for your review.');
   lines.push('');
-  lines.push('YOUR SELECTED DESIGN');
-  lines.push(`  ${data.heroLabel}`);
-  lines.push(`  ${data.heroImageUrl}`);
+  lines.push(`Design preview: ${data.heroImageUrl}`);
+  lines.push('');
+  lines.push('YOUR SELECTED CONFIGURATION');
+  if (data.mode === 'inspiration') {
+    lines.push("  Based on your uploaded inspiration photo, tailored to your");
+    lines.push("  bathroom's unique layout.");
+  } else if (data.heroConfig) {
+    if (data.heroConfig.enclosure) lines.push(`  Enclosure: ${data.heroConfig.enclosure}`);
+    if (data.heroConfig.framing) lines.push(`  Framing: ${data.heroConfig.framing}`);
+    if (data.heroConfig.hardware) lines.push(`  Hardware: ${data.heroConfig.hardware}`);
+    if (data.heroConfig.handle) lines.push(`  Handle: ${data.heroConfig.handle}`);
+  } else {
+    lines.push(`  ${data.heroLabel}`);
+  }
   lines.push('');
   if (data.galleryItems.length > 0) {
-    lines.push('MORE DESIGNS YOU TRIED');
+    lines.push('OTHER PREVIEWS FROM YOUR SESSION');
     for (const item of data.galleryItems) {
       lines.push(`  - ${item.label}`);
       lines.push(`    ${item.imageUrl}`);
     }
     lines.push('');
   }
-  lines.push('This visualization is AI-generated and intended for illustrative purposes');
-  lines.push('only. Actual product appearance, dimensions, and finish may vary.');
+  lines.push('This design preview is AI-generated and intended for illustrative');
+  lines.push('purposes only. Final product appearance, dimensions, and finish may');
+  lines.push('vary based on site conditions, measurements, and selected materials.');
   lines.push('');
-  lines.push('READY TO BRING THIS DESIGN TO LIFE?');
-  lines.push('A local Gatsby Glass professional can walk you through your options,');
-  lines.push('take measurements, and provide a detailed quote — all at no cost.');
+  lines.push('READY TO BRING YOUR DESIGN TO LIFE?');
+  lines.push('A member of your local Gatsby Glass team can guide you through');
+  lines.push('your options, take precise measurements, and provide a complimentary');
+  lines.push('proposal tailored to your space.');
   lines.push('');
   lines.push(`Request a quote: ${data.brandUrl || DEFAULT_BRAND_URL}`);
   lines.push('');
-  lines.push('Your visualization will be available for 30 days.');
+  lines.push('Your design preview will remain available for 30 days.');
   lines.push('');
   lines.push('—');
   lines.push('Gatsby Glass');
+  lines.push('Elegant. Strong. Innovative.');
   lines.push(data.brandUrl || DEFAULT_BRAND_URL);
   lines.push('');
-  lines.push('You are receiving this email because you requested your shower');
-  lines.push('visualization be sent to this address. If you believe this was sent');
-  lines.push('in error, you can disregard this message.');
+  lines.push('You are receiving this email because a shower design preview was');
+  lines.push('requested for this email address. If you believe this message was');
+  lines.push('sent in error, you may simply disregard it.');
   return lines.join('\n');
 }
 
@@ -495,7 +548,7 @@ function renderRaqHtml(data: RaqEmailData): string {
                 <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color:#000000;margin:0 auto;border:1px solid #231f20;border-radius:5px;margin:50px;width:600px;">
                     <tr>
                         <td align="center" style="padding:0;color:#ffffff;font-size:24px;width:600px;">
-                            <img src="${escapeHtml(EMAIL_HEADER_IMAGE_URL)}" alt="Gatsby Glass" width="100%" style="display:block;">
+                            <img src="${escapeHtml(RAQ_EMAIL_HEADER_IMAGE_URL)}" alt="New Quote Request" width="100%" style="display:block;">
                         </td>
                     </tr>
                     <tr>
@@ -598,6 +651,27 @@ function renderRaqText(data: RaqEmailData): string {
   lines.push('This lead has also been logged in Constant Contact. Please reach');
   lines.push('out to the customer promptly.');
   return lines.join('\n');
+}
+
+/**
+ * Public renderers exposed for previewing/testing. The actual email send
+ * pipeline (`sendRaqEmail`/`sendSasEmail`) wraps these — these helpers just
+ * return the HTML/text body without dispatching to Resend.
+ */
+export function renderRaqEmailHtml(data: RaqEmailData): string {
+  return renderRaqHtml(data);
+}
+
+export function renderRaqEmailText(data: RaqEmailData): string {
+  return renderRaqText(data);
+}
+
+export function renderSasEmailHtml(data: SasEmailData): string {
+  return renderHtml(data);
+}
+
+export function renderSasEmailText(data: SasEmailData): string {
+  return renderText(data);
 }
 
 /**
