@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Filter, Image as ImageIcon, AlertCircle, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Filter, Image as ImageIcon, AlertCircle, Clock, CheckCircle, XCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
 import type { VisualizerSubmission } from '@repo/types';
@@ -51,7 +51,7 @@ function MarketingBadge({ approved }: { approved: boolean }) {
   );
 }
 
-function SubmissionCard({ submission }: { submission: VisualizerSubmission }) {
+function SubmissionCard({ submission, onImageClick }: { submission: VisualizerSubmission; onImageClick: (src: string) => void }) {
   const meta = submission.metadata as Record<string, string | null | undefined>;
   const configItems = [
     meta.mode && `Mode: ${meta.mode}`,
@@ -70,7 +70,8 @@ function SubmissionCard({ submission }: { submission: VisualizerSubmission }) {
             <img
               src={submission.originalPhotoPath}
               alt="Original upload"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => onImageClick(submission.originalPhotoPath!)}
             />
           ) : (
             <div className="flex flex-col items-center gap-1 text-white/20">
@@ -84,7 +85,8 @@ function SubmissionCard({ submission }: { submission: VisualizerSubmission }) {
             <img
               src={submission.generatedImagePath}
               alt="AI generated"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => onImageClick(submission.generatedImagePath!)}
             />
           ) : (
             <div className="flex flex-col items-center gap-1 text-white/20">
@@ -132,6 +134,7 @@ export default function SubmissionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [marketingOnly, setMarketingOnly] = useState(true);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -257,8 +260,29 @@ export default function SubmissionsPage() {
       {!loading && submissions.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {submissions.map((submission) => (
-            <SubmissionCard key={submission.id} submission={submission} />
+            <SubmissionCard key={submission.id} submission={submission} onImageClick={setLightboxSrc} />
           ))}
+        </div>
+      )}
+
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 p-2 text-white/60 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxSrc}
+            alt="Expanded view"
+            className="max-w-[90vw] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
