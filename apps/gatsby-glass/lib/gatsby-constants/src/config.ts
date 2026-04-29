@@ -67,6 +67,28 @@ export const GATSBY_GLASS_CONFIG: BrandConfig = {
   name: 'Gatsby Glass',
   primaryColor: '#a37529',
   secondaryColor: '#e4bf6e',
-  supportEmail: 'support@gatsbyglass.com',
+  supportEmail: 'CustomerJourney@horsepowerbrands.com',
   supportPhone: '1-800-GATSBY'
 };
+
+/**
+ * Synthetic "test" franchise location used to QA the Request-a-Quote (RAQ)
+ * email pipeline end-to-end without sending to a real brand or franchise
+ * inbox.
+ *
+ * The override is gated on a signed-in Supabase session: only authenticated
+ * team members can trigger it. When such a user submits the RAQ form with
+ * a zip code that exactly matches `TEST_LOCATION.zipCode`, the submit-lead
+ * route delivers the franchise notification to `TEST_LOCATION.email`
+ * instead of the brand shared inbox fallback. Anonymous visitors who
+ * happen to type the same zip get the normal "no territory → brand inbox"
+ * behavior, so the test inbox never receives stray public traffic.
+ *
+ * The zip is intentionally non-real (`00000` is not assigned by USPS) so it
+ * will never collide with a live territory in `territory_zipcodes`.
+ */
+export const TEST_LOCATION = {
+  zipCode: '00000',
+  email: 'CustomerJourney@horsepowerbrands.com',
+  locationName: 'Customer Journey (Test)',
+} as const;

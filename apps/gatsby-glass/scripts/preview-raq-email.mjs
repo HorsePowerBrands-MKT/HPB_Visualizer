@@ -351,7 +351,7 @@ function renderIndex(items) {
             To: ${escapeHtml(
               item.data.locationName
                 ? `<franchise shared inbox> · ${item.data.locationName}`
-                : 'support@gatsbyglass.com (no-territory fallback)'
+                : 'CustomerJourney@horsepowerbrands.com (no-territory fallback)'
             )} · Mode: ${escapeHtml(item.data.mode)}
           </div>
         </li>`
