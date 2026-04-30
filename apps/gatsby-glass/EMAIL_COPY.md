@@ -1,6 +1,6 @@
 # Gatsby Glass Visualizer — Email Copy
 
-Two transactional emails triggered from the visualizer contact form.
+Two transactional emails triggered from the visualizer contact form for the visualizer.
 
 ## Deployment Prerequisites (SAS email)
 
@@ -8,15 +8,15 @@ The Save & Send to Me (SAS) email is sent through [Resend](https://resend.com).
 Before the email will deliver in any environment:
 
 1. **Verify the sender domain** (`gatsbyglass.com`) in the Resend dashboard
-   (DNS: SPF, DKIM, and ideally DMARC). Until the domain shows as verified,
+  (DNS: SPF, DKIM, and ideally DMARC). Until the domain shows as verified,
    Resend will reject `from: noreply@gatsbyglass.com`.
 2. **Set environment variables** on Vercel (and locally in `.env`):
-   - `RESEND_API_KEY` — required. The route logs a warning and skips the send
-     when this is unset, so the lead still saves successfully.
-   - `RESEND_FROM` — optional override of the sender address. Defaults to
-     `Gatsby Glass <noreply@gatsbyglass.com>`. Must use a verified domain.
+  - `RESEND_API_KEY` — required. The route logs a warning and skips the send
+   when this is unset, so the lead still saves successfully.
+  - `RESEND_FROM` — optional override of the sender address. Defaults to
+  `Gatsby Glass <noreply@gatsbyglass.com>`. Must use a verified domain.
 3. The reply-to header is automatically set to `GATSBY_GLASS_CONFIG.supportEmail`
-   (`CustomerJourney@horsepowerbrands.com`) so customer replies land in the
+  (`CustomerJourney@horsepowerbrands.com`) so customer replies land in the
    brand monitoring inbox.
 
 The send is fully awaited inside `POST /api/submit-lead` (Vercel terminates
