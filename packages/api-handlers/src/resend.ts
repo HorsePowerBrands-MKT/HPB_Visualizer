@@ -93,11 +93,23 @@ function renderHtml(data: SasEmailData): string {
   const brandUrl = data.brandUrl || DEFAULT_BRAND_URL;
   const isInspiration = data.mode === 'inspiration';
 
+  // NOTE: The border lives on the wrapping <table>, not the <img>, because
+  // Outlook (Word rendering engine) ignores `height:auto` and reserves the
+  // image's *natural* pixel height — when the border is on the <img>, that
+  // produces a gold frame with empty space below the scaled bitmap. Wrapping
+  // the image in a bordered table cell and adding an explicit `width="540"`
+  // HTML attribute keeps the frame flush against the rendered image.
   const heroSection = `
               <tr>
                 <td style="padding:0 30px 4px 30px;">
-                  <img src="${escapeHtml(data.heroImageUrl)}" alt="Your Gatsby Glass design preview"
-                    style="display:block;width:100%;height:auto;border:1px solid #e4bf6e;" />
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border:1px solid #e4bf6e;">
+                    <tr>
+                      <td style="padding:0;font-size:0;line-height:0;">
+                        <img src="${escapeHtml(data.heroImageUrl)}" alt="Your Gatsby Glass design preview" width="540" border="0"
+                          style="display:block;width:100%;height:auto;border:0;outline:none;-ms-interpolation-mode:bicubic;" />
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>`;
 
@@ -161,22 +173,28 @@ function renderHtml(data: SasEmailData): string {
               <tr>
                 <td style="padding:24px 30px 8px 30px;">
                   <p style="margin:0 0 6px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
-                    Other Previews From Your Session
+                    Other Previews From Your Session (${data.galleryItems.length})
                   </p>
                   <p style="margin:0 0 14px 0;color:#ababab;font-size:12px;line-height:1.6;font-family:Arial,sans-serif;">
-                    Additional design variations you explored, each labeled with the configuration that produced it.
+                    Additional design variations you explored. Click any item to view the image.
                   </p>
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    style="border-collapse:collapse;border:1px solid #231f20;">
                     ${data.galleryItems
                       .map(
-                        (item) => `
+                        (item, idx) => `
                     <tr>
-                      <td style="padding:0 0 14px 0;">
-                        <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.label)}"
-                          style="display:block;width:100%;height:auto;border:1px solid #3a3436;" />
-                        <p style="margin:6px 0 0 0;font-family:Arial,sans-serif;font-size:12px;color:#ababab;text-align:center;font-style:italic;">
+                      <td style="padding:10px 14px;border-bottom:${idx === data.galleryItems.length - 1 ? '0' : '1px solid #231f20'};vertical-align:top;width:36px;color:#777777;font-size:12px;font-family:Arial,sans-serif;">
+                        ${idx + 1}.
+                      </td>
+                      <td style="padding:10px 14px 10px 0;border-bottom:${idx === data.galleryItems.length - 1 ? '0' : '1px solid #231f20'};vertical-align:top;font-family:Arial,sans-serif;">
+                        <p style="margin:0 0 4px 0;color:#ffffff;font-size:13px;line-height:1.5;">
                           ${escapeHtml(item.label)}
                         </p>
+                        <a href="${escapeHtml(item.imageUrl)}" target="_blank"
+                          style="color:#e4bf6e;font-size:12px;text-decoration:underline;word-break:break-all;">
+                          View image
+                        </a>
                       </td>
                     </tr>`
                       )
@@ -299,11 +317,11 @@ function renderText(data: SasEmailData): string {
   }
   lines.push('');
   if (data.galleryItems.length > 0) {
-    lines.push('OTHER PREVIEWS FROM YOUR SESSION');
-    for (const item of data.galleryItems) {
-      lines.push(`  - ${item.label}`);
-      lines.push(`    ${item.imageUrl}`);
-    }
+    lines.push(`OTHER PREVIEWS FROM YOUR SESSION (${data.galleryItems.length})`);
+    data.galleryItems.forEach((item, idx) => {
+      lines.push(`  ${idx + 1}. ${item.label}`);
+      lines.push(`     ${item.imageUrl}`);
+    });
     lines.push('');
   }
   lines.push('This design preview is AI-generated and intended for illustrative');
@@ -479,16 +497,26 @@ function renderRaqHtml(data: RaqEmailData): string {
                 </td>
               </tr>`;
 
+  // NOTE: See SAS heroSection above for why the border is on the wrapping
+  // <table> rather than the <img> — same Outlook `height:auto` bug applies
+  // here, and it manifested as a gold frame with empty space below the
+  // bathroom photo in customer-reported screenshots.
   const heroSection = `
               <tr>
                 <td style="padding:18px 30px 4px 30px;">
                   <p style="margin:0 0 8px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
                     Selected Visualization
                   </p>
-                  <a href="${escapeHtml(data.heroImageUrl)}" target="_blank" style="text-decoration:none;">
-                    <img src="${escapeHtml(data.heroImageUrl)}" alt="Customer's selected visualization"
-                      style="display:block;width:100%;height:auto;border:1px solid #e4bf6e;" />
-                  </a>
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border:1px solid #e4bf6e;">
+                    <tr>
+                      <td style="padding:0;font-size:0;line-height:0;">
+                        <a href="${escapeHtml(data.heroImageUrl)}" target="_blank" style="text-decoration:none;display:block;">
+                          <img src="${escapeHtml(data.heroImageUrl)}" alt="Customer's selected visualization" width="540" border="0"
+                            style="display:block;width:100%;height:auto;border:0;outline:none;-ms-interpolation-mode:bicubic;" />
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
                   <p style="margin:8px 0 0 0;font-family:Arial,sans-serif;font-size:12px;color:#ababab;text-align:center;font-style:italic;">
                     ${escapeHtml(data.heroLabel)}
                   </p>
