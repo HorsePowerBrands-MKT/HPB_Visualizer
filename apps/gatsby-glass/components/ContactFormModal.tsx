@@ -80,7 +80,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
     const phoneDigits = stripPhoneFormatting(formData.phone);
     if (phoneRequired && phoneDigits.length === 0) {
-      newErrors.phone = 'Phone number is required for a quote request';
+      newErrors.phone = 'Phone number is required for an estimate request';
     } else if (phoneDigits.length > 0 && phoneDigits.length < 10) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
@@ -189,7 +189,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-brand-gold">
-              {mode === 'save' ? 'Save & Send to Me' : 'Request a Quote'}
+              {mode === 'save' ? 'Save & Send to Me' : 'Request an Estimate'}
             </CardTitle>
             <button
               onClick={onClose}
@@ -210,15 +210,15 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               <h3 className="text-lg font-semibold text-white mb-2">Success!</h3>
               <p className="text-gray-400">
                 {mode === 'save'
-                  ? 'Your visualization has been sent to your email.'
-                  : 'Your quote request has been submitted. We\'ll contact you soon!'}
+                  ? 'Your design preview has been sent to your email.'
+                  : 'Your estimate request has been submitted. We\'ll contact you soon!'}
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
                 {mode === 'save'
-                  ? 'Enter your information to receive your visualization via email.'
+                  ? 'Enter your information to receive your design preview via email.'
                   : 'Provide your details and we\'ll connect you with a local Gatsby Glass professional.'}
               </p>
 
@@ -370,14 +370,14 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                       Submitting...
                     </>
                   ) : (
-                    mode === 'save' ? 'Send to Me' : 'Request Quote'
+                    mode === 'save' ? 'Send to Me' : 'Request Estimate'
                   )}
                 </Button>
               </div>
 
               <p className="text-[11px] text-gray-500 leading-relaxed pt-2">
                 By submitting this form you consent to being contacted by Gatsby Glass or a local Gatsby Glass franchisee via email regarding your inquiry.{' '}
-                All visualization images generated during your session will be retained and shared with the franchisee serving your area to assist with your consultation.{' '}
+                All design preview images generated during your session will be retained and shared with the franchisee serving your area to assist with your consultation.{' '}
                 Your information will not be sold to third parties.{' '}
                 View our{' '}
                 <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>.

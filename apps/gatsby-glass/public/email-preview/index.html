@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gatsby Glass — Email Previews</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#fff;">
+  <div style="max-width:760px;margin:0 auto;padding:40px 24px;">
+    <h1 style="color:#e4bf6e;font-size:22px;margin:0 0 8px 0;letter-spacing:2px;text-transform:uppercase;">
+      Gatsby Glass — Email Previews
+    </h1>
+    <p style="color:#ababab;font-size:13px;line-height:1.6;margin:0 0 28px 0;">
+      Static renders of every transactional email the visualizer sends. These are
+      generated directly from the production renderers in
+      <code style="color:#e4bf6e;">packages/api-handlers/src/resend.ts</code>, so what you
+      see here is exactly what Resend will deliver. Regenerate with
+      <code style="color:#e4bf6e;">pnpm preview:emails</code> after editing the templates.
+    </p>
+    
+        <section style="margin:0 0 32px 0;">
+          <h2 style="color:#e4bf6e;font-size:14px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px 0;border-bottom:1px solid #231f20;padding-bottom:8px;">
+            SAS · Save &amp; Send to Me — sent to the customer
+          </h2>
+          <ul style="list-style:none;padding:0;margin:0;">
+            
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="sas-configure.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                SAS · Customer · Configure mode →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent when the customer clicks &quot;Save &amp; Send to Me&quot; after configuring an enclosure manually.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">Your Gatsby Glass Design Preview</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Customer (the email entered on the form)</td>
+                </tr>
+              </table>
+            </li>
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="sas-inspiration.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                SAS · Customer · Inspiration mode →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent after the customer uploads an inspiration photo and clicks &quot;Save &amp; Send to Me&quot;.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">Your Gatsby Glass Design Preview</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Customer (the email entered on the form)</td>
+                </tr>
+              </table>
+            </li>
+          </ul>
+        </section>
+        <section style="margin:0 0 32px 0;">
+          <h2 style="color:#e4bf6e;font-size:14px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px 0;border-bottom:1px solid #231f20;padding-bottom:8px;">
+            RAQ · Request an Estimate — sent to the franchise
+          </h2>
+          <ul style="list-style:none;padding:0;margin:0;">
+            
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="raq-configure.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                RAQ · Franchise · Configure mode →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent to the matched franchise location when the customer clicks &quot;Request an Estimate&quot; after configuring.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">New Visualizer Estimate Request — Jane Doe (94110)</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Franchise shared inbox — resolved via territory_zipcodes → team_locations</td>
+                </tr>
+              </table>
+            </li>
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="raq-inspiration.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                RAQ · Franchise · Inspiration mode →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent to the matched franchise when the customer requested an estimate after using inspiration mode.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">New Visualizer Estimate Request — Jane Doe (94110)</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Franchise shared inbox — resolved via territory_zipcodes → team_locations</td>
+                </tr>
+              </table>
+            </li>
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="raq-no-territory.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                RAQ · Brand fallback · No territory match →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent when the customer&#39;s zip code does not match any franchise territory.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">New Visualizer Estimate Request — Jane Doe (99999)</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">CustomerJourney@horsepowerbrands.com (brand monitoring inbox)</td>
+                </tr>
+              </table>
+            </li>
+          </ul>
+        </section>
+  </div>
+</body>
+</html>

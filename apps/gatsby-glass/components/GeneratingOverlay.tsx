@@ -7,7 +7,7 @@ const PROGRESS_MESSAGES = [
   'Mapping dimensions and angles...',
   'Designing glass panels...',
   'Applying hardware finishes...',
-  'Rendering your visualization...',
+  'Rendering your design preview...',
   'Adding final details...',
 ];
 

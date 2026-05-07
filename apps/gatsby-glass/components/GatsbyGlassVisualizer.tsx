@@ -583,9 +583,9 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         const errorData = await response.json();
         if (errorData.rateLimited) {
           setUsageCount(errorData.usageCount ?? usageLimit);
-          throw new Error('Monthly visualization limit reached');
+          throw new Error('Monthly design preview limit reached');
         }
-        throw new Error(errorData.error || 'Failed to generate visualization');
+        throw new Error(errorData.error || 'Failed to generate design preview');
       }
 
       const result = await response.json();

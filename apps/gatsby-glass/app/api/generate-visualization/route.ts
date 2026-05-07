@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       if (usageCount >= MONTHLY_GENERATION_LIMIT) {
         return NextResponse.json(
           {
-            error: 'Monthly visualization limit reached',
+            error: 'Monthly design preview limit reached',
             rateLimited: true,
             usageCount,
             limit: MONTHLY_GENERATION_LIMIT,
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     console.error('Visualization generation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json(
-      { error: `Failed to generate visualization: ${errorMessage}` },
+      { error: `Failed to generate design preview: ${errorMessage}` },
       { status: 500 }
     );
   }

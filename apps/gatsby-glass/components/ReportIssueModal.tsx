@@ -113,7 +113,7 @@ export const ReportIssueModal: React.FC<ReportIssueModalProps> = ({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
-                Please describe what's not working correctly with your visualization. This helps us improve the tool.
+                Please describe what's not working correctly with your design preview. This helps us improve the tool.
               </p>
 
               {error && (

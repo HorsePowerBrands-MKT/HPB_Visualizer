@@ -30,7 +30,7 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
           <Sparkles className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-sans text-white/90 font-medium">
-              You&apos;ve used all {limit} free visualizations this month.
+              You&apos;ve used all {limit} free design previews this month.
             </p>
             <p className="text-xs font-sans text-white/60 mt-1.5 leading-relaxed">
               Your limit resets at the start of next month. In the meantime,
@@ -57,7 +57,7 @@ export const UsageCounter: React.FC<UsageCounterProps> = ({
         <div className="flex items-center gap-2">
           <ImageIcon className="w-3.5 h-3.5 text-brand-gold/70" />
           <span className="text-xs font-sans text-white/60 leading-none">
-            Free AI Visualizations
+            Free AI Design Previews
           </span>
         </div>
         <div className="flex items-center gap-3">

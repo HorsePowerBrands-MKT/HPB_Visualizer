@@ -31,7 +31,7 @@ function formatLabel(item: PastVisualizationItem): string {
   ].filter(Boolean);
   return parts.length > 0
     ? parts.map((s) => s!.replace(/_/g, ' ')).join(' \u2022 ')
-    : 'Visualization';
+    : 'Design Preview';
 }
 
 function formatDetailRows(item: PastVisualizationItem): { label: string; value: string }[] {
@@ -106,7 +106,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items, o
         >
           <Clock className="w-3 h-3 text-brand-gold/50" />
           <span className="text-[11px] font-sans text-white/40 tracking-wide uppercase leading-none">
-            Your Visualizations
+            Your Design Previews
           </span>
           <span className="text-[10px] font-sans text-white/20 ml-1 leading-none">
             ({items.length})
@@ -267,7 +267,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items, o
                       onClick={() => { onRequestQuote(selectedItem); setSelectedItem(null); }}
                       className="flex-1 px-3 py-2 text-xs font-sans font-medium bg-brand-gold text-brand-black hover:bg-brand-gold/90 transition-colors duration-150"
                     >
-                      Request a Quote
+                      Request an Estimate
                     </button>
                   )}
                 </div>
