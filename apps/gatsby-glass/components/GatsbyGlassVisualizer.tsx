@@ -18,6 +18,7 @@ import { useVisualizerState, fileToBase64Data, isHeic, isSupportedImageType, con
 import { buildVisualizationPrompt, buildInspirationPrompt } from '../lib/promptBuilder';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
+import { LeadCapturePopup } from './LeadCapturePopup';
 import { ModeSelectionStep } from './wizard/ModeSelectionStep';
 import { PhotoUploadStep } from './wizard/PhotoUploadStep';
 import { EnclosureTypeStep } from './wizard/EnclosureTypeStep';
@@ -219,6 +220,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   const [contactModalOpen, setContactModalOpen] = useState<boolean>(false);
   const [contactModalMode, setContactModalMode] = useState<'save' | 'quote'>('save');
   const [pastVizModalItem, setPastVizModalItem] = useState<PastVisualizationItem | null>(null);
+
+  // Blocking lead-capture popup that fires once after the 5th generation in
+  // a session. `popHandled` flips on submit OR explicit dismiss so we never
+  // re-prompt for the rest of the session.
+  const [leadPopupOpen, setLeadPopupOpen] = useState<boolean>(false);
+  const [popHandled, setPopHandled] = useState<boolean>(false);
 
   // UTM team param — read once on mount from the URL
   const [teamUtm, setTeamUtm] = useState<string | null>(null);
@@ -503,6 +510,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   };
 
   const onGenerate = useCallback(async () => {
+    // Block any generation while the 5-image lead popup is up. The user must
+    // submit or explicitly dismiss before they can keep generating.
+    if (leadPopupOpen) {
+      return;
+    }
     if (!imageFile) {
       setError("Please upload a bathroom photo first.");
       return;
@@ -626,6 +638,13 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       addHistoryItem(newHistoryItem);
       setShowResult(true);
 
+      // After the 5th generation in this session, surface the blocking
+      // lead-capture popup once. Submit or explicit dismiss flips
+      // `popHandled` so it never re-opens this session.
+      if (nextGenIndex === 5 && !popHandled) {
+        setLeadPopupOpen(true);
+      }
+
       // Save visualization record (images already uploaded by generate endpoint)
       try {
         await fetch('/api/save-visualization', {
@@ -669,7 +688,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -858,11 +877,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     }
   };
 
-  // Determine if we should show generate button (disabled when rate-limited for non-team users)
+  // Determine if we should show generate button (disabled when rate-limited for non-team users
+  // or while the 5-image lead popup is blocking the user)
   const canGenerate = authUser || !isRateLimited;
   const showGenerateButton =
     ((form.mode === 'configure' && currentStep === 4) ||
-    (form.mode === 'inspiration' && currentStep === 2)) && canGenerate;
+    (form.mode === 'inspiration' && currentStep === 2)) && canGenerate && !leadPopupOpen;
 
   const isResultStep =
     (form.mode === 'configure' && currentStep === 5) ||
@@ -994,6 +1014,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           userFingerprint={userFingerprint}
         />
       )}
+
+      {/* Blocking lead-capture popup — fires once after the 5th generation
+          in a session. Both Submit and explicit Dismiss set `popHandled` so
+          the user is unblocked and never re-prompted this session. */}
+      <LeadCapturePopup
+        isOpen={leadPopupOpen}
+        userFingerprint={userFingerprint ?? undefined}
+        onSubmitted={() => {
+          setLeadPopupOpen(false);
+          setPopHandled(true);
+        }}
+        onDismissed={() => {
+          setLeadPopupOpen(false);
+          setPopHandled(true);
+        }}
+      />
     </div>
   );
 };

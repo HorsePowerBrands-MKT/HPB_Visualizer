@@ -33,7 +33,7 @@ export interface Lead extends ContactFormData {
   userId?: string;
   locationId?: string;
   locationName?: string;
-  leadType?: 'SAS' | 'RAQ';
+  leadType?: 'SAS' | 'RAQ' | 'POP';
 }
 
 // A single visualization image collected for a session/user, with the

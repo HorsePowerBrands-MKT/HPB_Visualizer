@@ -17,7 +17,7 @@ export interface SharpSpringLeadData {
   phone?: string;
   zipCode: string;
   locationName?: string;
-  leadType?: 'SAS' | 'RAQ';
+  leadType?: 'SAS' | 'RAQ' | 'POP';
 }
 
 interface SharpSpringError {
