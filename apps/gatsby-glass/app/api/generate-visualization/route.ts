@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+// Register Gatsby Glass brand templates before any prompt is built.
+import '../../../lib/registerTemplates';
 import { generateVisualization } from '@repo/api-handlers/gemini';
 import {
   getMonthlyUsageCount,

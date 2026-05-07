@@ -353,19 +353,51 @@ export function buildVisualizationPromptFromTemplate(
   const hingedConfig = config.hinged_config as Record<string, unknown> | undefined;
   if (hingedConfig) {
     variables.hinged_to_ceiling = hingedConfig.to_ceiling ? 'Yes' : 'No';
-    variables.hinged_direction = String(hingedConfig.direction || '').replace('_', ' ');
+    const hDir = String(hingedConfig.direction || '');
+    if (hDir === 'double') {
+      variables.hinged_direction = 'french-door pair (TWO doors hinged on opposite walls, meeting in the center)';
+      variables.hinged_count = 'two doors';
+      variables.hinged_is_double = 'true';
+    } else {
+      variables.hinged_direction = hDir.replace('_', ' ');
+      variables.hinged_count = 'one door';
+      variables.hinged_is_double = 'false';
+    }
+    variables.hinged_height = hingedConfig.to_ceiling
+      ? 'floor to ceiling — glass extends to the top wall plane with no gap above'
+      : 'standard 76-78 inch door height with open space above the glass';
   }
-  
+
   // Add pivot config if present
   const pivotConfig = config.pivot_config as Record<string, unknown> | undefined;
   if (pivotConfig) {
-    variables.pivot_direction = String(pivotConfig.direction || '').replace('_', ' ');
+    const pDir = String(pivotConfig.direction || '');
+    if (pDir === 'double') {
+      variables.pivot_direction = 'french-pivot pair (TWO pivot doors, one pivoting from each side, meeting in the center)';
+      variables.pivot_count = 'two doors';
+      variables.pivot_is_double = 'true';
+    } else {
+      variables.pivot_direction = pDir.replace('_', ' ');
+      variables.pivot_count = 'one door';
+      variables.pivot_is_double = 'false';
+    }
   }
-  
+
   // Add sliding config if present
+  // NOTE: The form sets `configuration` ('single' | 'double'), not `sub_type`.
+  // Falling back to `sub_type` for older payloads, but `configuration` is canonical.
   const slidingConfig = config.sliding_config as Record<string, unknown> | undefined;
   if (slidingConfig) {
-    variables.sliding_type = String(slidingConfig.sub_type || '').replace('_', ' ');
+    const slidingCfg = String(slidingConfig.configuration || slidingConfig.sub_type || 'single');
+    if (slidingCfg === 'double') {
+      variables.sliding_type = 'double bypass (two sliding panels meeting in the center when closed)';
+      variables.sliding_count = 'two glass panels';
+      variables.sliding_is_double = 'true';
+    } else {
+      variables.sliding_type = 'single sliding panel against a fixed return panel';
+      variables.sliding_count = 'one sliding glass panel plus one fixed glass panel';
+      variables.sliding_is_double = 'false';
+    }
     variables.sliding_direction = String(slidingConfig.direction || '').replace('_', ' ');
   }
   

@@ -8,6 +8,9 @@
  */
 
 import type { Payload } from '@repo/types';
+// IMPORTANT: This import must come before any @repo/prompt-templates usage.
+// It registers the brand-specific templates with the shared template engine.
+import './registerTemplates';
 import {
   buildVisualizationPromptFromTemplate,
   buildInspirationPromptFromTemplate,
