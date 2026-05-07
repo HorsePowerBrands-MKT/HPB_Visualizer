@@ -37,7 +37,7 @@ export interface SasEmailData {
   };
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
-  /** Public marketing/landing site URL (used in the Quote CTA). */
+  /** Public marketing/landing site URL (used in the Estimate CTA). */
   brandUrl?: string;
 }
 
@@ -54,11 +54,11 @@ export interface RaqEmailData {
   customerZipCode: string;
   /** ISO timestamp the lead was submitted. */
   submittedAt: string;
-  /** The image the customer was viewing when they requested the quote. */
+  /** The image the customer was viewing when they requested the estimate. */
   heroImageUrl: string;
   /** Human-readable description of the hero image's configuration. */
   heroLabel: string;
-  /** Other generations from the same session/user, oldest or newest first
+  /** Other design previews from the same session/user, oldest or newest first
    *  per caller's preference. Each entry will be rendered as a labeled link
    *  rather than an inline image. */
   galleryItems: SasGalleryItem[];
@@ -71,8 +71,8 @@ const RESEND_API_URL = 'https://api.resend.com/emails';
 
 const DEFAULT_BRAND_URL = 'https://www.gatsbyglass.com';
 const PRIVACY_POLICY_URL = 'https://www.horsepowerbrands.com/privacy-policy';
-const EMAIL_HEADER_IMAGE_URL =
-  'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/YourMagicLink.webp';
+const SAS_EMAIL_HEADER_IMAGE_URL =
+  'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/Design%20Preview.webp';
 const RAQ_EMAIL_HEADER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/NewQuote.webp';
 const EMAIL_FOOTER_BORDER_IMAGE_URL =
@@ -221,7 +221,7 @@ function renderHtml(data: SasEmailData): string {
                 <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color: #000000; margin: 0 auto; border: 1px solid #231f20; border-radius: 5px; margin: 50px; width: 600px;">
                     <tr>
                         <td align="center" style="padding: 0px; color: #ffffff; font-size: 24px; width: 600px;">
-                            <img src="${escapeHtml(EMAIL_HEADER_IMAGE_URL)}" alt="Gatsby Glass" width="100%" style="display: block;">
+                            <img src="${escapeHtml(SAS_EMAIL_HEADER_IMAGE_URL)}" alt="Your Gatsby Glass design preview" width="100%" style="display: block;">
                         </td>
                     </tr>
                     <tr>
@@ -250,7 +250,7 @@ function renderHtml(data: SasEmailData): string {
                                 <tr>
                                     <td align="center" style="background-color: #000000; border: 1px solid #e4bf6e; padding: 14px 34px;">
                                         <a href="${escapeHtml(brandUrl)}" target="_blank" style="color: #e4bf6e; font-size: 14px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; font-family: Arial, sans-serif;">
-                                            Request a Quote
+                                            Request an Estimate
                                         </a>
                                     </td>
                                 </tr>
@@ -333,7 +333,7 @@ function renderText(data: SasEmailData): string {
   lines.push('your options, take precise measurements, and provide a complimentary');
   lines.push('proposal tailored to your space.');
   lines.push('');
-  lines.push(`Request a quote: ${data.brandUrl || DEFAULT_BRAND_URL}`);
+  lines.push(`Request an estimate: ${data.brandUrl || DEFAULT_BRAND_URL}`);
   lines.push('');
   lines.push('Your design preview will remain available for 30 days.');
   lines.push('');
@@ -349,7 +349,7 @@ function renderText(data: SasEmailData): string {
 }
 
 /**
- * Send the "Save & Send to Me" (SAS) visualization email.
+ * Send the "Save & Send to Me" (SAS) design preview email.
  * Returns `{ success: true }` on success, or `{ success: false, error }` on
  * failure. Never throws.
  */
@@ -416,11 +416,11 @@ export async function sendSasEmail(
 }
 
 // ---------------------------------------------------------------------------
-// Request a Quote (RAQ) — franchise location notification
+// Request an Estimate (RAQ) — franchise location notification
 // ---------------------------------------------------------------------------
 
 function formatRaqSubject(data: RaqEmailData): string {
-  return `New Visualizer Quote Request — ${data.customerName} (${data.customerZipCode})`;
+  return `New Visualizer Estimate Request — ${data.customerName} (${data.customerZipCode})`;
 }
 
 function formatSubmittedAt(iso: string): string {
@@ -505,13 +505,13 @@ function renderRaqHtml(data: RaqEmailData): string {
               <tr>
                 <td style="padding:18px 30px 4px 30px;">
                   <p style="margin:0 0 8px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
-                    Selected Visualization
+                    Selected Design Preview
                   </p>
                   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;border:1px solid #e4bf6e;">
                     <tr>
                       <td style="padding:0;font-size:0;line-height:0;">
                         <a href="${escapeHtml(data.heroImageUrl)}" target="_blank" style="text-decoration:none;display:block;">
-                          <img src="${escapeHtml(data.heroImageUrl)}" alt="Customer's selected visualization" width="540" border="0"
+                          <img src="${escapeHtml(data.heroImageUrl)}" alt="Customer's selected design preview" width="540" border="0"
                             style="display:block;width:100%;height:auto;border:0;outline:none;-ms-interpolation-mode:bicubic;" />
                         </a>
                       </td>
@@ -576,16 +576,16 @@ function renderRaqHtml(data: RaqEmailData): string {
                 <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color:#000000;margin:0 auto;border:1px solid #231f20;border-radius:5px;margin:50px;width:600px;">
                     <tr>
                         <td align="center" style="padding:0;color:#ffffff;font-size:24px;width:600px;">
-                            <img src="${escapeHtml(RAQ_EMAIL_HEADER_IMAGE_URL)}" alt="New Quote Request" width="100%" style="display:block;">
+                            <img src="${escapeHtml(RAQ_EMAIL_HEADER_IMAGE_URL)}" alt="New Estimate Request" width="100%" style="display:block;">
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:22px 30px 6px 30px;color:#ffffff;font-family:Arial,sans-serif;">
                             <p style="margin:0 0 6px 0;color:#e4bf6e;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
-                                New Quote Request
+                                New Estimate Request
                             </p>
                             <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;">
-                                A potential customer has requested a quote after designing their shower in the Gatsby Glass Visualizer. ${locationLine}
+                                A potential customer has requested an estimate after designing their shower in the Gatsby Glass Visualizer. ${locationLine}
                             </p>
                         </td>
                     </tr>
@@ -641,7 +641,7 @@ function renderRaqHtml(data: RaqEmailData): string {
 
 function renderRaqText(data: RaqEmailData): string {
   const lines: string[] = [];
-  lines.push('NEW QUOTE REQUEST FROM THE GATSBY GLASS VISUALIZER');
+  lines.push('NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER');
   lines.push('');
   if (data.locationName) {
     lines.push(`Routed to: ${data.locationName}`);
@@ -663,7 +663,7 @@ function renderRaqText(data: RaqEmailData): string {
     lines.push(`  ${data.heroLabel}`);
   }
   lines.push('');
-  lines.push('SELECTED VISUALIZATION');
+  lines.push('SELECTED DESIGN PREVIEW');
   lines.push(`  ${data.heroImageUrl}`);
   lines.push('');
   if (data.galleryItems.length > 0) {
@@ -703,7 +703,7 @@ export function renderSasEmailText(data: SasEmailData): string {
 }
 
 /**
- * Send the "Request a Quote" (RAQ) notification to the franchise location's
+ * Send the "Request an Estimate" (RAQ) notification to the franchise location's
  * shared inbox. Returns `{ success: true }` on success or `{ success: false,
  * error }` on failure. Never throws.
  */

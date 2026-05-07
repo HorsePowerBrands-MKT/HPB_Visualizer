@@ -2,6 +2,31 @@
 
 Two transactional emails triggered from the visualizer contact form for the visualizer.
 
+## Previewing the emails
+
+Run from the repo root (or from `apps/gatsby-glass`):
+
+```bash
+pnpm preview:emails
+```
+
+This regenerates static HTML previews for every variant by importing the real
+renderers from `packages/api-handlers/src/resend.ts`, so what you see is exactly
+what Resend will deliver. Output files land in
+`apps/gatsby-glass/public/email-preview/`:
+
+| File                     | Email                                              |
+| ------------------------ | -------------------------------------------------- |
+| `index.html`             | Landing page that links to every variant           |
+| `sas-configure.html`     | SAS · customer · configure mode                    |
+| `sas-inspiration.html`   | SAS · customer · inspiration mode                  |
+| `raq-configure.html`     | RAQ · franchise · configure mode                   |
+| `raq-inspiration.html`   | RAQ · franchise · inspiration mode                 |
+| `raq-no-territory.html`  | RAQ · brand fallback (zip not in any territory)    |
+
+Open `email-preview/index.html` directly, or hit
+<http://localhost:3000/email-preview/> while `pnpm dev` is running.
+
 ## Deployment Prerequisites (SAS email)
 
 The Save & Send to Me (SAS) email is sent through [Resend](https://resend.com).

@@ -46,8 +46,8 @@ const MONTH_NAMES = [
 
 const CALL_TYPE_LABELS: Record<string, string> = {
   image_validation: 'Image Validation',
-  initial_generation: 'Initial Generation',
-  update_generation: 'Update Generation',
+  initial_generation: 'Initial Design Preview',
+  update_generation: 'Update Design Preview',
   lead_submission: 'Lead Submission',
   issue_report: 'Issue Report',
   image_upload: 'Image Upload',
@@ -116,7 +116,7 @@ function LocationRow({ row, days }: { row: UsageReportRow; days: string[] }) {
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider text-white/30 font-sans">
                     <th className="py-2 px-4 text-left pl-12">Day</th>
-                    <th className="py-2 px-4 text-right">Team Visualizations</th>
+                    <th className="py-2 px-4 text-right">Team Design Previews</th>
                     <th className="py-2 px-4 text-right">Leads</th>
                     <th className="py-2 px-4 text-right">Total</th>
                   </tr>
@@ -326,7 +326,7 @@ export default function UsageReportPage() {
   const exportCsv = () => {
     if (!data) return;
     const rows: string[][] = [];
-    rows.push(['Location', 'Team Visualizations', 'Leads', 'Total']);
+    rows.push(['Location', 'Team Design Previews', 'Leads', 'Total']);
     for (const r of data.rows) {
       rows.push([
         r.locationName,
@@ -378,7 +378,7 @@ export default function UsageReportPage() {
           USAGE REPORT
         </h2>
         <p className="text-white/50 text-sm font-sans mt-1">
-          Monthly visualizations and leads per franchise location
+          Monthly design previews and leads per franchise location
         </p>
       </div>
 
@@ -415,7 +415,7 @@ export default function UsageReportPage() {
             <div className="flex items-center gap-2 mb-1">
               <Eye className="w-4 h-4 text-brand-gold/60" />
               <span className="text-[10px] uppercase tracking-wider text-white/40 font-sans">
-                Team Visualizations
+                Team Design Previews
               </span>
             </div>
             <span className="text-2xl font-display text-white tabular-nums">
@@ -510,7 +510,7 @@ export default function UsageReportPage() {
             <thead>
               <tr className="border-b border-brand-gold/10 text-[10px] uppercase tracking-wider text-white/40 font-sans">
                 <th className="py-3 px-4 text-left">Location</th>
-                <th className="py-3 px-4 text-right">Team Visualizations</th>
+                <th className="py-3 px-4 text-right">Team Design Previews</th>
                 <th className="py-3 px-4 text-right">Leads</th>
                 <th className="py-3 px-4 text-right">Total</th>
               </tr>

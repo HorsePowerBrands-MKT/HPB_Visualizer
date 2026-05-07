@@ -109,7 +109,7 @@ const ConsentCheckboxes: React.FC<{
         className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold cursor-pointer"
       />
       <span className="text-xs text-gray-300 leading-relaxed group-hover:text-gray-200 transition-colors">
-        I confirm that I own this image or have permission to use it, and I consent to its use for AI-generated visualizations. <span className="text-gray-500">(required)</span>
+        I confirm that I own this image or have permission to use it, and I consent to its use for AI-generated design previews. <span className="text-gray-500">(required)</span>
       </span>
     </label>
     <div className="space-y-1.5">
@@ -133,7 +133,7 @@ const ConsentCheckboxes: React.FC<{
 
 const DisclaimerText: React.FC<{ openPrivacyPolicy: () => void }> = ({ openPrivacyPolicy }) => (
   <p className="text-xs text-gray-500 text-center mt-4 px-4">
-    By uploading this image, you represent that you have the legal right to use and submit it. You acknowledge that the image will be processed by an AI service to generate visualizations. Uploaded images are retained for up to 30 days and then permanently deleted. Do not upload images containing visible people, personal information, illegal or inappropriate content, or content you do not have permission to use. See our{' '}
+    By uploading this image, you represent that you have the legal right to use and submit it. You acknowledge that the image will be processed by an AI service to generate design previews. Uploaded images are retained for up to 30 days and then permanently deleted. Do not upload images containing visible people, personal information, illegal or inappropriate content, or content you do not have permission to use. See our{' '}
     <button type="button" onClick={openPrivacyPolicy} className="underline hover:text-gray-300 transition-colors">Privacy Policy</button>{' '}
     for details on how your data is used and your rights.
   </p>

@@ -2,22 +2,16 @@
 
 import React, { useState } from 'react';
 import { X, Loader2, Check, AlertCircle } from 'lucide-react';
-import type { Payload } from '@repo/types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { useLegalModal } from './legal/LegalModalProvider';
 
-interface ContactFormModalProps {
+interface LeadCapturePopupProps {
   isOpen: boolean;
-  onClose: () => void;
-  visualizationData: {
-    resultUrl: string;
-    uploadedImage: string;
-    configs: Partial<Payload>;
-  };
-  mode: 'save' | 'quote';
+  onSubmitted: () => void;
+  onDismissed: () => void;
   userFingerprint?: string;
 }
 
@@ -40,11 +34,10 @@ function stripPhoneFormatting(formatted: string): string {
 
 const TCPA_CONSENT_TEXT = 'I agree to receive calls and/or text messages from Gatsby Glass and its local franchisees at the phone number provided. I understand that consent is not a condition of purchase. Message & data rates may apply. Reply STOP to opt out at any time.';
 
-export const ContactFormModal: React.FC<ContactFormModalProps> = ({
+export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
   isOpen,
-  onClose,
-  visualizationData,
-  mode,
+  onSubmitted,
+  onDismissed,
   userFingerprint,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
@@ -52,7 +45,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     name: '',
     email: '',
     phone: '',
-    zipCode: ''
+    zipCode: '',
   });
   const [tcpaConsent, setTcpaConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -61,9 +54,8 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  const phoneRequired = mode === 'quote';
   const hasPhone = stripPhoneFormatting(formData.phone).length > 0;
-  const tcpaRequired = phoneRequired || hasPhone;
+  const tcpaRequired = hasPhone;
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -79,9 +71,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     }
 
     const phoneDigits = stripPhoneFormatting(formData.phone);
-    if (phoneRequired && phoneDigits.length === 0) {
-      newErrors.phone = 'Phone number is required for an estimate request';
-    } else if (phoneDigits.length > 0 && phoneDigits.length < 10) {
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
 
@@ -120,22 +110,13 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           email: formData.email.trim(),
           phone: phoneDigits || undefined,
           zipCode: formData.zipCode.replace(/[^\d-]/g, ''),
-          visualizationImage: visualizationData.resultUrl,
-          doorType: visualizationData.configs.enclosure_type,
-          finish: visualizationData.configs.glass_style,
-          hardware: visualizationData.configs.hardware_finish,
-          handleStyle: visualizationData.configs.handle_style,
-          trackPreference: visualizationData.configs.track_preference,
-          mode: visualizationData.configs.mode,
-          showerShape: visualizationData.configs.shower_shape,
-          sessionId: visualizationData.configs.session_id,
           source: 'Gatsby Glass Visualizer',
-          leadType: mode === 'save' ? 'SAS' : 'RAQ',
+          leadType: 'POP',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
           tcpaConsentText: tcpaRequired && tcpaConsent ? TCPA_CONSENT_TEXT : undefined,
           consentUserAgent: tcpaRequired && tcpaConsent ? navigator.userAgent : undefined,
           userFingerprint: userFingerprint || undefined,
-        })
+        }),
       });
 
       if (!response.ok) {
@@ -145,16 +126,13 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
       setSuccess(true);
 
+      // Brief success state, then unblock the user.
       setTimeout(() => {
-        onClose();
-        setFormData({ name: '', email: '', phone: '', zipCode: '' });
-        setTcpaConsent(false);
-        setSuccess(false);
-      }, 3000);
-
+        onSubmitted();
+      }, 1500);
     } catch (error) {
       setErrors({
-        submit: error instanceof Error ? error.message : 'Failed to submit. Please try again.'
+        submit: error instanceof Error ? error.message : 'Failed to submit. Please try again.',
       });
     } finally {
       setSubmitting(false);
@@ -166,16 +144,16 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
     if (field === 'phone') formatted = formatPhone(value);
     if (field === 'zipCode') formatted = formatZip(value);
 
-    setFormData(prev => ({ ...prev, [field]: formatted }));
+    setFormData((prev) => ({ ...prev, [field]: formatted }));
     if (errors[field]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
     }
     if (field === 'phone' && errors.tcpa) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors.tcpa;
         return newErrors;
@@ -189,12 +167,13 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-brand-gold">
-              {mode === 'save' ? 'Save & Send to Me' : 'Request an Estimate'}
+              You're on a roll!
             </CardTitle>
             <button
-              onClick={onClose}
+              onClick={onDismissed}
               className="text-gray-400 hover:text-white transition-colors"
               disabled={submitting}
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -207,19 +186,15 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 mb-4">
                 <Check className="w-8 h-8 text-green-500" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Success!</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Thanks!</h3>
               <p className="text-gray-400">
-                {mode === 'save'
-                  ? 'Your design preview has been sent to your email.'
-                  : 'Your estimate request has been submitted. We\'ll contact you soon!'}
+                You're all set — keep designing.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
-                {mode === 'save'
-                  ? 'Enter your information to receive your design preview via email.'
-                  : 'Provide your details and we\'ll connect you with a local Gatsby Glass professional.'}
+                You've created several designs already. Tell us a bit about yourself to keep going — we'll use this to share follow-up resources and connect you with your local Gatsby Glass team if you ever want to take the next step.
               </p>
 
               {errors.submit && (
@@ -231,9 +206,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
               {/* Name */}
               <div>
-                <Label htmlFor="name" className="text-white">Full Name *</Label>
+                <Label htmlFor="lead-popup-name" className="text-white">Full Name *</Label>
                 <Input
-                  id="name"
+                  id="lead-popup-name"
                   type="text"
                   autoComplete="name"
                   value={formData.name}
@@ -249,9 +224,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
               {/* Email */}
               <div>
-                <Label htmlFor="email" className="text-white">Email *</Label>
+                <Label htmlFor="lead-popup-email" className="text-white">Email *</Label>
                 <Input
-                  id="email"
+                  id="lead-popup-email"
                   type="email"
                   autoComplete="email"
                   inputMode="email"
@@ -268,11 +243,11 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
               {/* Phone */}
               <div>
-                <Label htmlFor="phone" className="text-white">
-                  Phone{phoneRequired ? ' *' : ' (Optional)'}
+                <Label htmlFor="lead-popup-phone" className="text-white">
+                  Phone (Optional)
                 </Label>
                 <Input
-                  id="phone"
+                  id="lead-popup-phone"
                   type="tel"
                   autoComplete="tel"
                   inputMode="tel"
@@ -289,9 +264,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
               {/* Zip Code */}
               <div>
-                <Label htmlFor="zipCode" className="text-white">Zip Code *</Label>
+                <Label htmlFor="lead-popup-zip" className="text-white">Zip Code *</Label>
                 <Input
-                  id="zipCode"
+                  id="lead-popup-zip"
                   type="text"
                   autoComplete="postal-code"
                   inputMode="numeric"
@@ -306,7 +281,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 )}
               </div>
 
-              {/* TCPA Consent — visible whenever phone is required or provided */}
+              {/* TCPA Consent — visible whenever phone is provided */}
               {tcpaRequired && (
                 <div className="pt-1">
                   <label className="flex items-start gap-3 cursor-pointer group">
@@ -317,7 +292,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                         onChange={(e) => {
                           setTcpaConsent(e.target.checked);
                           if (errors.tcpa) {
-                            setErrors(prev => {
+                            setErrors((prev) => {
                               const n = { ...prev };
                               delete n.tcpa;
                               return n;
@@ -353,11 +328,11 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={onClose}
+                  onClick={onDismissed}
                   disabled={submitting}
                   className="flex-1"
                 >
-                  Cancel
+                  No Thanks
                 </Button>
                 <Button
                   type="submit"
@@ -370,7 +345,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
                       Submitting...
                     </>
                   ) : (
-                    mode === 'save' ? 'Send to Me' : 'Request Estimate'
+                    'Continue'
                   )}
                 </Button>
               </div>

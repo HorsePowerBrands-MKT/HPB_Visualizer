@@ -9,7 +9,7 @@ export const PrivacyPolicy: React.FC = () => (
       Gatsby Glass, a brand operated by Horse Power Brands, LLC and its affiliated franchise entities
       (&ldquo;Gatsby Glass,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;),
       respects your privacy. This Privacy Policy explains how we collect, use, disclose, and
-      safeguard your information when you use our GatsbyView AI-powered shower visualization tool
+      safeguard your information when you use our GatsbyView AI-powered shower design preview tool
       (the &ldquo;Service&rdquo;), accessible at our website and through authorized franchise
       partner integrations. Please read this policy carefully. By accessing or using the Service,
       you acknowledge that you have read and understood this Privacy Policy.
@@ -20,8 +20,8 @@ export const PrivacyPolicy: React.FC = () => (
     <h4>A. Information You Provide Directly</h4>
     <ul>
       <li>
-        <strong>Contact Information:</strong> When you submit a lead form to save your visualization
-        or request a quote, we collect your full name, email address, phone number (optional or
+        <strong>Contact Information:</strong> When you submit a lead form to save your design preview
+        or request an estimate, we collect your full name, email address, phone number (optional or
         required depending on the request type), and ZIP code.
       </li>
       <li>
@@ -32,12 +32,12 @@ export const PrivacyPolicy: React.FC = () => (
       </li>
       <li>
         <strong>Design Preferences:</strong> The product configuration choices you make during the
-        visualization process, including door type, glass style, hardware finish, handle style,
+        design preview process, including door type, glass style, hardware finish, handle style,
         shower shape, and framing preferences.
       </li>
       <li>
         <strong>Issue Reports:</strong> If you submit a report about a problem with the Service, we
-        collect the text of your description along with associated session and visualization data.
+        collect the text of your description along with associated session and design preview data.
       </li>
       <li>
         <strong>Team Login Credentials:</strong> Authorized franchise team members authenticate via
@@ -50,7 +50,7 @@ export const PrivacyPolicy: React.FC = () => (
     <ul>
       <li>
         <strong>Session Identifier:</strong> We generate a random, anonymous identifier stored in
-        your browser&rsquo;s local storage to associate your visualization history and enforce usage
+        your browser&rsquo;s local storage to associate your design preview history and enforce usage
         limits. This is not linked to your identity unless you voluntarily submit a lead form.
       </li>
       <li>
@@ -70,35 +70,35 @@ export const PrivacyPolicy: React.FC = () => (
 
     <h4>C. AI-Generated Content</h4>
     <p>
-      When you use the visualization tool, the Service generates AI-rendered images based on your
+      When you use the design preview tool, the Service generates AI-rendered images based on your
       uploaded photos and design selections. These generated images, including watermarked versions,
       are stored in our systems for approximately 30 days and are accessible via a direct URL. If
-      you submit a lead form, the associated visualization images may be retained beyond the default
+      you submit a lead form, the associated design preview images may be retained beyond the default
       period to support your consultation.
     </p>
 
     <h3>2. How We Use Your Information</h3>
     <ul>
       <li>
-        <strong>Service Delivery:</strong> To generate AI-powered visualizations of shower glass
+        <strong>Service Delivery:</strong> To generate AI-powered design previews of shower glass
         configurations based on your photos and preferences.
       </li>
       <li>
         <strong>Franchise Referral:</strong> To connect you with a local Gatsby Glass franchise
-        professional in your area when you request a quote or save your visualization.
+        professional in your area when you request an estimate or save your design preview.
       </li>
       <li>
-        <strong>Communication:</strong> To respond to your inquiries, send your saved visualizations
+        <strong>Communication:</strong> To respond to your inquiries, send your saved design previews
         via email, and, with your consent, contact you via phone or text message regarding your
         inquiry.
       </li>
       <li>
-        <strong>Rate Limiting:</strong> To enforce fair-use limits on the visualization tool for
+        <strong>Rate Limiting:</strong> To enforce fair-use limits on the design preview tool for
         non-authenticated users using your anonymous session identifier and IP address.
       </li>
       <li>
         <strong>Service Improvement:</strong> To review issue reports, monitor Service performance,
-        and improve the accuracy and quality of AI-generated visualizations.
+        and improve the accuracy and quality of AI-generated design previews.
       </li>
       <li>
         <strong>Legal Compliance:</strong> To comply with applicable laws, regulations, and legal
@@ -112,7 +112,7 @@ export const PrivacyPolicy: React.FC = () => (
       <li>
         <strong>Google (Gemini AI):</strong> Your uploaded photographs and text-based design
         parameters are transmitted to Google&rsquo;s Gemini AI service to perform image validation
-        and generate visualizations. Google may process and temporarily retain this data in
+        and generate design previews. Google may process and temporarily retain this data in
         accordance with its own privacy policies and terms of service. We encourage you to review{' '}
         <a
           href="https://policies.google.com/privacy"
@@ -134,7 +134,7 @@ export const PrivacyPolicy: React.FC = () => (
       </li>
       <li>
         <strong>Franchise Partners:</strong> When you submit a lead form, your contact information,
-        design preferences, and visualization images are shared with the Gatsby Glass franchise
+        design preferences, and design preview images are shared with the Gatsby Glass franchise
         location serving your area to facilitate your consultation.
       </li>
     </ul>
@@ -154,7 +154,7 @@ export const PrivacyPolicy: React.FC = () => (
       </li>
       <li>
         <strong>Local Storage (Anonymous Identifier):</strong> A randomly generated UUID stored in
-        your browser&rsquo;s local storage to track your visualization history and usage count
+        your browser&rsquo;s local storage to track your design preview history and usage count
         across visits. This identifier is not linked to your personal identity unless you
         voluntarily submit a lead form.
       </li>
@@ -162,13 +162,13 @@ export const PrivacyPolicy: React.FC = () => (
     <p>
       We do not use third-party analytics cookies, advertising cookies, or tracking pixels. You can
       clear local storage and cookies through your browser settings at any time, though this may
-      reset your visualization history and usage count.
+      reset your design preview history and usage count.
     </p>
 
     <h3>5. Data Retention</h3>
     <ul>
       <li>
-        <strong>Visualization Images:</strong> AI-generated images are retained for approximately 30
+        <strong>Design Preview Images:</strong> AI-generated images are retained for approximately 30
         days after creation, after which they are automatically deleted from our storage systems. If
         you submit a lead form, images associated with your consultation may be retained for longer
         to support the franchise engagement.

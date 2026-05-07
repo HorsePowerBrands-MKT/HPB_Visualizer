@@ -141,7 +141,7 @@ const generateDescription = (form: Payload): { title: string; features: string[]
     return {
       title: 'Inspiration-Based Design',
       features: [
-        'Custom visualization based on your inspiration photo',
+        'Custom design preview based on your inspiration photo',
         'Tailored to your bathroom\'s unique layout',
         'Professional-grade rendering'
       ],
@@ -202,7 +202,7 @@ const generateDescription = (form: Payload): { title: string; features: string[]
   let summary = `A stunning ${summaryParts.slice(0, 3).join(', ')} shower enclosure${hardware ? ` with elegant ${hardware.name.toLowerCase()} accents` : ''}. Perfectly tailored to transform your bathroom.`;
 
   if (isDoubleDoor) {
-    summary += ' Note: The double door configuration may be adjusted in the visualization to account for your bathroom\'s layout and any obstructions.';
+    summary += ' Note: The double door configuration may be adjusted in the design preview to account for your bathroom\'s layout and any obstructions.';
   }
 
   return {
@@ -253,7 +253,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
       <div className="text-center space-y-1">
         <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Your Custom Shower Design</h2>
         <p className="text-gray-400 text-sm md:text-base">
-          {loading ? 'Generating your visualization...' : 'See how your shower will look'}
+          {loading ? 'Generating your design preview...' : 'See how your shower will look'}
         </p>
       </div>
 
@@ -309,10 +309,10 @@ export const ResultStep: React.FC<ResultStepProps> = ({
           {resultUrl && (
             <div className="text-center px-4 pt-2 space-y-1">
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                This visualization is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
+                This design preview is AI-generated and intended for illustrative purposes only. Actual product appearance, dimensions, and finish may vary. Final specifications will be confirmed by your local Gatsby Glass professional.
               </p>
               <p className="text-[10px] text-gray-600 leading-relaxed">
-                Your generated visualization is available for 30 days. Request a quote to have it shared with your local Gatsby Glass professional.
+                Your design preview is available for 30 days. Request an estimate to have it shared with your local Gatsby Glass professional.
               </p>
             </div>
           )}
@@ -420,7 +420,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                 className="w-full animate-pulse-glow"
                 onClick={onRequestQuote}
               >
-                Request a Quote
+                Request an Estimate
               </Button>
               <Button
                 variant="secondary"

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next node_modules"
+    "clean": "rm -rf .next node_modules",
+    "preview:emails": "node --experimental-strip-types --no-warnings scripts/preview-emails.mjs"
   },
   "dependencies": {
     "@repo/api-handlers": "workspace:*",
