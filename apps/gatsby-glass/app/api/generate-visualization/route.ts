@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Register Gatsby Glass brand templates before any prompt is built.
 import '../../../lib/registerTemplates';
-import { generateVisualization } from '@repo/api-handlers/gemini';
+import { generateVisualization, GeminiRateLimitError } from '@repo/api-handlers/gemini';
 import {
   getMonthlyUsageCount,
   recordUsage,
@@ -158,6 +158,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `Invalid request: ${error.issues[0]?.message || 'Validation failed'}` },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof GeminiRateLimitError) {
+      console.warn('[GENERATE] Gemini rate-limited after retry; returning friendly 503 to client.');
+      return NextResponse.json(
+        {
+          error: "Our visualization service is briefly busy — please try again in a moment.",
+          serviceBusy: true,
+        },
+        { status: 503 }
       );
     }
 

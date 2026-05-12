@@ -33,7 +33,36 @@ export interface GeminiConfig {
 }
 
 /**
- * Generate a photorealistic visualization of a shower glass installation
+ * Error thrown when Gemini reports it is rate-limited or out of quota
+ * (HTTP 429 / status RESOURCE_EXHAUSTED). Surfaced separately so the API
+ * route can return a friendly retry message instead of leaking the raw
+ * Gemini error JSON to the user.
+ */
+export class GeminiRateLimitError extends Error {
+  readonly isRateLimit = true;
+  constructor(message = 'Gemini reported the visualization service is briefly busy.') {
+    super(message);
+    this.name = 'GeminiRateLimitError';
+  }
+}
+
+/**
+ * Detects whether a thrown error from the Gemini SDK represents a 429 /
+ * RESOURCE_EXHAUSTED response. The SDK surfaces these in a few different
+ * shapes depending on transport, so we normalize across all of them.
+ */
+function isRateLimitError(err: unknown): boolean {
+  if (!err) return false;
+  const anyErr = err as { status?: number; code?: number; message?: string };
+  if (anyErr.status === 429 || anyErr.code === 429) return true;
+  const msg = String(anyErr.message ?? err);
+  return /\b429\b|RESOURCE_EXHAUSTED|quota|rate\s*limit/i.test(msg);
+}
+
+/**
+ * Generate a photorealistic visualization of a shower glass installation.
+ * Includes one automatic retry with a short backoff if Gemini reports a
+ * 429 / RESOURCE_EXHAUSTED — these are usually transient burst-rate issues.
  */
 export async function generateVisualization(
   config: GeminiConfig,
@@ -76,15 +105,37 @@ export async function generateVisualization(
   // Add text prompt
   parts.push({ text: prompt });
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: { parts },
-    config: {
-      systemInstruction: getSystemPrompt(),
-      responseModalities: [Modality.IMAGE],
-      temperature: 0.3,
-    },
-  });
+  const generateOnce = () =>
+    ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts },
+      config: {
+        systemInstruction: getSystemPrompt(),
+        responseModalities: [Modality.IMAGE],
+        temperature: 0.3,
+      },
+    });
+
+  let response;
+  try {
+    response = await generateOnce();
+  } catch (err) {
+    if (isRateLimitError(err)) {
+      console.warn('[GEMINI generateVisualization] 429/RESOURCE_EXHAUSTED on first attempt, retrying once after 2s backoff');
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        response = await generateOnce();
+      } catch (retryErr) {
+        if (isRateLimitError(retryErr)) {
+          console.error('[GEMINI generateVisualization] Retry also rate-limited, surfacing GeminiRateLimitError');
+          throw new GeminiRateLimitError();
+        }
+        throw retryErr;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   // Extract the generated image
   const candidates = response.candidates;
