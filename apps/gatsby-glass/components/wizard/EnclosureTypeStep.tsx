@@ -113,6 +113,12 @@ export const EnclosureTypeStep: React.FC<EnclosureTypeStepProps> = ({
     { value: 'double', label: 'Double Door', hint: 'Hinges on outside edges, opens from the middle' },
   ];
 
+  const pivotDirectionOptions: { value: string; label: string; hint?: string }[] = [
+    { value: 'left', label: 'Pivot Left', hint: 'Pivot axis on the left, swings out to the left' },
+    { value: 'right', label: 'Pivot Right', hint: 'Pivot axis on the right, swings out to the right' },
+    { value: 'double', label: 'Double Door', hint: 'Pivot axes on outside edges, opens from the middle' },
+  ];
+
   const slidingDirectionOptions: { value: string; label: string; hint?: string }[] = [
     { value: 'left', label: 'Slides Left', hint: 'Inner door slides left, outer door stays fixed' },
     { value: 'right', label: 'Slides Right', hint: 'Inner door slides right, outer door stays fixed' },
@@ -219,7 +225,7 @@ export const EnclosureTypeStep: React.FC<EnclosureTypeStepProps> = ({
                     {option.value === 'pivot' && (
                       <OptionPills
                         label="Direction"
-                        options={directionOptions}
+                        options={pivotDirectionOptions}
                         value={pivotConfig.direction}
                         onChange={(v) => onPivotConfigChange({ ...pivotConfig, direction: v as DoorDirection })}
                       />
