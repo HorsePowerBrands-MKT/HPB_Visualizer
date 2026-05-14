@@ -129,11 +129,11 @@ export const visualizationTemplate: PromptTemplate = {
         "    \"configuration\": {",
         "      \"type\": \"hinged\",",
         "      \"swing_direction\": \"{{hinged_direction}}\",",
-        "      \"swing_arc\": \"render the door SLIGHTLY OPEN (15-20 degrees outward, away from the shower) so the door type is visually unmistakable\",",
+        "      \"door_state\": \"FULLY CLOSED — the door is flush against the adjacent fixed panel or wall, NOT swung open. The door type is identifiable from the hardware (side-mounted hinges along the correct edge) without needing to tilt the door open.\",",
         "      \"door_count\": \"{{hinged_count}}\",",
         "      \"is_double\": {{hinged_is_double}},",
-        "      \"hinge_axis\": \"side-mounted hinges along ONE vertical edge of the door panel (NEVER pivot mechanism, NEVER top track)\",",
-        "      \"handle_position\": \"on the OPPOSITE vertical edge from the hinges\"",
+        "      \"hinge_axis\": \"{{hinged_hinge_axis}}\",",
+        "      \"handle_position\": \"{{hinged_handle_position}}\"",
         "    }",
         "  },",
       ],
@@ -146,11 +146,11 @@ export const visualizationTemplate: PromptTemplate = {
         "    \"configuration\": {",
         "      \"type\": \"pivot\",",
         "      \"swing_direction\": \"{{pivot_direction}}\",",
-        "      \"swing_arc\": \"render the door SLIGHTLY OPEN (15-20 degrees outward) showing the distinctive offset-pivot angle profile\",",
+        "      \"door_state\": \"FULLY CLOSED — the door is flush against the adjacent fixed panel or wall, NOT swung open. The pivot type is identifiable from the offset pivot hardware visible at top and bottom without needing to tilt the door open.\",",
         "      \"door_count\": \"{{pivot_count}}\",",
         "      \"is_double\": {{pivot_is_double}},",
-        "      \"pivot_axis\": \"vertical pivot axis offset 4-6 inches from one edge (NOT center, NOT side hinges); two pivot points only — top and bottom\",",
-        "      \"handle_position\": \"on the side OPPOSITE the offset pivot for natural operation\"",
+        "      \"pivot_axis\": \"{{pivot_axis}}\",",
+        "      \"handle_position\": \"{{pivot_handle_position}}\"",
         "    }",
         "  },",
       ],
@@ -417,6 +417,7 @@ export const visualizationTemplate: PromptTemplate = {
       type: "specifications",
       condition: { variable: "enclosure_type", operator: "equals", value: "hinged" },
       content: [
+        "    \"the hinged door rendered swung OPEN, tilted open, or ajar — the door must be FULLY CLOSED against the adjacent fixed panel or wall\",",
         "    \"hinges shown on BOTH sides of the door (hinges live on ONE side only)\",",
         "    \"a top-mounted slider track or rail (this is a hinged door, not a slider)\",",
         "    \"pivot hardware at top and bottom of the door (this is a hinged door, not a pivot)\",",
@@ -428,6 +429,7 @@ export const visualizationTemplate: PromptTemplate = {
       type: "specifications",
       condition: { variable: "enclosure_type", operator: "equals", value: "pivot" },
       content: [
+        "    \"the pivot door rendered swung OPEN, tilted open, or ajar — the door must be FULLY CLOSED against the adjacent fixed panel or wall\",",
         "    \"side-mounted hinges along the vertical edge (this is a pivot, not a hinged door)\",",
         "    \"a top-mounted slider track or rollers (this is a pivot, not a slider)\",",
         "    \"the door rendered as a sliding panel\",",
@@ -552,8 +554,10 @@ export const visualizationTemplate: PromptTemplate = {
       type: "instructions",
       condition: { variable: "enclosure_type", operator: "equals", value: "hinged" },
       content: [
+        "    \"Is the hinged door rendered FULLY CLOSED (not swung open, not tilted, not ajar)?\",",
         "    \"Does the glass match the requested height? Spec says: {{hinged_height}}\",",
-        "    \"Are hinges on ONE vertical edge only, with the handle on the OPPOSITE edge?\",",
+        "    \"Do the hinges sit on the EXACT side requested by the spec? Spec says: {{hinged_hinge_axis}}\",",
+        "    \"Is the handle on the side requested by the spec? Spec says: {{hinged_handle_position}}\",",
         "    \"Is the door count EXACTLY {{hinged_count}} (matching is_double = {{hinged_is_double}})?\",",
       ],
     },
@@ -562,9 +566,10 @@ export const visualizationTemplate: PromptTemplate = {
       type: "instructions",
       condition: { variable: "enclosure_type", operator: "equals", value: "pivot" },
       content: [
-        "    \"Is there an offset pivot axis (4-6 inches from one edge), with NO side hinges?\",",
+        "    \"Is the pivot door rendered FULLY CLOSED (not swung open, not tilted, not ajar)?\",",
+        "    \"Is the offset pivot axis on the EXACT side requested by the spec? Spec says: {{pivot_axis}}\",",
+        "    \"Is the handle on the side requested by the spec? Spec says: {{pivot_handle_position}}\",",
         "    \"Is the door count EXACTLY {{pivot_count}} (matching is_double = {{pivot_is_double}})?\",",
-        "    \"Is the handle on the side opposite the pivot axis?\",",
       ],
     },
     {
@@ -573,6 +578,7 @@ export const visualizationTemplate: PromptTemplate = {
       condition: { variable: "enclosure_type", operator: "equals", value: "sliding" },
       content: [
         "    \"Are the doors rendered FULLY CLOSED with both panels visible (not slid open)?\",",
+        "    \"Is the slide direction consistent with the spec? Spec says: {{sliding_direction}}\",",
         "    \"Is the panel count EXACTLY {{sliding_count}} (matching is_double = {{sliding_is_double}})?\",",
         "    \"Are handles ONLY on the outer edges of panels (never at the center seam)?\",",
         "    \"Are there exactly TWO roller carriages per panel (not three sets)?\",",
@@ -612,13 +618,17 @@ export const visualizationTemplate: PromptTemplate = {
 
     // hinged-specific (set by processor.buildVisualizationPromptFromTemplate)
     { name: "hinged_to_ceiling", type: "string", required: false, default: "No", description: "Whether hinged door extends to ceiling (Yes/No)" },
-    { name: "hinged_direction", type: "string", required: false, default: "left", description: "Hinged door swing direction" },
+    { name: "hinged_direction", type: "string", required: false, default: "swing left (hinges on the LEFT vertical edge of the door panel)", description: "Hinged door swing direction (expanded by processor)" },
+    { name: "hinged_hinge_axis", type: "string", required: false, default: "side-mounted hinges along the LEFT vertical edge of the door panel ONLY (NEVER pivot mechanism, NEVER top track)", description: "Side-specific hinge axis clause (expanded by processor)" },
+    { name: "hinged_handle_position", type: "string", required: false, default: "on the RIGHT vertical edge of the door panel (the edge OPPOSITE the hinges)", description: "Side-specific handle position clause (expanded by processor)" },
     { name: "hinged_count", type: "string", required: false, default: "one door", description: "Hinged door count phrase" },
     { name: "hinged_is_double", type: "string", required: false, default: "false", description: "Whether the hinged config is a double/french-door pair" },
     { name: "hinged_height", type: "string", required: false, default: "standard 76-78 inch door height with open space above the glass", description: "Hinged door height spec phrase" },
 
     // pivot-specific
-    { name: "pivot_direction", type: "string", required: false, default: "right", description: "Pivot door swing direction" },
+    { name: "pivot_direction", type: "string", required: false, default: "pivot right (vertical pivot axis on the RIGHT side)", description: "Pivot door swing direction (expanded by processor)" },
+    { name: "pivot_axis", type: "string", required: false, default: "vertical pivot axis on the RIGHT side of the door panel, offset 4-6 inches IN from the RIGHT vertical edge", description: "Side-specific pivot axis clause (expanded by processor)" },
+    { name: "pivot_handle_position", type: "string", required: false, default: "on the LEFT side of the door panel (the side OPPOSITE the pivot axis)", description: "Side-specific pivot handle position clause (expanded by processor)" },
     { name: "pivot_count", type: "string", required: false, default: "one door", description: "Pivot door count phrase" },
     { name: "pivot_is_double", type: "string", required: false, default: "false", description: "Whether the pivot config is double" },
 
