@@ -23,10 +23,17 @@ export const ValidationRequestSchema = z.object({
 }));
 
 // Visualization generation request
+//
+// NOTE on prompt size: the structured JSON-spec prompts we build for the
+// visualization route are ~13-15k characters (system prompt is sent as
+// systemInstruction and is not part of this field). The 32_000 cap leaves
+// comfortable headroom for future template growth while still bounding the
+// request body to a sane size — anything larger almost certainly indicates a
+// bug rather than legitimate prompt content.
 export const VisualizationRequestSchema = z.object({
   bathroomImage: ImageDataSchema,
   inspirationImage: ImageDataSchema.optional(),
-  prompt: z.string().min(10, 'Prompt too short').max(10000, 'Prompt too long'),
+  prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
   hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
