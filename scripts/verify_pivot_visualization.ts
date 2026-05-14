@@ -112,6 +112,14 @@ function checkVariant(v: PivotVariant, prompt: string): CheckResult {
     '"type": "pivot"',
     'FULLY CLOSED', // door state lock
     'offset pivot axis', // mechanism
+    // Pivot-disambiguation against the "rendered as hinged" failure mode
+    '"common_mistake_warning"',
+    '"visual_reference"',
+    '"vertical_edges"',
+    'TOP and BOTTOM horizontal edges',
+    'COMPLETELY BARE',
+    'THE #1 PIVOT FAILURE MODE',
+    'rendered as a regular hinged swing door',
   ]);
 
   // "no side hinges" — wording varies between single (NOT side hinges) and
@@ -131,9 +139,10 @@ function checkVariant(v: PivotVariant, prompt: string): CheckResult {
   // Forbidden_pivot list assertions
   requireAll(prompt, passed, failed, [
     'the pivot door rendered swung OPEN',
-    'side-mounted hinges along the vertical edge (this is a pivot, not a hinged door)',
+    'side-mounted hinges, butt hinges, barrel hinges, or ANY hinge-like hardware',
     'a top-mounted slider track or rollers (this is a pivot, not a slider)',
     'pivot hardware on BOTH sides',
+    'ANY metal hardware, bracket, clamp, or fitting visible along the vertical edges of the door',
   ]);
 
   // Self-check assertions
@@ -146,17 +155,24 @@ function checkVariant(v: PivotVariant, prompt: string): CheckResult {
   // Framing-specific hardware assertions
   if (v.framing === 'frameless') {
     requireAll(prompt, passed, failed, [
-      'NO side hinges anywhere',
+      'NO side hinges',
       'NO frame, NO U-channel, NO bottom track',
+      'TOP pivot fitting',
+      'BOTTOM pivot fitting',
+      'VERTICAL EDGES OF THE DOOR ARE BARE',
     ]);
   } else if (v.framing === 'semi_frameless') {
     requireAll(prompt, passed, failed, [
-      'narrow header bar',
-      'offset pivot 4-6 inches from one edge',
+      'narrow {{hardware_finish_name}} header bar'.replace('{{hardware_finish_name}}', 'Matte Black'),
+      'TOP pivot mount',
+      'BOTTOM pivot mount',
+      'VERTICAL EDGES OF THE DOOR ARE BARE',
     ]);
   } else if (v.framing === 'framed') {
     requireAll(prompt, passed, failed, [
       'full extruded aluminum frame',
+      'CONCEALED INSIDE the TOP and BOTTOM frame rails',
+      'NO side hinges anywhere',
       'NO externally visible pivot points',
     ]);
   }
