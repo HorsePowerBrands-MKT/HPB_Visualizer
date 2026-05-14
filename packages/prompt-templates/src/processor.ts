@@ -350,23 +350,115 @@ export function buildVisualizationPromptFromTemplate(
   };
   
   // Add hinged config if present
+  //
+  // UI convention (apps/gatsby-glass/components/wizard/EnclosureTypeStep.tsx):
+  //   "Swing Left"  → direction='left'  → "Hinges on the LEFT,  swings out to the left"
+  //   "Swing Right" → direction='right' → "Hinges on the RIGHT, swings out to the right"
+  //   "Double Door" → direction='double' → "Hinges on outside edges, opens from the middle"
+  //
+  // We MUST expand 'left'/'right' into unambiguous side-specific clauses before
+  // sending to the AI — passing the bare word "left" is genuinely ambiguous
+  // (could mean hinge-side or swing-target-side).
   const hingedConfig = config.hinged_config as Record<string, unknown> | undefined;
   if (hingedConfig) {
     variables.hinged_to_ceiling = hingedConfig.to_ceiling ? 'Yes' : 'No';
-    variables.hinged_direction = String(hingedConfig.direction || '').replace('_', ' ');
+    const hDir = String(hingedConfig.direction || '');
+    if (hDir === 'double') {
+      variables.hinged_direction = 'double / french-door pair (TWO doors hinged on opposite walls, meeting in the center)';
+      variables.hinged_hinge_axis = 'EACH door hinges on its OUTER (wall-side) vertical edge — the LEFT door has side-mounted hinges along its LEFT edge anchored to the LEFT wall; the RIGHT door has side-mounted hinges along its RIGHT edge anchored to the RIGHT wall. NEVER pivot mechanism, NEVER top track, NEVER hinges in the center where the doors meet.';
+      variables.hinged_handle_position = "EACH door has its handle on its INNER (center-facing) vertical edge — the LEFT door's handle on its RIGHT edge, the RIGHT door's handle on its LEFT edge — so the two handles sit next to each other at the center seam where the doors meet.";
+      variables.hinged_count = 'two doors';
+      variables.hinged_is_double = 'true';
+    } else if (hDir === 'left') {
+      variables.hinged_direction = 'swing left (hinges on the LEFT vertical edge of the door panel; the door swings OUTWARD to the left, away from the shower, when opened)';
+      variables.hinged_hinge_axis = 'side-mounted hinges along the LEFT vertical edge of the door panel ONLY (NEVER pivot mechanism, NEVER top track, NEVER hinges on the RIGHT edge, NEVER hinges on both sides)';
+      variables.hinged_handle_position = 'on the RIGHT vertical edge of the door panel (the edge OPPOSITE the LEFT-side hinges)';
+      variables.hinged_count = 'one door';
+      variables.hinged_is_double = 'false';
+    } else if (hDir === 'right') {
+      variables.hinged_direction = 'swing right (hinges on the RIGHT vertical edge of the door panel; the door swings OUTWARD to the right, away from the shower, when opened)';
+      variables.hinged_hinge_axis = 'side-mounted hinges along the RIGHT vertical edge of the door panel ONLY (NEVER pivot mechanism, NEVER top track, NEVER hinges on the LEFT edge, NEVER hinges on both sides)';
+      variables.hinged_handle_position = 'on the LEFT vertical edge of the door panel (the edge OPPOSITE the RIGHT-side hinges)';
+      variables.hinged_count = 'one door';
+      variables.hinged_is_double = 'false';
+    } else {
+      // Defensive fallback for any unrecognized value.
+      variables.hinged_direction = hDir.replace('_', ' ');
+      variables.hinged_hinge_axis = 'side-mounted hinges along ONE vertical edge of the door panel (NEVER pivot mechanism, NEVER top track)';
+      variables.hinged_handle_position = 'on the OPPOSITE vertical edge from the hinges';
+      variables.hinged_count = 'one door';
+      variables.hinged_is_double = 'false';
+    }
+    variables.hinged_height = hingedConfig.to_ceiling
+      ? 'floor to ceiling — glass extends to the top wall plane with no gap above'
+      : 'standard 76-78 inch door height with open space above the glass';
   }
-  
+
   // Add pivot config if present
+  //
+  // The UI reuses `directionOptions` for pivot doors, so 'left' and 'right' carry
+  // the same orientation semantics as hinged — except the mechanism is an offset
+  // pivot axis, not side-mounted hinges. We translate them analogously.
   const pivotConfig = config.pivot_config as Record<string, unknown> | undefined;
   if (pivotConfig) {
-    variables.pivot_direction = String(pivotConfig.direction || '').replace('_', ' ');
+    const pDir = String(pivotConfig.direction || '');
+    if (pDir === 'double') {
+      variables.pivot_direction = 'double / french-pivot pair (TWO pivot doors, each pivoting from its own wall-side, meeting in the center)';
+      variables.pivot_axis = 'EACH door has its own vertical pivot axis offset 4-6 inches IN from its OUTER (wall-side) edge — the LEFT door pivots near its LEFT edge, the RIGHT door pivots near its RIGHT edge. Two pivot points per door (top and bottom). NEVER center pivot, NEVER side hinges, NEVER top track.';
+      variables.pivot_handle_position = "EACH door has its handle on its INNER (center-facing) edge — the LEFT door's handle on its RIGHT edge, the RIGHT door's handle on its LEFT edge — so the two handles sit next to each other at the center where the doors meet.";
+      variables.pivot_count = 'two doors';
+      variables.pivot_is_double = 'true';
+    } else if (pDir === 'left') {
+      variables.pivot_direction = 'pivot left (vertical pivot axis on the LEFT side, offset 4-6 inches IN from the LEFT edge of the door panel)';
+      variables.pivot_axis = 'vertical pivot axis on the LEFT side of the door panel, offset 4-6 inches IN from the LEFT vertical edge (NOT center, NOT side hinges, NOT on the right side); two pivot points only — top and bottom — both anchored on this same LEFT-side axis';
+      variables.pivot_handle_position = 'on the RIGHT side of the door panel (the side OPPOSITE the LEFT-side pivot axis) for natural operation';
+      variables.pivot_count = 'one door';
+      variables.pivot_is_double = 'false';
+    } else if (pDir === 'right') {
+      variables.pivot_direction = 'pivot right (vertical pivot axis on the RIGHT side, offset 4-6 inches IN from the RIGHT edge of the door panel)';
+      variables.pivot_axis = 'vertical pivot axis on the RIGHT side of the door panel, offset 4-6 inches IN from the RIGHT vertical edge (NOT center, NOT side hinges, NOT on the left side); two pivot points only — top and bottom — both anchored on this same RIGHT-side axis';
+      variables.pivot_handle_position = 'on the LEFT side of the door panel (the side OPPOSITE the RIGHT-side pivot axis) for natural operation';
+      variables.pivot_count = 'one door';
+      variables.pivot_is_double = 'false';
+    } else {
+      variables.pivot_direction = pDir.replace('_', ' ');
+      variables.pivot_axis = 'vertical pivot axis offset 4-6 inches from one edge (NOT center, NOT side hinges); two pivot points only — top and bottom';
+      variables.pivot_handle_position = 'on the side OPPOSITE the offset pivot for natural operation';
+      variables.pivot_count = 'one door';
+      variables.pivot_is_double = 'false';
+    }
   }
-  
+
   // Add sliding config if present
+  // NOTE: The form sets `configuration` ('single' | 'double'), not `sub_type`.
+  // Falling back to `sub_type` for older payloads, but `configuration` is canonical.
+  //
+  // UI hints (slidingDirectionOptions):
+  //   'left'  → "Inner door slides LEFT,  outer door stays fixed"
+  //   'right' → "Inner door slides RIGHT, outer door stays fixed"
+  // Slide direction has limited visual impact when the door is rendered CLOSED,
+  // but we still expand it so the AI knows which panel is moving and where its
+  // handle should appear on the leading edge.
   const slidingConfig = config.sliding_config as Record<string, unknown> | undefined;
   if (slidingConfig) {
-    variables.sliding_type = String(slidingConfig.sub_type || '').replace('_', ' ');
-    variables.sliding_direction = String(slidingConfig.direction || '').replace('_', ' ');
+    const slidingCfg = String(slidingConfig.configuration || slidingConfig.sub_type || 'single');
+    if (slidingCfg === 'double') {
+      variables.sliding_type = 'double bypass (two sliding panels meeting in the center when closed)';
+      variables.sliding_count = 'two glass panels';
+      variables.sliding_is_double = 'true';
+    } else {
+      variables.sliding_type = 'single sliding panel against a fixed return panel';
+      variables.sliding_count = 'one sliding glass panel plus one fixed glass panel';
+      variables.sliding_is_double = 'false';
+    }
+    const sDir = String(slidingConfig.direction || '');
+    if (sDir === 'left') {
+      variables.sliding_direction = 'slides LEFT — the inner (front) moving panel travels LEFTWARD on the top track when opened; the fixed (back) panel sits on the LEFT side behind the moving panel; the moving panel\'s handle is positioned on its LEFT (leading) outer edge';
+    } else if (sDir === 'right') {
+      variables.sliding_direction = 'slides RIGHT — the inner (front) moving panel travels RIGHTWARD on the top track when opened; the fixed (back) panel sits on the RIGHT side behind the moving panel; the moving panel\'s handle is positioned on its RIGHT (leading) outer edge';
+    } else {
+      variables.sliding_direction = sDir.replace('_', ' ');
+    }
   }
   
   return processTemplate(tmpl, variables, options);

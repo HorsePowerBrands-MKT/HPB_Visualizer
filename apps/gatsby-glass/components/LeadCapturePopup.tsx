@@ -194,7 +194,7 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
-                You've created several designs already. Tell us a bit about yourself to keep going — we'll use this to share follow-up resources and connect you with your local Gatsby Glass team if you ever want to take the next step.
+                You've been busy! Drop your details below to keep the design previews flowing. If any of these designs catch your eye, your local Gatsby Glass team would love to help bring it to life.
               </p>
 
               {errors.submit && (

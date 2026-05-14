@@ -2,6 +2,7 @@
 export {
   generateVisualization,
   validateImage,
+  GeminiRateLimitError,
   type GeminiConfig
 } from './gemini';
 
