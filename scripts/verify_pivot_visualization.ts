@@ -53,6 +53,16 @@ function buildPivotPrompt(v: PivotVariant): string {
   return buildVisualizationPromptFromTemplate(config, { catalog: CATALOG }).text;
 }
 
+/**
+ * The system prompt is the strongest place to anchor the install-is-mandatory
+ * rule, so we concatenate it with the visualization prompt for assertions.
+ */
+function buildFullPivotContext(v: PivotVariant): string {
+  const vis = buildPivotPrompt(v);
+  const sys = getSystemPromptFromTemplate({ catalog: CATALOG }).text;
+  return `${sys}\n\n${vis}`;
+}
+
 function extractBlock(text: string, startToken: string, endToken: string): string | null {
   const i = text.indexOf(startToken);
   if (i < 0) return null;
@@ -151,6 +161,32 @@ function checkVariant(v: PivotVariant, prompt: string): CheckResult {
     ]);
   }
 
+  // Install-is-mandatory + no-op-render assertions (regression test for the
+  // bug where pivot + open-alcove input produced an unchanged output).
+  requireAll(prompt, passed, failed, [
+    'INSTALLATION IS MANDATORY',
+    'open shower alcove',
+    'hallucinate the new enclosure',
+    '"must_install"',
+    '"open_alcove_handling"',
+    '"forbidden_output"',
+    '"visibility_requirements"',
+    '"no_op_check"',
+    'NO-OP CHECK',
+    'output looks identical to input_1',
+  ]);
+
+  // Frameless-specific visibility emphasis (the worst-case combo for no-op
+  // renders, because frameless + clear glass is the easiest install for the
+  // model to leave invisible).
+  if (v.framing === 'frameless') {
+    requireAll(prompt, passed, failed, [
+      '"frameless_visibility_note"',
+      'bright specular edge highlights',
+      'the enclosure will appear absent',
+    ]);
+  }
+
   return { variant: v, passed, failed };
 }
 
@@ -183,7 +219,9 @@ function requireAny(
 
 const results: CheckResult[] = [];
 for (const v of VARIANTS) {
-  const prompt = buildPivotPrompt(v);
+  // Use full context (system + visualization) so we can assert install-mandate
+  // rules that live in the system prompt.
+  const prompt = buildFullPivotContext(v);
   results.push(checkVariant(v, prompt));
 }
 
