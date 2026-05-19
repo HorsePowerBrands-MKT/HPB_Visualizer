@@ -30,11 +30,18 @@ export const ValidationRequestSchema = z.object({
 // comfortable headroom for future template growth while still bounding the
 // request body to a sane size — anything larger almost certainly indicates a
 // bug rather than legitimate prompt content.
+//
+// NOTE on doorType/pivotDirection: the route uses these to select an anatomy
+// reference image to send alongside the bathroom photo (currently only for
+// pivot doors, where the model has a strong wrong-default bias). They are
+// optional — if absent, no reference image is attached and the model falls
+// back to text-only instructions.
 export const VisualizationRequestSchema = z.object({
   bathroomImage: ImageDataSchema,
   inspirationImage: ImageDataSchema.optional(),
   prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
+  pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
   hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
   showerShape: z.enum(['standard', 'neo_angle', 'tub']).optional(),

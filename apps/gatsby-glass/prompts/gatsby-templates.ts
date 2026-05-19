@@ -160,6 +160,26 @@ export const visualizationTemplate: PromptTemplate = {
         "      \"type\": \"pivot\",",
         "      \"common_mistake_warning\": \"PIVOT DOORS ARE COMMONLY MIS-RENDERED AS HINGED DOORS. This is the #1 failure mode for pivot installs. A pivot door has NO side-mounted hinges. The pivot mechanism lives on the TOP and BOTTOM horizontal edges of the door (one small fitting at the top, one at the bottom, both on the same vertical axis), NOT along either vertical (left or right) edge. If you render side hinges anywhere along a vertical edge of this door, you have rendered the WRONG door type.\",",
         "      \"visual_reference\": \"A pivot shower door appears to FLOAT in space. Its vertical (left and right) edges are completely bare — no hinges, no clamps, no brackets, nothing. The ONLY visible hardware is (a) a small pivot fitting at the TOP horizontal edge of the door connecting to a header bar or ceiling-mounted bracket, and (b) a matching small pivot pin embedded in the FLOOR or curb directly below the top fitting. Both pivot points sit on the same vertical axis, offset 4-6 inches IN from one vertical edge of the door (NOT centered, NOT on the edge). The door rotates around this offset top-to-bottom axis.\",",
+        "      \"reference_images\": {",
+        "        \"availability\": \"An AUTHORITATIVE pivot anatomy reference image is attached to this request AFTER input_1 (and AFTER input_2 if an inspiration photo is provided). For double-pivot configurations TWO reference images are attached, one per door. These reference images are the FINAL image input(s) before this text prompt.\",",
+        "        \"purpose\": \"Use the reference image(s) ONLY as ground-truth examples of pivot-door anatomy: hardware placement (small pivot fittings on the TOP and BOTTOM horizontal edges of the door, both on the same vertical axis), the BARE vertical edges of the door (no hinges/clamps/brackets along the left or right edges), the handle position OPPOSITE the pivot axis, and the proportions of the adjacent fixed return panel.\",",
+        "        \"direction_mapping\": \"For a SINGLE pivot door, the attached reference shows the EXACT direction requested in swing_direction above — match the side the pivot axis is on (left or right) and the side the handle is on (opposite). For a DOUBLE pivot, both references are attached so you can see both wall-side configurations meeting in the center.\",",
+        "        \"do_not_copy\": [",
+        "          \"the reference's plain white/blank background — render the door into input_1's actual bathroom\",",
+        "          \"the reference's lighting, color palette, or photographic style — match input_1's lighting and color grading exactly\",",
+        "          \"the reference's overall scene framing — input_1 is the ONLY scene to render into\",",
+        "          \"the reference's exact framing style (the reference shows semi-framed/chrome geometry; if the requested framing is frameless or fully framed, follow the framing-specific hardware_layout below, but keep the pivot-mechanism placement from the reference)\",",
+        "          \"the reference's specific handle shape — use the requested handle_style ({{handle_style_name}}) on the same side the reference's handle is on\"",
+        "        ],",
+        "        \"copy_only\": [",
+        "          \"the position of the TOP pivot fitting (top horizontal edge of door, offset toward the pivot-axis side)\",",
+        "          \"the position of the BOTTOM pivot fitting (bottom horizontal edge of door, directly below the top fitting)\",",
+        "          \"the fact that the vertical edges of the door are BARE\",",
+        "          \"the side the handle is on relative to the pivot axis (opposite)\",",
+        "          \"the presence of an adjacent fixed return panel of similar height\"",
+        "        ],",
+        "        \"override_warning\": \"If the reference image disagrees with your default 'shower door' rendering instinct, TRUST THE REFERENCE. The reference is the ground truth for what a pivot door looks like — your default rendering is the failure mode this reference is here to correct.\"",
+        "      },",
         "      \"swing_direction\": \"{{pivot_direction}}\",",
         "      \"door_state\": \"FULLY CLOSED — the door is flush against the adjacent fixed panel or wall, NOT swung open. The pivot type is identifiable from the offset pivot hardware visible at TOP and BOTTOM without needing to tilt the door open.\",",
         "      \"door_count\": \"{{pivot_count}}\",",
@@ -217,6 +237,39 @@ export const visualizationTemplate: PromptTemplate = {
       condition: { variable: "track_preference", operator: "equals", value: "frameless" },
       content: [
         "  \"frameless_visibility_note\": \"This install is FRAMELESS, which means there is no frame to outline the glass. The only visible cues will be: (1) bright specular edge highlights along every glass edge, (2) the small pieces of hardware appropriate to the door type, and (3) the through-glass handle. Without these three signals the enclosure will appear absent. Render all three prominently.\",",
+      ],
+    },
+    // ---------------------------------------------------------------
+    // 4b. anatomy_reference_pointer — only for pivot installs, where the
+    //     route attaches one or more authoritative pivot-door reference
+    //     photographs earlier in the multimodal `parts` array. This block
+    //     reminds the model that those references exist and tells it to
+    //     match the pivot anatomy shown in them. The references' own
+    //     introductory text (set in apps/gatsby-glass/lib/referenceImages.ts)
+    //     already tells the model what to copy and what to ignore — this
+    //     section just reinforces the link.
+    // ---------------------------------------------------------------
+    {
+      id: "anatomy_reference_pointer_pivot",
+      type: "specifications",
+      condition: { variable: "enclosure_type", operator: "equals", value: "pivot" },
+      content: [
+        "  \"anatomy_reference\": {",
+        "    \"note\": \"You have been shown one or more AUTHORITATIVE PIVOT-DOOR REFERENCE IMAGES earlier in this multimodal input. Treat those references as your VISUAL GROUND TRUTH for pivot-door anatomy: small pivot fittings at the TOP and BOTTOM horizontal edges of the door, completely BARE vertical edges, single fixed return panel adjacent to the operating door, and the handle on the side opposite the pivot axis. Match this anatomy in your output.\",",
+        "    \"what_to_copy_from_reference\": [",
+        "      \"the placement of pivot hardware on the TOP and BOTTOM horizontal edges only\",",
+        "      \"the completely bare LEFT and RIGHT vertical edges of the door (no hinges, no clamps, no brackets)\",",
+        "      \"the relationship between the operating door and its adjacent fixed return panel\",",
+        "      \"the orientation of the door consistent with the requested swing direction\"",
+        "    ],",
+        "    \"what_NOT_to_copy_from_reference\": [",
+        "      \"the white background — the output background must be input_1's bathroom\",",
+        "      \"any text labels in the reference image (e.g., 'Left open', 'Right open')\",",
+        "      \"the chrome/silver finish in the reference — use the {{hardware_finish_name}} finish specified above\",",
+        "      \"the exact handle style in the reference — use the {{handle_style_name}} style specified above\",",
+        "      \"any wall, floor, tile, lighting, or scene element from the reference — those all come from input_1\"",
+        "    ]",
+        "  },",
       ],
     },
 

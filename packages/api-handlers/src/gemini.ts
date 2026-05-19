@@ -63,13 +63,21 @@ function isRateLimitError(err: unknown): boolean {
  * Generate a photorealistic visualization of a shower glass installation.
  * Includes one automatic retry with a short backoff if Gemini reports a
  * 429 / RESOURCE_EXHAUSTED — these are usually transient burst-rate issues.
+ *
+ * `referenceImages` (on the request) are authoritative anatomy/product
+ * reference images appended AFTER input_1 (bathroom) and AFTER input_2
+ * (optional inspiration). Each one is preceded in the `parts` array by its
+ * `description` text so the model knows what it is, what to copy from it,
+ * and what to ignore (e.g., labels, finish, surrounding scene). Without
+ * the per-image descriptions, Gemini tends to copy the background and
+ * color from the reference instead of just the door anatomy.
  */
 export async function generateVisualization(
   config: GeminiConfig,
   request: VisualizationRequest
 ): Promise<VisualizationResponse> {
   const { apiKey } = config;
-  const { bathroomImage, inspirationImage, prompt } = request;
+  const { bathroomImage, inspirationImage, referenceImages, prompt } = request;
 
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is required');
@@ -81,10 +89,13 @@ export async function generateVisualization(
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // Build the parts array
+  // Build the parts array. Order matters: target bathroom first (the model
+  // treats the first image as the scene-to-edit), then any inspiration
+  // photo, then reference images (each preceded by its description), then
+  // the structured text spec.
   const parts: any[] = [];
 
-  // Add bathroom image
+  // Position 1 (always): the target bathroom (input_1)
   parts.push({
     inlineData: {
       data: bathroomImage.data,
@@ -92,7 +103,7 @@ export async function generateVisualization(
     }
   });
 
-  // Add inspiration image if provided
+  // Position 2 (optional): inspiration photo (input_2 in the prompt)
   if (inspirationImage) {
     parts.push({
       inlineData: {
@@ -102,7 +113,28 @@ export async function generateVisualization(
     });
   }
 
-  // Add text prompt
+  // Position 3+ (optional): anatomy reference images for door types where the
+  // model has a strong wrong-default bias (most notably pivot, which the
+  // model tends to render as hinged). Each reference is introduced by its
+  // description so the model knows what to copy from it and what to ignore.
+  if (referenceImages && referenceImages.length > 0) {
+    for (const ref of referenceImages) {
+      parts.push({ text: ref.description });
+      parts.push({
+        inlineData: {
+          data: ref.image.data,
+          mimeType: ref.image.mimeType,
+        }
+      });
+    }
+    console.log(
+      `[GEMINI generateVisualization] Attached ${referenceImages.length} anatomy reference image(s): ${referenceImages
+        .map((r) => r.label)
+        .join(', ')}`
+    );
+  }
+
+  // Last: the structured text prompt
   parts.push({ text: prompt });
 
   const generateOnce = () =>

@@ -3,7 +3,7 @@ export {
   generateVisualization,
   validateImage,
   GeminiRateLimitError,
-  type GeminiConfig
+  type GeminiConfig,
 } from './gemini';
 
 // Supabase handlers

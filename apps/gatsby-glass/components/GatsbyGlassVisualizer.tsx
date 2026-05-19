@@ -578,6 +578,13 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         targetHeight: bathroomImageData.height,
         sessionId,
         generationIndex: nextGenIndex,
+        // Pass the structured door config so the server route can attach
+        // anatomy reference images for door types with a wrong-default bias
+        // (currently pivot). Hinged + sliding pass through unchanged.
+        doorType: form.enclosure_type,
+        ...(form.pivot_config?.direction
+          ? { pivotDirection: form.pivot_config.direction }
+          : {}),
         ...(userFingerprint ? { userFingerprint } : {}),
       };
 
