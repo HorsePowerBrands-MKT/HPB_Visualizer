@@ -33,6 +33,30 @@ export interface GeminiConfig {
 }
 
 /**
+ * Gemini image-generation model used by `generateVisualization`.
+ *
+ * As of May 2026 the model lineup is:
+ *   - gemini-2.5-flash-image          → Nano Banana       (Aug 2025, deprecated default)
+ *   - gemini-3.1-flash-image-preview  → Nano Banana 2     (Feb 26 2026, fast tier)
+ *   - gemini-3-pro-image-preview      → Nano Banana Pro   (Nov 20 2025, studio quality)
+ *
+ * Nano Banana Pro is the right default for our use case — single-image
+ * customer-facing bathroom visualizations where rendering quality matters
+ * far more than per-call cost or latency. It has materially better
+ * real-world reasoning ("preserve this room but install glass over the
+ * existing shower"), better small-detail fidelity (hinges, handles, edge
+ * highlights), and lower hallucination rates than the 2.5 model we were
+ * on before.
+ *
+ * Override via `GEMINI_IMAGE_MODEL` env var to swap to Flash 3.1 (cheaper +
+ * faster) or back to 2.5 in an emergency, without a redeploy.
+ */
+const DEFAULT_IMAGE_MODEL = 'gemini-3-pro-image-preview';
+function getImageModelName(): string {
+  return process.env.GEMINI_IMAGE_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
+}
+
+/**
  * Error thrown when Gemini reports it is rate-limited or out of quota
  * (HTTP 429 / status RESOURCE_EXHAUSTED). Surfaced separately so the API
  * route can return a friendly retry message instead of leaking the raw
@@ -170,8 +194,10 @@ export async function generateVisualization(
   // Last: the structured text prompt
   parts.push({ text: prompt });
 
+  const modelName = getImageModelName();
   console.log(
-    `[GEMINI generateVisualization] parts.length=${parts.length}` +
+    `[GEMINI generateVisualization] model=${modelName}` +
+      ` parts.length=${parts.length}` +
       ` (preamble + bathroom${inspirationImage ? ' + inspiration' : ''}` +
       `${referenceImages?.length ? ` + ${referenceImages.length} reference(s)` : ''}` +
       ` + spec); spec.length=${prompt.length} chars`
@@ -179,7 +205,7 @@ export async function generateVisualization(
 
   const generateOnce = () =>
     ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: modelName,
       contents: { parts },
       config: {
         systemInstruction: getSystemPrompt(),
