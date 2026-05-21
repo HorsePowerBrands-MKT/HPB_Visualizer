@@ -150,7 +150,55 @@ function checkVariant(v: PivotVariant, prompt: string): CheckResult {
     'Is the pivot door rendered FULLY CLOSED',
     'Is the offset pivot axis on the EXACT side requested by the spec?',
     'Is the handle on the side requested by the spec?',
+    'Does every region in the spatial_map match the render?',
+    'Are ALL FOUR corners of the door bare exposed glass',
   ]);
+
+  // Spatial map block — region-by-region "where things ARE / are NOT" map.
+  // Pairs with the bundled reference image to give the model both textual
+  // and visual ground truth for pivot anatomy.
+  requireAll(prompt, passed, failed, [
+    '"spatial_map"',
+    '"top_horizontal_edge_of_door"',
+    '"bottom_horizontal_edge_of_door"',
+    '"left_vertical_edge_of_door"',
+    '"right_vertical_edge_of_door"',
+    '"door_interior_glass_field"',
+    '"handle_location_on_door"',
+    '"fixed_return_panel_location"',
+    '"four_corners_of_door"',
+    '"axis_of_rotation"',
+    '"summary_things_NOT_present"',
+    'no decorative elements, no etching',
+    'NO side hinges anywhere',
+    'NO continuous top track or header rail',
+    'NO continuous bottom track or U-channel',
+    'NO hardware at any of the door',
+    'NO sliding rollers',
+  ]);
+
+  // Side-specific spatial map: top + bottom fitting positions, handle, fixed
+  // panel placement all flow from the pivot direction. Verify the resolved
+  // text matches the requested side.
+  if (v.direction === 'left') {
+    requireAll(prompt, passed, failed, [
+      'positioned 4-6 inches IN from the LEFT vertical edge of the door',
+      'on the RIGHT side of the door panel',
+      'fixed-glass return panel sits to the LEFT of the pivot door',
+    ]);
+  } else if (v.direction === 'right') {
+    requireAll(prompt, passed, failed, [
+      'positioned 4-6 inches IN from the RIGHT vertical edge of the door',
+      'on the LEFT side of the door panel',
+      'fixed-glass return panel sits to the RIGHT of the pivot door',
+    ]);
+  } else if (v.direction === 'double') {
+    requireAll(prompt, passed, failed, [
+      "from that door's OUTER (wall-side) vertical edge",
+      'TWO handles total',
+      'two pivot doors meet directly at the center',
+    ]);
+  }
 
   // Framing-specific hardware assertions
   if (v.framing === 'frameless') {
