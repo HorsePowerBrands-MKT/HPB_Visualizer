@@ -9,46 +9,26 @@
  * `apps/gatsby-glass/prompts/gatsby-templates.ts` for the related text-only
  * pressure.
  *
- * Images live in `apps/gatsby-glass/public/prompt-references/<door-type>/`
- * so they ship with the deploy (versioned, edge-cached) and are reachable
- * from disk via the Node.js runtime that the visualization route already
- * runs on.
+ * IMPORTANT: the reference image bytes are NOT read from the filesystem at
+ * request time. Vercel serverless functions do not bundle files from
+ * `public/`, so an earlier fs-based implementation silently fell back to
+ * "no reference attached" in production and the model kept rendering
+ * hinged doors. The PNGs are now embedded directly in
+ * `./reference-images/pivot/bundled.ts` as base64 string constants — this
+ * guarantees they ship with the function bundle on every deploy target.
+ *
+ * To swap the reference images, edit the PNGs at
+ * `apps/gatsby-glass/public/prompt-references/pivot/` (designers can also
+ * preview them there in the browser) and then regenerate the bundled TS:
+ *   pnpm --filter gatsby-glass exec node scripts/generate-pivot-reference-images.mjs
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import type { ReferenceImage } from '@repo/types';
-
-/**
- * Where the reference images live on disk. Resolved relative to the Next.js
- * project root (process.cwd()), which is `apps/gatsby-glass` at runtime for
- * the gatsby-glass app — both in `next dev` and on Vercel.
- */
-const REF_ROOT = path.join(process.cwd(), 'public', 'prompt-references');
-
-/**
- * Reads a PNG from disk and returns it as a base64 ImageData payload ready
- * to hand to Gemini. Returns null if the file is missing so callers can
- * gracefully degrade to text-only prompting rather than 500-ing the route.
- */
-async function readReferenceFile(
-  relativePath: string
-): Promise<{ data: string; mimeType: string } | null> {
-  const fullPath = path.join(REF_ROOT, relativePath);
-  try {
-    const buf = await fs.readFile(fullPath);
-    return {
-      data: buf.toString('base64'),
-      mimeType: 'image/png',
-    };
-  } catch (err) {
-    console.warn(
-      `[referenceImages] could not read ${fullPath}, falling back to text-only prompt:`,
-      err
-    );
-    return null;
-  }
-}
+import {
+  PIVOT_LEFT_REFERENCE,
+  PIVOT_RIGHT_REFERENCE,
+  type BundledPivotReferenceImage,
+} from './reference-images/pivot/bundled';
 
 const PIVOT_REFERENCE_DESCRIPTION = (direction: 'left' | 'right') => {
   const dirLabel = direction === 'left' ? 'LEFT' : 'RIGHT';
@@ -67,18 +47,35 @@ const PIVOT_REFERENCE_DESCRIPTION = (direction: 'left' | 'right') => {
     '  • the handle sits on the side of the door OPPOSITE the offset pivot.',
     'DO NOT copy from this reference: the white background, any text labels',
     `("${dirLabel.toLowerCase()} open"), the chrome finish, the exact handle`,
-    "style, or anything about the surrounding scene. The bathroom, tile,",
+    'style, or anything about the surrounding scene. The bathroom, tile,',
     'lighting, fixtures, finish, glass style, and handle style must all',
     'come from input_1 + the install specification — this reference is for',
     'PIVOT ANATOMY ONLY.',
   ].join('\n');
 };
 
+function toReferenceImage(
+  bundled: BundledPivotReferenceImage
+): ReferenceImage {
+  return {
+    image: {
+      data: bundled.data,
+      mimeType: bundled.mimeType,
+    },
+    label: `pivot-${bundled.direction}-reference`,
+    description: PIVOT_REFERENCE_DESCRIPTION(bundled.direction),
+  };
+}
+
 /**
  * Returns the reference images for the requested enclosure type + direction,
  * or [] if no references exist for that configuration. The API route can
- * pass the return value straight into `generateVisualization`'s
- * `referenceImages` field.
+ * pass the return value straight into the `referenceImages` field on the
+ * `VisualizationRequest`.
+ *
+ * Async so callers don't have to change if we later switch to a remote
+ * fetch (e.g., Supabase storage) — but today this is a pure in-memory
+ * lookup that never throws and never blocks on I/O.
  */
 export async function loadReferenceImagesFor(args: {
   enclosureType?: string;
@@ -88,26 +85,25 @@ export async function loadReferenceImagesFor(args: {
 
   if (enclosureType !== 'pivot') return [];
 
-  // For a single-pivot install we send the direction-matched reference. For a
-  // french-pivot pair ('double') we send BOTH left + right references because
-  // a french-pivot is functionally a mirrored pair of single pivots — left
-  // door pivots from the left side, right door pivots from the right side.
-  const filenamesByDirection: Record<string, ('left' | 'right')[]> = {
-    left: ['left'],
-    right: ['right'],
-    double: ['left', 'right'],
-  };
-  const requested = filenamesByDirection[pivotDirection ?? 'left'] ?? ['left'];
-
-  const refs: ReferenceImage[] = [];
-  for (const dir of requested) {
-    const file = await readReferenceFile(`pivot/pivot-${dir}.png`);
-    if (!file) continue;
-    refs.push({
-      image: file,
-      label: `pivot-${dir}-reference`,
-      description: PIVOT_REFERENCE_DESCRIPTION(dir),
-    });
+  // For a single-pivot install we send the direction-matched reference. For
+  // a french-pivot pair ('double') we send BOTH left + right references
+  // because a french-pivot is functionally a mirrored pair of single pivots
+  // — left door pivots from the left side, right door pivots from the
+  // right side.
+  switch (pivotDirection) {
+    case 'left':
+      return [toReferenceImage(PIVOT_LEFT_REFERENCE)];
+    case 'right':
+      return [toReferenceImage(PIVOT_RIGHT_REFERENCE)];
+    case 'double':
+      return [
+        toReferenceImage(PIVOT_LEFT_REFERENCE),
+        toReferenceImage(PIVOT_RIGHT_REFERENCE),
+      ];
+    default:
+      // Unknown / missing direction — default to the LEFT reference so the
+      // model still gets a pivot-anatomy anchor rather than going back to
+      // text-only prompting.
+      return [toReferenceImage(PIVOT_LEFT_REFERENCE)];
   }
-  return refs;
 }

@@ -99,10 +99,22 @@ export async function POST(request: NextRequest) {
     // the door type actually looks like. Each reference travels with its own
     // explanatory `description` so the model knows what to copy from it
     // (anatomy only) and what to ignore (background, labels, finish).
+    //
+    // The bytes are bundled at build time (see lib/reference-images/) — do
+    // NOT switch this back to fs.readFile against public/, because Vercel
+    // does not include public/ in serverless function bundles and the
+    // request would silently fall back to text-only prompting.
     const referenceImages = await loadReferenceImagesFor({
       enclosureType: validatedData.doorType,
       pivotDirection: validatedData.pivotDirection,
     });
+    console.log(
+      `[generate-visualization] doorType=${validatedData.doorType ?? 'unknown'}` +
+        ` pivotDirection=${validatedData.pivotDirection ?? 'n/a'}` +
+        ` referenceImages=${referenceImages.length} (${referenceImages
+          .map((r) => r.label)
+          .join(', ') || 'none'})`
+    );
 
     // --- Generate the visualization ---
     const visualizationRequest: VisualizationRequest = {
