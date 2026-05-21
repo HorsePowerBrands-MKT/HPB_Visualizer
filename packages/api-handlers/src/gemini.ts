@@ -89,13 +89,46 @@ export async function generateVisualization(
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // Build the parts array. Order matters: target bathroom first (the model
-  // treats the first image as the scene-to-edit), then any inspiration
-  // photo, then reference images (each preceded by its description), then
-  // the structured text spec.
+  // Build the parts array. Order matters: a short edit-mandate preamble
+  // first so the model is anchored on "edit, don't preserve" BEFORE it sees
+  // the bathroom photo, then the bathroom (input_1) it should edit, then
+  // any inspiration photo, then reference images (each preceded by its
+  // description), then the full structured text spec.
+  //
+  // Without the preamble the bathroom photo is the very first thing in the
+  // conversation, which makes it easy for the model to default to "this is
+  // the canvas, return it unchanged" — especially when the trailing spec
+  // is 25k+ characters and attention spreads thin. The preamble re-anchors
+  // the task in a single short, high-priority block of text.
   const parts: any[] = [];
 
-  // Position 1 (always): the target bathroom (input_1)
+  parts.push({
+    text: [
+      'EDIT TASK — READ THIS BEFORE LOOKING AT ANY IMAGE.',
+      '',
+      'The very next image (input_1) is a photo of a bathroom or shower area.',
+      'Your output MUST be a modified version of input_1 with a NEW glass',
+      'shower enclosure installed where the shower currently is. The output',
+      'must NOT be identical to input_1 — a render that returns the input',
+      'unchanged (no glass visible, no hardware visible, no door visible) is',
+      'a FAILED render and you must redo it.',
+      '',
+      'Any additional images that follow input_1 are reference material',
+      '(inspiration photos and/or authoritative product references). They',
+      'are NEVER the canvas to render into — input_1 is the only canvas.',
+      'Each reference image is preceded by its own text block explaining',
+      'what to copy from it and, just as importantly, what NOT to copy.',
+      '',
+      'After all images you will receive a long structured INSTALL_',
+      'SPECIFICATION JSON describing every detail of the enclosure to',
+      'install. That JSON is non-negotiable; obey every preserve_exact,',
+      'remove, forbidden_elements, spatial_map, and self_check_before_',
+      'output entry. But the master rule is this single short paragraph:',
+      'edit input_1, do not preserve it.',
+    ].join('\n'),
+  });
+
+  // The target bathroom (input_1)
   parts.push({
     inlineData: {
       data: bathroomImage.data,
@@ -136,6 +169,13 @@ export async function generateVisualization(
 
   // Last: the structured text prompt
   parts.push({ text: prompt });
+
+  console.log(
+    `[GEMINI generateVisualization] parts.length=${parts.length}` +
+      ` (preamble + bathroom${inspirationImage ? ' + inspiration' : ''}` +
+      `${referenceImages?.length ? ` + ${referenceImages.length} reference(s)` : ''}` +
+      ` + spec); spec.length=${prompt.length} chars`
+  );
 
   const generateOnce = () =>
     ai.models.generateContent({
