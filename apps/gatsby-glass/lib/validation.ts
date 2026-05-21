@@ -5,12 +5,20 @@ import { z } from 'zod';
  * Using Zod for runtime type checking and validation
  */
 
-// Base64 image data schema
+// Base64 image data schema.
+//
+// width / height are optional because not every caller has them at validation
+// time, but when they ARE present we forward them to the image-generation
+// model so it can constrain the output aspect ratio to match input_1
+// (Gemini 3.x image models default to 1:1 / 16:9 otherwise, which mirrors
+// portrait photos into panoramas).
 export const ImageDataSchema = z.object({
   data: z.string().min(100, 'Image data too short'),
   mimeType: z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'], {
     errorMap: () => ({ message: 'Invalid image type. Must be JPEG, PNG, or WebP' })
   }),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
 });
 
 // Image validation request
@@ -46,6 +54,12 @@ export const VisualizationRequestSchema = z.object({
   hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
   showerShape: z.enum(['standard', 'neo_angle', 'tub']).optional(),
   userFingerprint: z.string().uuid('Invalid fingerprint').optional(),
+  // Used by the image model to constrain the output aspect ratio to match
+  // input_1. Sent by the client when it knows the input dimensions; the
+  // server falls back to bathroomImage.width / height (if present) or to a
+  // 3:4 portrait default.
+  targetWidth: z.number().int().positive().optional(),
+  targetHeight: z.number().int().positive().optional(),
 });
 
 // Lead submission request

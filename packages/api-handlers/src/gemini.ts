@@ -57,6 +57,55 @@ function getImageModelName(): string {
 }
 
 /**
+ * Aspect ratios supported by gemini-3-pro-image-preview (and the 3.1 flash
+ * variant). Source: the @google/genai SDK ImageConfig.aspectRatio docstring.
+ * Listed as [label, value] so we can snap an input ratio to the closest one.
+ */
+const SUPPORTED_ASPECT_RATIOS: ReadonlyArray<readonly [string, number]> = [
+  ['9:16', 9 / 16],
+  ['2:3', 2 / 3],
+  ['3:4', 3 / 4],
+  ['1:1', 1],
+  ['4:3', 4 / 3],
+  ['3:2', 3 / 2],
+  ['16:9', 16 / 9],
+  ['21:9', 21 / 9],
+];
+
+/**
+ * Snap an input width/height to the closest supported aspect ratio for the
+ * image model. We compare in log space so a 4:3 landscape and a 3:4 portrait
+ * are equidistant from 1:1 (instead of landscape disproportionately winning).
+ *
+ * Why we need this: Gemini 2.5 Flash Image inferred the output aspect ratio
+ * from input_1. Gemini 3 Pro / 3.1 Flash Image do NOT — if you don't pass
+ * imageConfig.aspectRatio they default to their own ratio (typically 1:1 or
+ * 16:9), which makes a portrait bathroom photo come back as a stretched
+ * landscape with the scene mirrored to fill the extra horizontal space.
+ */
+function pickAspectRatio(
+  width?: number,
+  height?: number
+): string {
+  if (!width || !height || width <= 0 || height <= 0) {
+    // No dimensions — assume portrait phone photo (the most common upload).
+    return '3:4';
+  }
+  const ratio = width / height;
+  const logTarget = Math.log(ratio);
+  let bestLabel = SUPPORTED_ASPECT_RATIOS[0][0];
+  let bestDistance = Infinity;
+  for (const [label, value] of SUPPORTED_ASPECT_RATIOS) {
+    const distance = Math.abs(Math.log(value) - logTarget);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestLabel = label;
+    }
+  }
+  return bestLabel;
+}
+
+/**
  * Error thrown when Gemini reports it is rate-limited or out of quota
  * (HTTP 429 / status RESOURCE_EXHAUSTED). Surfaced separately so the API
  * route can return a friendly retry message instead of leaking the raw
@@ -101,7 +150,14 @@ export async function generateVisualization(
   request: VisualizationRequest
 ): Promise<VisualizationResponse> {
   const { apiKey } = config;
-  const { bathroomImage, inspirationImage, referenceImages, prompt } = request;
+  const {
+    bathroomImage,
+    inspirationImage,
+    referenceImages,
+    prompt,
+    targetWidth,
+    targetHeight,
+  } = request;
 
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is required');
@@ -195,8 +251,22 @@ export async function generateVisualization(
   parts.push({ text: prompt });
 
   const modelName = getImageModelName();
+
+  // Snap the output aspect ratio to the closest supported value, derived
+  // from input_1's actual dimensions. Without this the 3.x image models
+  // default to their own aspect ratio (typically 1:1 / 16:9) which makes
+  // a portrait bathroom photo come back as a panoramic render with the
+  // scene mirrored/duplicated to fill the extra horizontal space.
+  const aspectRatio = pickAspectRatio(
+    bathroomImage.width ?? targetWidth,
+    bathroomImage.height ?? targetHeight
+  );
+
   console.log(
     `[GEMINI generateVisualization] model=${modelName}` +
+      ` aspectRatio=${aspectRatio}` +
+      ` (inputDims=${bathroomImage.width ?? targetWidth ?? '?'}` +
+      `x${bathroomImage.height ?? targetHeight ?? '?'})` +
       ` parts.length=${parts.length}` +
       ` (preamble + bathroom${inspirationImage ? ' + inspiration' : ''}` +
       `${referenceImages?.length ? ` + ${referenceImages.length} reference(s)` : ''}` +
@@ -211,6 +281,9 @@ export async function generateVisualization(
         systemInstruction: getSystemPrompt(),
         responseModalities: [Modality.IMAGE],
         temperature: 0.3,
+        imageConfig: {
+          aspectRatio,
+        },
       },
     });
 

@@ -122,6 +122,10 @@ export async function POST(request: NextRequest) {
       inspirationImage: validatedData.inspirationImage,
       referenceImages,
       prompt: validatedData.prompt,
+      // Forward the input dimensions so the image model can constrain the
+      // output aspect ratio to match input_1.
+      targetWidth: validatedData.targetWidth,
+      targetHeight: validatedData.targetHeight,
     };
 
     const result = await generateVisualization({ apiKey }, visualizationRequest);
