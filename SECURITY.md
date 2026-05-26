@@ -77,7 +77,7 @@ All routes are protected by security headers configured in `next.config.js`:
 |--------|-------|---------|
 | `X-Content-Type-Options` | `nosniff` | Prevents MIME-type sniffing attacks |
 | `X-XSS-Protection` | `1; mode=block` | Enables browser XSS filtering |
-| `Content-Security-Policy` | `frame-ancestors 'self' https://*.horsepowerbrands.com https://*.hubspot.com https://*.vercel.app` | Controls which domains can embed the app in iframes — prevents clickjacking |
+| `Content-Security-Policy` | `frame-ancestors 'self' https://*.horsepowerbrands.com https://*.hubspot.com https://*.vercel.app https://gatsbyglass.com https://*.gatsbyglass.com` | Controls which domains can embed the app in iframes — prevents clickjacking |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer information leaked to external sites |
 
 These headers are applied to every route (`/(.*)`), covering all pages and API endpoints.
