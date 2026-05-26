@@ -20,7 +20,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://*.horsepowerbrands.com https://*.hubspot.com https://*.vercel.app",
+            value: "frame-ancestors 'self' https://*.horsepowerbrands.com https://*.hubspot.com https://*.vercel.app https://gatsbyglass.com https://*.gatsbyglass.com",
           },
           {
             key: 'X-XSS-Protection',
