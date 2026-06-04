@@ -110,6 +110,11 @@ const PlaceholderIcon = ({ icon: Icon, label }: { icon?: React.ElementType, labe
 /** Raw file size above which we resize before validate/generate to avoid Vercel ~4.5MB JSON body limits (base64 expands ~4/3). */
 const VALIDATE_COMPRESS_THRESHOLD_BYTES = 2.5 * 1024 * 1024;
 
+/** Hard upper bound on the raw file we'll even attempt to process in-browser.
+ *  Modern iPhone JPEGs are routinely 5–15 MB and HEICs can be larger; 50 MB
+ *  comfortably covers ProRAW-derived exports while still blocking absurd uploads. */
+const MAX_RAW_FILE_BYTES = 50 * 1024 * 1024;
+
 /** Maps browser fetch failures (Safari "Load failed", Chrome "Failed to fetch", etc.) to one clear message. */
 function userFacingValidationError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
@@ -364,9 +369,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_RAW_FILE_BYTES) {
       console.error('[FILE UPLOAD] File too large:', file.size);
-      setError("Image size should be less than 10MB.");
+      setError(
+        "That photo is unusually large (over 50MB). On iPhone, open the photo, tap Share → Save as JPEG, or use a screenshot — we'll automatically resize it for you."
+      );
       return;
     }
 
@@ -404,6 +411,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         try {
           console.log('[FILE UPLOAD] Compressing large image before upload...');
           fileForFlow = await compressImage(fileForFlow, 1920);
+          // Fallback pass for huge originals (e.g. 20MB+ iPhone exports) where a
+          // single 1920px resize can still exceed the server's ~4.5MB body limit.
+          if (fileForFlow.size > VALIDATE_COMPRESS_THRESHOLD_BYTES) {
+            console.log('[FILE UPLOAD] Still large after first pass, compressing again to 1280px...');
+            fileForFlow = await compressImage(fileForFlow, 1280);
+          }
         } catch (compressErr) {
           console.error('[FILE UPLOAD] Compression failed:', compressErr);
           setError(
