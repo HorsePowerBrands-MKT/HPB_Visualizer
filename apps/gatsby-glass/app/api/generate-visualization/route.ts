@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Register Gatsby Glass brand templates before any prompt is built.
 import '../../../lib/registerTemplates';
-import { generateVisualization, GeminiRateLimitError } from '@repo/api-handlers/gemini';
+import {
+  generateVisualization,
+  GeminiRateLimitError,
+} from '@repo/api-handlers/gemini';
 import {
   getMonthlyUsageCount,
   recordUsage,
@@ -15,6 +18,7 @@ import { VisualizationRequestSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
 import { applyWatermark } from '../../../lib/watermark';
+import { loadReferenceImagesFor } from '../../../lib/referenceImages';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -89,11 +93,39 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Anatomy reference images: for door types where the model has a strong
+    // wrong-default bias (currently only pivot, which is consistently
+    // rendered as hinged), attach pre-vetted reference image(s) showing what
+    // the door type actually looks like. Each reference travels with its own
+    // explanatory `description` so the model knows what to copy from it
+    // (anatomy only) and what to ignore (background, labels, finish).
+    //
+    // The bytes are bundled at build time (see lib/reference-images/) — do
+    // NOT switch this back to fs.readFile against public/, because Vercel
+    // does not include public/ in serverless function bundles and the
+    // request would silently fall back to text-only prompting.
+    const referenceImages = await loadReferenceImagesFor({
+      enclosureType: validatedData.doorType,
+      pivotDirection: validatedData.pivotDirection,
+    });
+    console.log(
+      `[generate-visualization] doorType=${validatedData.doorType ?? 'unknown'}` +
+        ` pivotDirection=${validatedData.pivotDirection ?? 'n/a'}` +
+        ` referenceImages=${referenceImages.length} (${referenceImages
+          .map((r) => r.label)
+          .join(', ') || 'none'})`
+    );
+
     // --- Generate the visualization ---
     const visualizationRequest: VisualizationRequest = {
       bathroomImage: validatedData.bathroomImage,
       inspirationImage: validatedData.inspirationImage,
+      referenceImages,
       prompt: validatedData.prompt,
+      // Forward the input dimensions so the image model can constrain the
+      // output aspect ratio to match input_1.
+      targetWidth: validatedData.targetWidth,
+      targetHeight: validatedData.targetHeight,
     };
 
     const result = await generateVisualization({ apiKey }, visualizationRequest);

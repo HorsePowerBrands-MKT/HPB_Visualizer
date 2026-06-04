@@ -5,12 +5,20 @@ import { z } from 'zod';
  * Using Zod for runtime type checking and validation
  */
 
-// Base64 image data schema
+// Base64 image data schema.
+//
+// width / height are optional because not every caller has them at validation
+// time, but when they ARE present we forward them to the image-generation
+// model so it can constrain the output aspect ratio to match input_1
+// (Gemini 3.x image models default to 1:1 / 16:9 otherwise, which mirrors
+// portrait photos into panoramas).
 export const ImageDataSchema = z.object({
   data: z.string().min(100, 'Image data too short'),
   mimeType: z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'], {
     errorMap: () => ({ message: 'Invalid image type. Must be JPEG, PNG, or WebP' })
   }),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
 });
 
 // Image validation request
@@ -23,15 +31,35 @@ export const ValidationRequestSchema = z.object({
 }));
 
 // Visualization generation request
+//
+// NOTE on prompt size: the structured JSON-spec prompts we build for the
+// visualization route are ~13-15k characters (system prompt is sent as
+// systemInstruction and is not part of this field). The 32_000 cap leaves
+// comfortable headroom for future template growth while still bounding the
+// request body to a sane size — anything larger almost certainly indicates a
+// bug rather than legitimate prompt content.
+//
+// NOTE on doorType/pivotDirection: the route uses these to select an anatomy
+// reference image to send alongside the bathroom photo (currently only for
+// pivot doors, where the model has a strong wrong-default bias). They are
+// optional — if absent, no reference image is attached and the model falls
+// back to text-only instructions.
 export const VisualizationRequestSchema = z.object({
   bathroomImage: ImageDataSchema,
   inspirationImage: ImageDataSchema.optional(),
-  prompt: z.string().min(10, 'Prompt too short').max(10000, 'Prompt too long'),
+  prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
+  pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
   hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
   showerShape: z.enum(['standard', 'neo_angle', 'tub']).optional(),
   userFingerprint: z.string().uuid('Invalid fingerprint').optional(),
+  // Used by the image model to constrain the output aspect ratio to match
+  // input_1. Sent by the client when it knows the input dimensions; the
+  // server falls back to bathroomImage.width / height (if present) or to a
+  // 3:4 portrait default.
+  targetWidth: z.number().int().positive().optional(),
+  targetHeight: z.number().int().positive().optional(),
 });
 
 // Lead submission request
