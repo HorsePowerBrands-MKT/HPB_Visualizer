@@ -9,6 +9,7 @@ export {
 // Supabase handlers
 export {
   submitLead,
+  getLeads,
   getLeadsByZipCode,
   lookupLocationByZipcode,
   updateLeadStatus,
@@ -22,6 +23,7 @@ export {
   type TeamLocationWithPermissions,
   type UsageReportRow,
   type ApiCallReportRow,
+  type AdminLeadRow,
 } from './supabase';
 
 // Supabase Storage handlers

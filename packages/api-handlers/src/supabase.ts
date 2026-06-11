@@ -279,6 +279,84 @@ export async function updateLeadStatus(
   }
 }
 
+export interface AdminLeadRow {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  zipCode: string | null;
+  locationId: string | null;
+  locationName: string | null;
+  createdAt: string;
+  status: string | null;
+  doorType: string | null;
+  finish: string | null;
+  hardware: string | null;
+  handleStyle: string | null;
+  trackPreference: string | null;
+  showerShape: string | null;
+  mode: string | null;
+  visualizationImageUrl: string | null;
+  allVisualizationUrls: VisualizationHistoryItem[] | null;
+  tcpaConsent: boolean;
+}
+
+/**
+ * Fetch lead details for the admin leads view, scoped to a calendar month.
+ * Optionally filtered to a single location. Newest first.
+ */
+export async function getLeads(
+  config: SupabaseConfig,
+  { year, month, locationId }: { year: number; month: number; locationId?: string }
+): Promise<AdminLeadRow[]> {
+  const supabase = getSupabaseClient(config);
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString();
+
+  let query = supabase
+    .from('leads')
+    .select(
+      'id, name, email, phone, zip_code, location_id, location_name, created_at, status, door_type, finish, hardware, handle_style, track_preference, shower_shape, mode, visualization_image_url, all_visualization_urls, tcpa_consent'
+    )
+    .gte('created_at', monthStart)
+    .lt('created_at', nextMonthStart)
+    .order('created_at', { ascending: false });
+
+  if (locationId) {
+    query = query.eq('location_id', locationId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[getLeads] Database error:', error);
+    throw new Error('Failed to retrieve leads');
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    phone: row.phone ?? null,
+    zipCode: row.zip_code ?? null,
+    locationId: row.location_id ?? null,
+    locationName: row.location_name ?? null,
+    createdAt: row.created_at,
+    status: row.status ?? null,
+    doorType: row.door_type ?? null,
+    finish: row.finish ?? null,
+    hardware: row.hardware ?? null,
+    handleStyle: row.handle_style ?? null,
+    trackPreference: row.track_preference ?? null,
+    showerShape: row.shower_shape ?? null,
+    mode: row.mode ?? null,
+    visualizationImageUrl: row.visualization_image_url ?? null,
+    allVisualizationUrls: row.all_visualization_urls ?? null,
+    tcpaConsent: row.tcpa_consent ?? false,
+  }));
+}
+
 /**
  * Save a single image generation event to the visualizations table
  * Called every time an image is generated (including re-generates)

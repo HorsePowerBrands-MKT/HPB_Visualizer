@@ -923,6 +923,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               Submissions
             </Link>
             <Link
+              href="/admin/leads"
+              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+            >
+              Leads
+            </Link>
+            <Link
               href="/admin/usage-report"
               className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
             >

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Filter, Image as ImageIcon, AlertCircle, Clock, CheckCircle, XCircle, X } from 'lucide-react';
+import { ArrowLeft, Filter, Image as ImageIcon, AlertCircle, Clock, CheckCircle, XCircle, X, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
 import type { VisualizerSubmission } from '@repo/types';
@@ -51,6 +51,55 @@ function MarketingBadge({ approved }: { approved: boolean }) {
   );
 }
 
+function CardImage({
+  src,
+  alt,
+  emptyLabel,
+  consented,
+  onImageClick,
+}: {
+  src: string | null;
+  alt: string;
+  emptyLabel: string;
+  consented: boolean;
+  onImageClick: (src: string) => void;
+}) {
+  return (
+    <div className="relative bg-brand-black/80 flex items-center justify-center aspect-[4/3] overflow-hidden">
+      {src ? (
+        consented ? (
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => onImageClick(src)}
+          />
+        ) : (
+          <>
+            <img
+              src={src}
+              alt={alt}
+              className="w-full h-full object-cover blur-md scale-110 select-none pointer-events-none"
+              draggable={false}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30">
+              <EyeOff className="w-5 h-5 text-white/50" />
+              <span className="text-[10px] uppercase tracking-wider text-white/50 font-sans">
+                No consent
+              </span>
+            </div>
+          </>
+        )
+      ) : (
+        <div className="flex flex-col items-center gap-1 text-white/20">
+          <ImageIcon className="w-8 h-8" />
+          <span className="text-[10px]">{emptyLabel}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubmissionCard({ submission, onImageClick }: { submission: VisualizerSubmission; onImageClick: (src: string) => void }) {
   const meta = submission.metadata as Record<string, string | null | undefined>;
   const configItems = [
@@ -65,36 +114,20 @@ function SubmissionCard({ submission, onImageClick }: { submission: VisualizerSu
   return (
     <div className="bg-brand-black/60 border border-brand-gold/10 overflow-hidden">
       <div className="grid grid-cols-2 gap-px bg-white/5">
-        <div className="bg-brand-black/80 flex items-center justify-center aspect-[4/3] overflow-hidden">
-          {submission.originalPhotoPath ? (
-            <img
-              src={submission.originalPhotoPath}
-              alt="Original upload"
-              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => onImageClick(submission.originalPhotoPath!)}
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-1 text-white/20">
-              <ImageIcon className="w-8 h-8" />
-              <span className="text-[10px]">No photo</span>
-            </div>
-          )}
-        </div>
-        <div className="bg-brand-black/80 flex items-center justify-center aspect-[4/3] overflow-hidden">
-          {submission.generatedImagePath ? (
-            <img
-              src={submission.generatedImagePath}
-              alt="AI generated"
-              className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => onImageClick(submission.generatedImagePath!)}
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-1 text-white/20">
-              <ImageIcon className="w-8 h-8" />
-              <span className="text-[10px]">Not generated</span>
-            </div>
-          )}
-        </div>
+        <CardImage
+          src={submission.originalPhotoPath}
+          alt="Original upload"
+          emptyLabel="No photo"
+          consented={submission.marketingConsent}
+          onImageClick={onImageClick}
+        />
+        <CardImage
+          src={submission.generatedImagePath}
+          alt="AI generated"
+          emptyLabel="Not generated"
+          consented={submission.marketingConsent}
+          onImageClick={onImageClick}
+        />
       </div>
 
       <div className="p-3 space-y-2">
