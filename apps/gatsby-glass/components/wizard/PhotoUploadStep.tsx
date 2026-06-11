@@ -79,7 +79,7 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
           </div>
           <p className="text-xl font-medium text-gray-300 mb-2">Click to upload or drag & drop</p>
           <p className="text-sm text-gray-400 mb-4">Best results: Straight-on photo, good lighting</p>
-          <p className="text-xs text-gray-500">Maximum file size: 10MB</p>
+          <p className="text-xs text-gray-500">iPhone photos welcome — we'll auto-resize large images</p>
         </div>
       )}
 
