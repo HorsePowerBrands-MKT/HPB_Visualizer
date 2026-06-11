@@ -946,3 +946,181 @@ export async function getApiCallReport(
 
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
+
+// ---------------------------------------------------------------------------
+// Team user management (admin UI)
+// ---------------------------------------------------------------------------
+
+export const CORPORATE_LOCATION_ID = 'CORPORATE';
+
+export interface TeamUser {
+  id: string;
+  email: string;
+  locationId: string;
+  locationName: string | null;
+  isActive: boolean;
+  accessLevel: AccessLevel;
+  source: string;
+  createdAt: string;
+}
+
+function toTeamUser(row: Record<string, unknown>): TeamUser {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    locationId: row.location_id as string,
+    locationName: (row.location_name as string | null) ?? null,
+    isActive: (row.is_active as boolean) ?? false,
+    accessLevel: ((row.access_level as AccessLevel) ?? 'member'),
+    source: (row.source as string) ?? 'manual',
+    createdAt: row.created_at as string,
+  };
+}
+
+const TEAM_USER_COLUMNS = 'id, email, location_id, location_name, is_active, access_level, source, created_at';
+
+/**
+ * List every team_locations row (active and inactive) for the admin
+ * user-management UI.
+ */
+export async function listTeamUsers(config: SupabaseConfig): Promise<TeamUser[]> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select(TEAM_USER_COLUMNS)
+    .order('email', { ascending: true });
+
+  if (error) {
+    console.error('[listTeamUsers] Database error:', error);
+    throw new Error('Failed to load users');
+  }
+
+  return (data ?? []).map(toTeamUser);
+}
+
+/**
+ * Distinct active franchise locations (GG-*) for the add-user dropdown.
+ */
+export async function listActiveLocations(
+  config: SupabaseConfig
+): Promise<{ locationId: string; locationName: string | null }[]> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select('location_id, location_name')
+    .like('location_id', 'GG-%')
+    .eq('is_active', true)
+    .order('location_name', { ascending: true });
+
+  if (error) {
+    console.error('[listActiveLocations] Database error:', error);
+    throw new Error('Failed to load locations');
+  }
+
+  const seen = new Set<string>();
+  const locations: { locationId: string; locationName: string | null }[] = [];
+  for (const row of data ?? []) {
+    if (!seen.has(row.location_id)) {
+      seen.add(row.location_id);
+      locations.push({ locationId: row.location_id, locationName: row.location_name ?? null });
+    }
+  }
+  return locations;
+}
+
+/**
+ * Create a manually managed team user. Throws with a clear message when the
+ * email is already registered.
+ */
+export async function createTeamUser(
+  config: SupabaseConfig,
+  input: {
+    email: string;
+    locationId: string;
+    locationName: string | null;
+    accessLevel: AccessLevel;
+  }
+): Promise<TeamUser> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .insert([{
+      email: input.email.toLowerCase().trim(),
+      location_id: input.locationId,
+      location_name: input.locationName,
+      access_level: input.accessLevel,
+      is_active: true,
+      source: 'manual',
+    }])
+    .select(TEAM_USER_COLUMNS)
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('A user with this email already exists');
+    }
+    console.error('[createTeamUser] Database error:', error);
+    throw new Error('Failed to create user');
+  }
+
+  return toTeamUser(data);
+}
+
+/**
+ * Update a team user's access level, active flag, and/or location.
+ */
+export async function updateTeamUser(
+  config: SupabaseConfig,
+  id: string,
+  updates: {
+    accessLevel?: AccessLevel;
+    isActive?: boolean;
+    locationId?: string;
+    locationName?: string | null;
+  }
+): Promise<TeamUser> {
+  const supabase = getSupabaseClient(config);
+
+  const payload: Record<string, unknown> = {};
+  if (updates.accessLevel !== undefined) payload.access_level = updates.accessLevel;
+  if (updates.isActive !== undefined) payload.is_active = updates.isActive;
+  if (updates.locationId !== undefined) payload.location_id = updates.locationId;
+  if (updates.locationName !== undefined) payload.location_name = updates.locationName;
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .update(payload)
+    .eq('id', id)
+    .select(TEAM_USER_COLUMNS)
+    .single();
+
+  if (error || !data) {
+    console.error('[updateTeamUser] Database error:', error);
+    throw new Error('Failed to update user');
+  }
+
+  return toTeamUser(data);
+}
+
+/**
+ * Fetch a single team user by row id. Returns null when not found.
+ */
+export async function getTeamUserById(
+  config: SupabaseConfig,
+  id: string
+): Promise<TeamUser | null> {
+  const supabase = getSupabaseClient(config);
+
+  const { data, error } = await supabase
+    .from('team_locations')
+    .select(TEAM_USER_COLUMNS)
+    .eq('id', id)
+    .single();
+
+  if (error || !data) return null;
+
+  return toTeamUser(data);
+}

@@ -47,11 +47,21 @@ function LoginForm() {
       }
 
       // Step 2: Client sends the magic link (keeps PKCE code_verifier in cookies)
+      //
+      // The magic link should always send the user to the canonical site URL
+      // (e.g. https://visualizer.gatsbyglass.com), even when the login form
+      // was submitted from a Vercel preview deployment or while embedded in
+      // an iframe. We fall back to window.location.origin for local dev where
+      // the env var is unset.
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
+        window.location.origin;
+
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${siteUrl}/auth/callback`,
         },
       });
 
