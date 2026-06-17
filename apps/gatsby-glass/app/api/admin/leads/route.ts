@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Team authorization required' }, { status: 403 });
     }
 
-    if (!hasAccess(location.accessLevel, 'admin')) {
+    if (!hasAccess(location.accessLevel, 'corporate_team')) {
       return NextResponse.json({ error: 'You do not have permission to view leads' }, { status: 403 });
     }
   } catch {

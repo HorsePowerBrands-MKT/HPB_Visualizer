@@ -13,7 +13,7 @@ import {
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
 
-type AccessLevel = 'member' | 'social' | 'admin' | 'super_admin';
+type AccessLevel = 'member' | 'social' | 'corporate_team' | 'admin' | 'super_admin';
 
 interface TeamUser {
   id: string;
@@ -40,6 +40,7 @@ interface UsersResponse {
 const ACCESS_LABELS: Record<AccessLevel, string> = {
   member: 'Member',
   social: 'Social',
+  corporate_team: 'Corporate Team',
   admin: 'Admin',
   super_admin: 'Super Admin',
 };
@@ -379,9 +380,9 @@ export default function ManageUsersPage() {
 
   const grantableLevels = useMemo<AccessLevel[]>(() => {
     if (data?.currentUser.accessLevel === 'super_admin') {
-      return ['member', 'social', 'admin', 'super_admin'];
+      return ['member', 'social', 'corporate_team', 'admin', 'super_admin'];
     }
-    return ['member', 'social', 'admin'];
+    return ['member', 'social', 'corporate_team', 'admin'];
   }, [data?.currentUser.accessLevel]);
 
   const handleUpdate = useCallback(
