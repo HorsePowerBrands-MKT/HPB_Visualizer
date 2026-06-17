@@ -1,0 +1,16 @@
+-- Migration 018: Document corporate_team access level
+-- Run this in the Supabase SQL editor.
+--
+-- Tiered access levels (higher tiers inherit lower-tier access):
+--   'member' (default)  - standard franchise team member
+--   'social'            - social/marketing team; can view submissions
+--   'corporate_team'    - corporate HQ staff; can view leads and usage reports
+--   'admin'             - can manage users plus all report pages
+--   'super_admin'       - full access including API call breakdown
+--
+-- No schema change is required; access_level is already free-form TEXT.
+-- Assign the new level to existing corporate users as needed, e.g.:
+--
+--   UPDATE team_locations
+--   SET access_level = 'corporate_team'
+--   WHERE location_id = 'CORPORATE' AND access_level = 'member';

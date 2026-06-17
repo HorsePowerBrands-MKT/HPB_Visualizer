@@ -42,7 +42,7 @@ async function requireAdmin(
   return { actor: { ...location, email: user.email.toLowerCase() } };
 }
 
-const GRANTABLE_LEVELS: AccessLevel[] = ['member', 'social', 'admin'];
+const GRANTABLE_LEVELS: AccessLevel[] = ['member', 'social', 'corporate_team', 'admin'];
 
 export async function GET() {
   const sbConfig = getSupabaseConfig();
