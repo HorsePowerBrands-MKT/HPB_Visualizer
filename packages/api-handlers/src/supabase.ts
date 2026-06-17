@@ -799,13 +799,14 @@ export async function deleteSubmissionRows(
 // Team location permissions
 // ---------------------------------------------------------------------------
 
-export type AccessLevel = 'member' | 'social' | 'admin' | 'super_admin';
+export type AccessLevel = 'member' | 'social' | 'corporate_team' | 'admin' | 'super_admin';
 
 const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
   member: 0,
   social: 1,
-  admin: 2,
-  super_admin: 3,
+  corporate_team: 2,
+  admin: 3,
+  super_admin: 4,
 };
 
 export interface TeamLocationWithPermissions extends TeamLocation {
@@ -814,7 +815,7 @@ export interface TeamLocationWithPermissions extends TeamLocation {
 
 /**
  * True when the user's access level is at least `required`.
- * admin >= social >= member.
+ * super_admin >= admin >= corporate_team >= social >= member.
  */
 export function hasAccess(
   userLevel: AccessLevel,

@@ -29,6 +29,7 @@ import { UsageCounter } from './UsageCounter';
 import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
 import { GeneratingOverlay } from './GeneratingOverlay';
 import { createClient } from '../lib/supabase/client';
+import { hasAccess, type AccessLevel } from '../lib/permissions';
 import Link from 'next/link';
 
 import { 
@@ -258,7 +259,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   // --- Auth state ---
-  const [authUser, setAuthUser] = useState<{ email: string; locationName: string | null } | null>(null);
+  const [authUser, setAuthUser] = useState<{
+    email: string;
+    locationName: string | null;
+    accessLevel: AccessLevel | null;
+  } | null>(null);
 
   // Generate or retrieve fingerprint from localStorage
   useEffect(() => {
@@ -308,18 +313,37 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     refreshPastVisualizations();
   }, [authUser, refreshPastVisualizations]);
 
-  // Check Supabase auth state on mount
+  // Check Supabase auth state on mount and load team permissions
   useEffect(() => {
     const supabase = createClient();
+
+    const loadTeamProfile = async (email: string) => {
+      try {
+        const res = await fetch('/api/team-profile');
+        if (!res.ok) {
+          setAuthUser({ email, locationName: null, accessLevel: null });
+          return;
+        }
+        const data = await res.json();
+        setAuthUser({
+          email: data.email ?? email,
+          locationName: data.locationName ?? null,
+          accessLevel: data.accessLevel ?? null,
+        });
+      } catch {
+        setAuthUser({ email, locationName: null, accessLevel: null });
+      }
+    };
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
-        setAuthUser({ email: user.email, locationName: null });
+        loadTeamProfile(user.email);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user?.email) {
-        setAuthUser({ email: session.user.email, locationName: null });
+        loadTeamProfile(session.user.email);
       } else {
         setAuthUser(null);
       }
@@ -923,24 +947,38 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-3 ml-3 shrink-0">
-            <Link
-              href="/admin/submissions"
-              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-            >
-              Submissions
-            </Link>
-            <Link
-              href="/admin/leads"
-              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-            >
-              Leads
-            </Link>
-            <Link
-              href="/admin/usage-report"
-              className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-            >
-              Usage Report
-            </Link>
+            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'social') && (
+              <Link
+                href="/admin/submissions"
+                className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+              >
+                Submissions
+              </Link>
+            )}
+            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'corporate_team') && (
+              <>
+                <Link
+                  href="/admin/leads"
+                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+                >
+                  Leads
+                </Link>
+                <Link
+                  href="/admin/usage-report"
+                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+                >
+                  Usage Report
+                </Link>
+              </>
+            )}
+            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'admin') && (
+              <Link
+                href="/admin/users"
+                className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+              >
+                Users
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors"

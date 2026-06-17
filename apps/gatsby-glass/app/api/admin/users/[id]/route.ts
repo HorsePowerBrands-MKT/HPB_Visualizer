@@ -17,7 +17,7 @@ function getSupabaseConfig() {
   return { url, serviceKey };
 }
 
-const GRANTABLE_LEVELS: AccessLevel[] = ['member', 'social', 'admin'];
+const GRANTABLE_LEVELS: AccessLevel[] = ['member', 'social', 'corporate_team', 'admin'];
 
 export async function PATCH(
   request: NextRequest,
