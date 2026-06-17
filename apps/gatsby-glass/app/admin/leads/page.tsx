@@ -16,6 +16,7 @@ import {
   ShieldOff,
   Inbox,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
@@ -349,6 +350,57 @@ export default function LeadsPage() {
     return leads.filter((l) => (l.locationId ?? 'UNKNOWN') === locationFilter);
   }, [data, locationFilter]);
 
+  const exportCsv = () => {
+    if (!filteredLeads.length) return;
+    const headers = [
+      'Date',
+      'Name',
+      'Email',
+      'Phone',
+      'Zip',
+      'Location',
+      'Status',
+      'Mode',
+      'Door Type',
+      'Finish',
+      'Hardware',
+      'Handle',
+      'Framing',
+      'Shape',
+      'TCPA Consent',
+    ];
+    const rows: string[][] = [headers];
+    for (const lead of filteredLeads) {
+      rows.push([
+        lead.createdAt,
+        lead.name ?? '',
+        lead.email ?? '',
+        lead.phone ?? '',
+        lead.zipCode ?? '',
+        lead.locationName || lead.locationId || '',
+        lead.status ?? 'new',
+        lead.mode ?? '',
+        lead.doorType ?? '',
+        lead.finish ?? '',
+        lead.hardware ?? '',
+        lead.handleStyle ?? '',
+        lead.trackPreference ?? '',
+        lead.showerShape ?? '',
+        lead.tcpaConsent ? 'Yes' : 'No',
+      ]);
+    }
+    const csvContent = rows
+      .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leads-${MONTH_NAMES[month - 1]}-${year}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (authed === false) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
@@ -453,9 +505,16 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* Location filter */}
+      {/* Location filter + Export */}
       {!loading && data && data.leads.length > 0 && (
-        <div className="flex justify-end mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-sans font-semibold uppercase tracking-wider text-brand-gold border border-brand-gold/20 bg-brand-black/60 hover:bg-brand-gold/10 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
           <select
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
