@@ -10,7 +10,9 @@
 //   - sas-inspiration.html   SAS · customer · inspiration mode
 //   - raq-configure.html     RAQ · franchise · configure mode
 //   - raq-inspiration.html   RAQ · franchise · inspiration mode
-//   - raq-no-territory.html  RAQ · brand fallback (zip not in any territory)
+//   - raq-no-territory.html  RAQ · outside service area (zip not in any territory)
+//   - customer-quote-matched.html   RAQ · customer confirmation (territory matched)
+//   - customer-quote-outside.html   RAQ · customer confirmation (outside service area)
 //
 // Usage (from repo root):
 //   pnpm preview:emails
@@ -24,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import {
   renderSasEmailHtml,
   renderRaqEmailHtml,
+  renderCustomerQuoteEmailHtml,
 } from '../../../packages/api-handlers/src/resend.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -183,14 +186,18 @@ const variants = [
   {
     fileName: 'raq-no-territory.html',
     kind: 'RAQ',
-    title: 'RAQ · Brand fallback · No territory match',
+    title: 'RAQ · Outside service area · No territory match',
     subject: `New Visualizer Estimate Request — ${SAMPLE_CUSTOMER.customerName} (99999)`,
-    recipient: 'CustomerJourney@horsepowerbrands.com (brand monitoring inbox)',
+    recipient: 'ahoebelheinrich@gatsbyglass.com (outside-territory triage inbox)',
     description:
-      "Sent when the customer's zip code does not match any franchise territory.",
+      "Sent when the customer's zip code falls outside every territory (including the mileage buffer). Includes the nearest franchise so it can be forwarded.",
     html: renderRaqEmailHtml({
-      toEmail: 'CustomerJourney@horsepowerbrands.com',
+      toEmail: 'ahoebelheinrich@gatsbyglass.com',
       locationName: null,
+      outsideTerritory: true,
+      nearestLocationName: 'Gatsby Glass — Austin Metro',
+      nearestLocationEmail: 'franchise-austin@example.com',
+      nearestDistanceMiles: 23,
       ...SAMPLE_CUSTOMER,
       customerZipCode: '99999',
       heroImageUrl: PLACEHOLDER('Selected Design'),
@@ -198,6 +205,41 @@ const variants = [
         'Sliding Door · Frameless framing · Polished Chrome hardware · Knob handle',
       galleryItems: SAMPLE_GALLERY.slice(0, 2),
       mode: 'configure',
+    }),
+  },
+  {
+    fileName: 'customer-quote-matched.html',
+    kind: 'CUST',
+    title: 'Customer quote · Territory matched',
+    subject: "We've received your Gatsby Glass quote request",
+    recipient: 'Customer (the email entered on the form)',
+    description:
+      'Sent to the customer after a quote request when their zip is served by a local franchise.',
+    html: renderCustomerQuoteEmailHtml({
+      toEmail: SAMPLE_CUSTOMER.customerEmail,
+      firstName: 'Jane',
+      matched: true,
+      locationName: 'Gatsby Glass — San Francisco Bay',
+      supportPhone: '(866) 479-2870',
+      supportPhoneTel: '+18664792870',
+      contactUrl: 'https://www.gatsbyglass.com/contact-us/',
+    }),
+  },
+  {
+    fileName: 'customer-quote-outside.html',
+    kind: 'CUST',
+    title: 'Customer quote · Outside service area',
+    subject: 'About your Gatsby Glass quote request',
+    recipient: 'Customer (the email entered on the form)',
+    description:
+      "Sent to the customer after a quote request when their zip is outside every service area — points them to the support phone and contact page.",
+    html: renderCustomerQuoteEmailHtml({
+      toEmail: SAMPLE_CUSTOMER.customerEmail,
+      firstName: 'Jane',
+      matched: false,
+      supportPhone: '(866) 479-2870',
+      supportPhoneTel: '+18664792870',
+      contactUrl: 'https://www.gatsbyglass.com/contact-us/',
     }),
   },
 ];
@@ -224,6 +266,7 @@ function renderIndex(items) {
   const groupTitles = {
     SAS: 'SAS · Save & Send to Me — sent to the customer',
     RAQ: 'RAQ · Request an Estimate — sent to the franchise',
+    CUST: 'Quote confirmation — sent to the customer',
   };
 
   const sections = Object.entries(groupedByKind)

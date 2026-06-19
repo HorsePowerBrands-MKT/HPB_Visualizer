@@ -17,5 +17,6 @@ export {
   CATALOG_VERSION,
   GATSBY_GLASS_CONFIG,
   TEST_LOCATION,
+  OUTSIDE_TERRITORY_INBOX,
   type BrandConfig
 } from './config';
