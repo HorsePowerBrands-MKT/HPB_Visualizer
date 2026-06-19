@@ -48,6 +48,18 @@ export interface RaqEmailData {
   ccEmails?: string[];
   /** Resolved franchise location name, or null when no territory. */
   locationName: string | null;
+  /**
+   * True when the customer's zip fell outside every territory (including the
+   * mileage buffer). The email then renders an "outside service area" notice
+   * and surfaces the nearest franchise below so HQ can forward it.
+   */
+  outsideTerritory?: boolean;
+  /** Closest franchise to an out-of-territory customer, if one was found. */
+  nearestLocationName?: string | null;
+  /** Closest franchise's shared inbox, if known. */
+  nearestLocationEmail?: string | null;
+  /** Approximate miles from the customer's zip to the nearest franchise. */
+  nearestDistanceMiles?: number | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -67,16 +79,55 @@ export interface RaqEmailData {
   brandUrl?: string;
 }
 
+/**
+ * Customer-facing confirmation sent after a Request-a-Quote submission. Two
+ * variants keyed off `matched`:
+ *   - matched: their zip is served, so a local franchise was notified.
+ *   - outside: their zip is outside every service area, so we point them to
+ *     the support phone / contact page instead of promising a callback.
+ */
+export interface CustomerQuoteEmailData {
+  toEmail: string;
+  firstName: string;
+  /** True when the zip resolved to an active franchise territory. */
+  matched: boolean;
+  /** Resolved franchise name, shown in the matched variant when available. */
+  locationName?: string | null;
+  /** Display support phone, e.g. "(866) 479-2870". */
+  supportPhone: string;
+  /** Dial-able support phone for tel: links, e.g. "+18664792870". */
+  supportPhoneTel: string;
+  /** Public contact page URL. */
+  contactUrl: string;
+  /** Public marketing/landing site URL. */
+  brandUrl?: string;
+}
+
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
 const DEFAULT_BRAND_URL = 'https://www.gatsbyglass.com';
 const PRIVACY_POLICY_URL = 'https://www.horsepowerbrands.com/privacy-policy';
-const SAS_EMAIL_HEADER_IMAGE_URL =
-  'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/Design%20Preview.webp';
-const RAQ_EMAIL_HEADER_IMAGE_URL =
-  'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/NewQuote.webp';
 const EMAIL_FOOTER_BORDER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/GG%20Email%20Border%204.png';
+
+// Base URL the email images are served from. The logo PNG lives in this app's
+// public/email-assets folder, so it resolves at the deployed site origin.
+// Override with EMAIL_ASSET_BASE_URL if the asset is hosted elsewhere (e.g. a CDN).
+const EMAIL_ASSET_BASE_URL = (
+  process.env.EMAIL_ASSET_BASE_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  DEFAULT_BRAND_URL
+).replace(/\/$/, '');
+const BRAND_LOGO_URL = `${EMAIL_ASSET_BASE_URL}/email-assets/gg-logo-horizontal.png`;
+
+// Brand header: the Gatsby Glass logo (gold wordmark + white tagline) on black.
+// The PNG already has a black background that matches the header, so it blends
+// seamlessly in every email client (no transparency/SVG support needed).
+const BRAND_HEADER = `<tr>
+                        <td align="center" style="padding:28px 30px 24px 30px; background-color:#000000; border-bottom:1px solid #231f20;">
+                            <img src="${BRAND_LOGO_URL}" alt="Gatsby Glass — Raise a Glass to Sophisticated Glass Solutions" width="320" style="display:block; width:320px; max-width:80%; height:auto;">
+                        </td>
+                    </tr>`;
 
 const SUBJECT_LINE = 'Your Gatsby Glass Design Preview';
 
@@ -206,6 +257,7 @@ function renderHtml(data: SasEmailData): string {
   return `<!doctype html>
 <html>
 <head>
+    <meta charset="utf-8" />
     <title>${escapeHtml(SUBJECT_LINE)}</title>
     <style>
         body {
@@ -219,11 +271,7 @@ function renderHtml(data: SasEmailData): string {
         <tr>
             <td align="center">
                 <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color: #000000; margin: 0 auto; border: 1px solid #231f20; border-radius: 5px; margin: 50px; width: 600px;">
-                    <tr>
-                        <td align="center" style="padding: 0px; color: #ffffff; font-size: 24px; width: 600px;">
-                            <img src="${escapeHtml(SAS_EMAIL_HEADER_IMAGE_URL)}" alt="Your Gatsby Glass design preview" width="100%" style="display: block;">
-                        </td>
-                    </tr>
+                    ${BRAND_HEADER}
                     <tr>
                         <td style="padding: 22px 30px 6px 30px; color: #ffffff; font-size: 14px; line-height: 1.7; font-family: Arial, sans-serif;">
                             <p style="margin: 0 0 8px 0;">Hi ${escapeHtml(data.firstName)},</p>
@@ -559,13 +607,56 @@ function renderRaqHtml(data: RaqEmailData): string {
                 </td>
               </tr>`;
 
-  const locationLine = data.locationName
+  const locationLine = data.outsideTerritory
+    ? `This person requested a quote but is <strong style="color:#ffffff;">outside our service areas</strong>. If you believe they're close enough for a location to service, please forward the information below to the appropriate team.`
+    : data.locationName
     ? `Routed to <strong style="color:#ffffff;">${escapeHtml(data.locationName)}</strong>.`
     : `No franchise territory matched the customer's zip code — please review and forward to the appropriate location.`;
+
+  const nearestBlock = data.outsideTerritory
+    ? `
+              <tr>
+                <td style="padding:18px 30px 0 30px;">
+                  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="background-color:#2a1f10;border:1px solid #e4bf6e;padding:18px;">
+                        <p style="margin:0 0 8px 0;color:#e4bf6e;font-size:13px;font-family:Arial,sans-serif;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+                          Outside Service Area
+                        </p>
+                        <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">
+                          The zip code they entered (<strong style="color:#ffffff;">${escapeHtml(data.customerZipCode)}</strong>) places them outside every active territory.
+                          ${
+                            data.nearestLocationName != null
+                              ? `The closest location is <strong style="color:#ffffff;">${escapeHtml(
+                                  data.nearestLocationName
+                                )}</strong>${
+                                  data.nearestDistanceMiles != null
+                                    ? ` (~${Math.round(data.nearestDistanceMiles)} miles away)`
+                                    : ''
+                                }${
+                                  data.nearestLocationEmail
+                                    ? ` &mdash; <a href="mailto:${escapeHtml(
+                                        data.nearestLocationEmail
+                                      )}" style="color:#e4bf6e;text-decoration:underline;">${escapeHtml(
+                                        data.nearestLocationEmail
+                                      )}</a>`
+                                    : ''
+                                }.`
+                              : `No nearby location could be determined automatically.`
+                          }
+                          If you believe they're close enough for that location to service, please forward the following information.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`
+    : '';
 
   return `<!doctype html>
 <html>
 <head>
+    <meta charset="utf-8" />
     <title>${escapeHtml(formatRaqSubject(data))}</title>
     <style>body { font-family: Arial, sans-serif; }</style>
 </head>
@@ -574,11 +665,7 @@ function renderRaqHtml(data: RaqEmailData): string {
         <tr>
             <td align="center">
                 <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color:#000000;margin:0 auto;border:1px solid #231f20;border-radius:5px;margin:50px;width:600px;">
-                    <tr>
-                        <td align="center" style="padding:0;color:#ffffff;font-size:24px;width:600px;">
-                            <img src="${escapeHtml(RAQ_EMAIL_HEADER_IMAGE_URL)}" alt="New Estimate Request" width="100%" style="display:block;">
-                        </td>
-                    </tr>
+                    ${BRAND_HEADER}
                     <tr>
                         <td style="padding:22px 30px 6px 30px;color:#ffffff;font-family:Arial,sans-serif;">
                             <p style="margin:0 0 6px 0;color:#e4bf6e;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
@@ -605,6 +692,7 @@ function renderRaqHtml(data: RaqEmailData): string {
                             </table>
                         </td>
                     </tr>
+                    ${nearestBlock}
                     ${configBlock}
                     ${heroSection}
                     ${galleryRows}
@@ -643,7 +731,31 @@ function renderRaqText(data: RaqEmailData): string {
   const lines: string[] = [];
   lines.push('NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER');
   lines.push('');
-  if (data.locationName) {
+  if (data.outsideTerritory) {
+    lines.push('OUTSIDE SERVICE AREA');
+    lines.push(
+      '  This person requested a quote but is outside our service areas.'
+    );
+    lines.push(
+      `  The zip code they entered (${data.customerZipCode}) places them outside every active territory.`
+    );
+    if (data.nearestLocationName != null) {
+      const dist =
+        data.nearestDistanceMiles != null
+          ? ` (~${Math.round(data.nearestDistanceMiles)} miles away)`
+          : '';
+      lines.push(`  Closest location: ${data.nearestLocationName}${dist}`);
+      if (data.nearestLocationEmail) {
+        lines.push(`  Closest inbox:    ${data.nearestLocationEmail}`);
+      }
+    } else {
+      lines.push('  No nearby location could be determined automatically.');
+    }
+    lines.push(
+      '  If you believe they are close enough for that location to service,'
+    );
+    lines.push('  please forward the following information.');
+  } else if (data.locationName) {
     lines.push(`Routed to: ${data.locationName}`);
   } else {
     lines.push('No franchise territory matched the customer\'s zip code.');
@@ -773,6 +885,208 @@ export async function sendRaqEmail(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[RESEND] RAQ unexpected error:', msg);
+    return { success: false, error: msg };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Request a Quote (RAQ) — customer confirmation
+// ---------------------------------------------------------------------------
+
+function formatCustomerQuoteSubject(data: CustomerQuoteEmailData): string {
+  return data.matched
+    ? "We've received your Gatsby Glass quote request"
+    : 'About your Gatsby Glass quote request';
+}
+
+function renderCustomerQuoteHtml(data: CustomerQuoteEmailData): string {
+  const brandUrl = data.brandUrl || DEFAULT_BRAND_URL;
+  const greetingName = data.firstName ? escapeHtml(data.firstName) : 'there';
+
+  const bodyBlock = data.matched
+    ? `
+                            <p style="margin:0 0 14px 0;color:#d5d5d5;font-size:14px;line-height:1.7;">
+                                Thanks for requesting a quote with the Gatsby Glass Visualizer! We've
+                                notified your local Gatsby Glass team${
+                                  data.locationName
+                                    ? ` (<strong style="color:#ffffff;">${escapeHtml(
+                                        data.locationName
+                                      )}</strong>)`
+                                    : ''
+                                }, and they'll be in touch soon to help bring your design to life.
+                            </p>
+                            <p style="margin:0;color:#d5d5d5;font-size:14px;line-height:1.7;">
+                                In the meantime, if you have any questions you can reach us at
+                                <a href="tel:${escapeHtml(data.supportPhoneTel)}" style="color:#e4bf6e;text-decoration:underline;">${escapeHtml(
+                                  data.supportPhone
+                                )}</a>.
+                            </p>`
+    : `
+                            <p style="margin:0 0 14px 0;color:#d5d5d5;font-size:14px;line-height:1.7;">
+                                Thanks for requesting a quote with the Gatsby Glass Visualizer! It looks
+                                like the zip code you entered is just outside of our current service
+                                area, so we're looking into how we can assist you.
+                            </p>
+                            <p style="margin:0;color:#d5d5d5;font-size:14px;line-height:1.7;">
+                                We'd still love to help. Give us a call at
+                                <a href="tel:${escapeHtml(data.supportPhoneTel)}" style="color:#e4bf6e;text-decoration:underline;">${escapeHtml(
+                                  data.supportPhone
+                                )}</a>
+                                or get in touch through our
+                                <a href="${escapeHtml(data.contactUrl)}" target="_blank" style="color:#e4bf6e;text-decoration:underline;">Contact Page</a>
+                                and we'll do our best to help out how we can!
+                            </p>`;
+
+  return `<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(formatCustomerQuoteSubject(data))}</title>
+    <style>body { font-family: Arial, sans-serif; }</style>
+</head>
+<body style="margin:0;padding:0;background-color:#000000;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="auto" style="background-color:#000000;margin:0 auto;border:1px solid #231f20;border-radius:5px;margin:50px;width:600px;">
+                    ${BRAND_HEADER}
+                    <tr>
+                        <td style="padding:24px 30px 6px 30px;color:#ffffff;font-family:Arial,sans-serif;">
+                            <p style="margin:0 0 14px 0;color:#ffffff;font-size:16px;line-height:1.5;">
+                                Hi ${greetingName},
+                            </p>
+                            ${bodyBlock}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:18px 20px 0 20px;">
+                            <img src="${escapeHtml(EMAIL_FOOTER_BORDER_IMAGE_URL)}" alt="" width="100%" style="display:block;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding:14px;background-color:#231f20;color:#ababab;font-size:11px;line-height:1.6;font-family:Arial,sans-serif;">
+                            &copy; Gatsby Glass &bull; A HorsePower Brands Company<br>
+                            <a href="${escapeHtml(brandUrl)}" target="_blank" style="color:#e4bf6e;text-decoration:underline;">${escapeHtml(brandUrl.replace(/^https?:\/\//, ''))}</a>
+                            &nbsp;&middot;&nbsp;
+                            <a href="${escapeHtml(PRIVACY_POLICY_URL)}" target="_blank" style="color:#e4bf6e;text-decoration:underline;">Privacy Policy</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+}
+
+function renderCustomerQuoteText(data: CustomerQuoteEmailData): string {
+  const lines: string[] = [];
+  lines.push(`Hi ${data.firstName || 'there'},`);
+  lines.push('');
+  if (data.matched) {
+    lines.push(
+      "Thanks for requesting a quote with the Gatsby Glass Visualizer! We've notified your local"
+    );
+    lines.push(
+      `Gatsby Glass team${
+        data.locationName ? ` (${data.locationName})` : ''
+      }, and they'll be in touch soon to help bring your design to life.`
+    );
+    lines.push('');
+    lines.push(`Questions? Call us at ${data.supportPhone}.`);
+  } else {
+    lines.push(
+      'Thanks for requesting a quote with the Gatsby Glass Visualizer! It looks like the zip code'
+    );
+    lines.push(
+      "you entered is just outside of our current service area, so we're looking into how we can"
+    );
+    lines.push('assist you.');
+    lines.push('');
+    lines.push("We'd still love to help. Give us a call or get in touch and we'll do our best to");
+    lines.push('help out how we can!');
+    lines.push(`  Call:    ${data.supportPhone}`);
+    lines.push(`  Contact: ${data.contactUrl}`);
+  }
+  lines.push('');
+  lines.push('— Gatsby Glass');
+  return lines.join('\n');
+}
+
+/**
+ * Public renderers exposed for previewing/testing the customer quote email.
+ */
+export function renderCustomerQuoteEmailHtml(data: CustomerQuoteEmailData): string {
+  return renderCustomerQuoteHtml(data);
+}
+
+export function renderCustomerQuoteEmailText(data: CustomerQuoteEmailData): string {
+  return renderCustomerQuoteText(data);
+}
+
+/**
+ * Send the customer-facing confirmation after a Request-a-Quote submission.
+ * Returns `{ success: true }` on success or `{ success: false, error }` on
+ * failure. Never throws.
+ */
+export async function sendCustomerQuoteEmail(
+  config: ResendConfig,
+  data: CustomerQuoteEmailData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!config.apiKey) {
+      return { success: false, error: 'Resend API key not configured' };
+    }
+    if (!config.from) {
+      return { success: false, error: 'Resend "from" address not configured' };
+    }
+    if (!data.toEmail) {
+      return { success: false, error: 'Recipient email is required' };
+    }
+
+    const body: Record<string, unknown> = {
+      from: config.from,
+      to: [data.toEmail],
+      subject: formatCustomerQuoteSubject(data),
+      html: renderCustomerQuoteHtml(data),
+      text: renderCustomerQuoteText(data),
+    };
+
+    if (config.replyTo) {
+      body.reply_to = config.replyTo;
+    }
+
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      console.error(`[RESEND] Customer quote HTTP ${response.status}: ${text}`);
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+
+    const json = (await response.json().catch(() => null)) as
+      | { id?: string; message?: string; name?: string }
+      | null;
+
+    if (!json || !json.id) {
+      console.error('[RESEND] Customer quote unexpected response shape:', JSON.stringify(json));
+      return { success: false, error: 'Unexpected response from Resend' };
+    }
+
+    console.log(
+      `[RESEND] Customer quote email queued for ${data.toEmail} (id: ${json.id}, matched: ${data.matched})`
+    );
+    return { success: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[RESEND] Customer quote unexpected error:', msg);
     return { success: false, error: msg };
   }
 }

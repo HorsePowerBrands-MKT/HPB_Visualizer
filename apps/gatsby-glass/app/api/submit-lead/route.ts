@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitLead, lookupLocationByZipcode, logApiCall } from '@repo/api-handlers/supabase';
+import { submitLead, lookupLocationByZipcode, findNearestLocation, logApiCall } from '@repo/api-handlers/supabase';
 import { pushLeadToSharpSpring } from '@repo/api-handlers/sharpspring';
-import { sendSasEmail, sendRaqEmail, type SasGalleryItem } from '@repo/api-handlers/resend';
+import { sendSasEmail, sendRaqEmail, sendCustomerQuoteEmail, type SasGalleryItem } from '@repo/api-handlers/resend';
 import { validateLeadData } from '@repo/api-handlers/validation';
 import type { Lead, VisualizationHistoryItem, EnclosureType, TrackPreference, HardwareFinish, HandleStyle } from '@repo/types';
 import { LeadSubmissionSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
-import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION } from '../../../lib/gatsby-constants/src';
+import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION, OUTSIDE_TERRITORY_INBOX } from '../../../lib/gatsby-constants/src';
 
 /**
  * Build a human-readable label for a visualization history item using the
@@ -313,6 +313,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Territory status for a quote request: drives the franchise routing, the
+    // customer confirmation variant, and the response the popup reads to show
+    // an accurate on-screen message. Only meaningful for RAQ leads.
+    let raqLocationMatched: boolean | undefined;
+    let raqOutsideTerritory: boolean | undefined;
+
     // Send the franchise-facing RAQ email (Request a Quote) to the location's
     // shared inbox so they can follow up with the customer. Falls back to the
     // brand support inbox when the customer's zip is outside any active
@@ -321,9 +327,81 @@ export async function POST(request: NextRequest) {
       const resendApiKey = process.env.RESEND_API_KEY;
       const resendFrom = process.env.RESEND_FROM || 'Gatsby Glass <noreply@gatsbyglass.com>';
 
+      // Resolve territory status once. Computed independently of email sending
+      // so the response is accurate even if Resend is unconfigured.
+      //
+      // QA short-circuit: a designated non-real test zip routes the RAQ email
+      // to the Customer Journey QA inbox so we can exercise the pipeline
+      // without spamming a real brand/franchise mailbox. Gated on a signed-in
+      // session — anonymous visitors entering the test zip get the normal
+      // "no territory" fallback. See `TEST_LOCATION` in gatsby-constants.
+      const normalizedZip = validatedData.zipCode.replace(/[^0-9]/g, '').slice(0, 5);
+      const isTestZip = normalizedZip === TEST_LOCATION.zipCode && !!authUserId;
+      if (normalizedZip === TEST_LOCATION.zipCode && !authUserId) {
+        console.warn(
+          '[SUBMIT-LEAD] Test zip submitted by an anonymous visitor; falling back to brand inbox.'
+        );
+      }
+
+      // When the zip falls inside a territory (core or buffer) we email that
+      // franchise's shared inbox. Otherwise the lead still goes through but is
+      // routed to the outside-territory triage inbox, enriched with the
+      // nearest franchise so it can be forwarded.
+      const insideTerritory = !!resolvedLocation?.email;
+      const matched = isTestZip || insideTerritory;
+      const outsideTerritory = !matched;
+      raqLocationMatched = matched;
+      raqOutsideTerritory = outsideTerritory;
+
+      let nearest: Awaited<ReturnType<typeof findNearestLocation>> = null;
+      if (outsideTerritory) {
+        try {
+          nearest = await findNearestLocation(supabaseConfig, validatedData.zipCode);
+        } catch (nearestErr) {
+          console.error('[SUBMIT-LEAD] Nearest-location lookup failed:', nearestErr);
+        }
+      }
+
+      const firstName =
+        validatedData.name.trim().split(/\s+/)[0] || validatedData.name.trim();
+
       if (!resendApiKey) {
-        console.warn('[SUBMIT-LEAD] RESEND_API_KEY not configured, skipping RAQ email');
+        console.warn('[SUBMIT-LEAD] RESEND_API_KEY not configured, skipping RAQ emails');
       } else {
+        // Customer-facing confirmation. Best-effort; never blocks the lead.
+        try {
+          const customerEmailResult = await sendCustomerQuoteEmail(
+            {
+              apiKey: resendApiKey,
+              from: resendFrom,
+              replyTo: GATSBY_GLASS_CONFIG.supportEmail,
+            },
+            {
+              toEmail: validatedData.email,
+              firstName,
+              matched,
+              locationName: matched
+                ? isTestZip
+                  ? TEST_LOCATION.locationName
+                  : resolvedLocation?.locationName ?? null
+                : null,
+              supportPhone: GATSBY_GLASS_CONFIG.supportPhone || '(866) 479-2870',
+              supportPhoneTel: GATSBY_GLASS_CONFIG.supportPhoneTel || '+18664792870',
+              contactUrl:
+                GATSBY_GLASS_CONFIG.contactUrl || 'https://www.gatsbyglass.com/contact-us/',
+            }
+          );
+
+          if (!customerEmailResult.success) {
+            console.error(
+              '[SUBMIT-LEAD] Customer quote email send failed:',
+              customerEmailResult.error
+            );
+          }
+        } catch (custErr) {
+          console.error('[SUBMIT-LEAD] Customer quote email send threw:', custErr);
+        }
+
         try {
           const history = result.allVisualizationUrls ?? [];
 
@@ -368,36 +446,19 @@ export async function POST(request: NextRequest) {
                 label: buildImageLabel(v),
               }));
 
-            // QA short-circuit: a designated non-real test zip routes the
-            // RAQ email to the Customer Journey QA inbox so we can exercise
-            // the end-to-end pipeline without spamming a real brand or
-            // franchise mailbox. See `TEST_LOCATION` in gatsby-constants.
-            //
-            // Gated on a signed-in Supabase session: anonymous visitors who
-            // happen to enter the test zip get the normal "no territory →
-            // brand inbox" fallback, so the test inbox only ever receives
-            // intentional test traffic from authenticated team members.
-            const normalizedZip = validatedData.zipCode.replace(/[^0-9]/g, '').slice(0, 5);
-            const isTestZip = normalizedZip === TEST_LOCATION.zipCode && !!authUserId;
-
-            if (normalizedZip === TEST_LOCATION.zipCode && !authUserId) {
-              console.warn(
-                '[SUBMIT-LEAD] Test zip submitted by an anonymous visitor; falling back to brand inbox.'
-              );
-            }
-
-            const fallbackInbox = GATSBY_GLASS_CONFIG.supportEmail || 'CustomerJourney@horsepowerbrands.com';
             const toEmail = isTestZip
               ? TEST_LOCATION.email
-              : resolvedLocation?.email || fallbackInbox;
+              : insideTerritory
+              ? (resolvedLocation!.email as string)
+              : OUTSIDE_TERRITORY_INBOX;
             const locationName = isTestZip
               ? TEST_LOCATION.locationName
-              : resolvedLocation?.email
-              ? resolvedLocation.locationName
+              : insideTerritory
+              ? resolvedLocation!.locationName
               : null;
 
             console.log(
-              `[SUBMIT-LEAD] Sending RAQ email to ${toEmail} (location: ${locationName ?? 'NO_TERRITORY → fallback'}${isTestZip ? ' [TEST ZIP, auth user: ' + authUserId + ']' : ''}, gallery items: ${galleryItems.length})`
+              `[SUBMIT-LEAD] Sending RAQ email to ${toEmail} (location: ${locationName ?? 'NO_TERRITORY → ' + (outsideTerritory ? 'outside-territory inbox' : 'fallback')}${isTestZip ? ' [TEST ZIP, auth user: ' + authUserId + ']' : ''}, nearest: ${nearest?.locationName ?? 'n/a'}, gallery items: ${galleryItems.length})`
             );
 
             const emailResult = await sendRaqEmail(
@@ -409,6 +470,10 @@ export async function POST(request: NextRequest) {
               {
                 toEmail,
                 locationName,
+                outsideTerritory,
+                nearestLocationName: nearest?.locationName ?? null,
+                nearestLocationEmail: nearest?.email ?? null,
+                nearestDistanceMiles: nearest?.distanceMiles ?? null,
                 customerName: validatedData.name,
                 customerEmail: validatedData.email,
                 customerPhone: validatedData.phone || '',
@@ -431,7 +496,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      ...(validatedData.leadType === 'RAQ'
+        ? { locationMatched: raqLocationMatched, outsideTerritory: raqOutsideTerritory }
+        : {}),
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       console.error('Validation error:', error.issues);

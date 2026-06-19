@@ -106,10 +106,10 @@
             </li>
             <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
               <a href="raq-no-territory.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
-                RAQ · Brand fallback · No territory match →
+                RAQ · Outside service area · No territory match →
               </a>
               <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
-                Sent when the customer&#39;s zip code does not match any franchise territory.
+                Sent when the customer&#39;s zip code falls outside every territory (including the mileage buffer). Includes the nearest franchise so it can be forwarded.
               </div>
               <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
                 <tr>
@@ -118,7 +118,50 @@
                 </tr>
                 <tr>
                   <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
-                  <td style="color:#ababab;font-size:12px;padding:1px 0;">CustomerJourney@horsepowerbrands.com (brand monitoring inbox)</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">ahoebelheinrich@gatsbyglass.com (outside-territory triage inbox)</td>
+                </tr>
+              </table>
+            </li>
+          </ul>
+        </section>
+        <section style="margin:0 0 32px 0;">
+          <h2 style="color:#e4bf6e;font-size:14px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px 0;border-bottom:1px solid #231f20;padding-bottom:8px;">
+            Quote confirmation — sent to the customer
+          </h2>
+          <ul style="list-style:none;padding:0;margin:0;">
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="customer-quote-matched.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                Customer quote · Territory matched →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent to the customer after a quote request when their zip is served by a local franchise.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">We&#39;ve received your Gatsby Glass quote request</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Customer (the email entered on the form)</td>
+                </tr>
+              </table>
+            </li>
+            <li style="margin:0 0 16px 0;padding:14px 16px;background:#111111;border:1px solid #231f20;border-radius:4px;">
+              <a href="customer-quote-outside.html" style="color:#ffffff;font-size:15px;text-decoration:none;font-weight:600;">
+                Customer quote · Outside service area →
+              </a>
+              <div style="color:#d5d5d5;font-size:13px;margin-top:6px;line-height:1.5;">
+                Sent to the customer after a quote request when their zip is outside every service area — points them to the support phone and contact page.
+              </div>
+              <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">Subject</td>
+                  <td style="color:#e4bf6e;font-size:12px;padding:1px 0;font-family:monospace;">About your Gatsby Glass quote request</td>
+                </tr>
+                <tr>
+                  <td style="color:#777777;font-size:11px;padding:1px 8px 1px 0;letter-spacing:1px;text-transform:uppercase;vertical-align:top;white-space:nowrap;">To</td>
+                  <td style="color:#ababab;font-size:12px;padding:1px 0;">Customer (the email entered on the form)</td>
                 </tr>
               </table>
             </li>

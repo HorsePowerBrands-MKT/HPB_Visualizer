@@ -59,7 +59,12 @@ export interface BrandConfig {
   secondaryColor: string;
   logo?: string;
   supportEmail?: string;
+  /** Human-readable support phone, e.g. for display. */
   supportPhone?: string;
+  /** Dial-able form of the support phone for `tel:` links. */
+  supportPhoneTel?: string;
+  /** Public contact page customers can reach out through. */
+  contactUrl?: string;
 }
 
 // Gatsby Glass default configuration
@@ -68,7 +73,9 @@ export const GATSBY_GLASS_CONFIG: BrandConfig = {
   primaryColor: '#a37529',
   secondaryColor: '#e4bf6e',
   supportEmail: 'CustomerJourney@horsepowerbrands.com',
-  supportPhone: '1-800-GATSBY'
+  supportPhone: '(866) 479-2870',
+  supportPhoneTel: '+18664792870',
+  contactUrl: 'https://www.gatsbyglass.com/contact-us/'
 };
 
 /**
@@ -92,3 +99,11 @@ export const TEST_LOCATION = {
   email: 'CustomerJourney@horsepowerbrands.com',
   locationName: 'Customer Journey (Test)',
 } as const;
+
+/**
+ * Inbox for Request-a-Quote leads whose zip code falls outside every active
+ * territory (including the configured mileage buffer). These leads still go
+ * through; the notification is routed here with the customer's details and the
+ * single nearest franchise so it can be triaged and forwarded.
+ */
+export const OUTSIDE_TERRITORY_INBOX = 'ahoebelheinrich@gatsbyglass.com';

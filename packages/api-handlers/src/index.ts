@@ -12,6 +12,7 @@ export {
   getLeads,
   getLeadsByZipCode,
   lookupLocationByZipcode,
+  findNearestLocation,
   updateLeadStatus,
   getTeamLocationWithPermissions,
   getUsageReport,
@@ -44,14 +45,18 @@ export {
 export {
   sendSasEmail,
   sendRaqEmail,
+  sendCustomerQuoteEmail,
   renderRaqEmailHtml,
   renderRaqEmailText,
   renderSasEmailHtml,
   renderSasEmailText,
+  renderCustomerQuoteEmailHtml,
+  renderCustomerQuoteEmailText,
   type ResendConfig,
   type SasEmailData,
   type SasGalleryItem,
   type RaqEmailData,
+  type CustomerQuoteEmailData,
 } from './resend';
 
 // Validation utilities
