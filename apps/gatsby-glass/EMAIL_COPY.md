@@ -1,6 +1,8 @@
 # Gatsby Glass Visualizer — Email Copy
 
-Two transactional emails triggered from the visualizer contact form for the visualizer.
+Transactional emails triggered from the visualizer contact form. A quote (RAQ)
+request now sends both a franchise/triage notification and a customer-facing
+confirmation.
 
 ## Previewing the emails
 
@@ -22,7 +24,9 @@ what Resend will deliver. Output files land in
 | `sas-inspiration.html`   | SAS · customer · inspiration mode                  |
 | `raq-configure.html`     | RAQ · franchise · configure mode                   |
 | `raq-inspiration.html`   | RAQ · franchise · inspiration mode                 |
-| `raq-no-territory.html`  | RAQ · brand fallback (zip not in any territory)    |
+| `raq-no-territory.html`  | RAQ · outside service area (zip not in any territory) |
+| `customer-quote-matched.html` | Customer quote confirmation · territory matched |
+| `customer-quote-outside.html` | Customer quote confirmation · outside service area |
 
 Open `email-preview/index.html` directly, or hit
 <http://localhost:3000/email-preview/> while `pnpm dev` is running.
@@ -144,9 +148,18 @@ Sent to the **franchise location's shared inbox** when a customer clicks "Reques
 
 ### Recipient
 
-The `SharedInboxEmailAddress` (stored as `email` in `team_locations`) resolved by the customer's zip code through `territory_zipcodes` → `team_locations`.
+The `SharedInboxEmailAddress` (stored as `email` in `team_locations`) resolved by the customer's zip code through `territory_zipcodes` → `team_locations`. Each territory's coverage is expanded by a configurable mileage buffer (Vault secret `territory_radius_miles`, default 10) during the daily sync; when a zip is covered by more than one territory, `lookupLocationByZipcode` routes to whichever franchise is closest (`territory_zipcodes.distance_miles`).
 
-**No-territory fallback:** If the zip code does not match any franchise territory, send to `CustomerJourney@horsepowerbrands.com` (the brand-level monitoring inbox from `GATSBY_GLASS_CONFIG.supportEmail`).
+**Outside-territory routing:** If the zip code falls outside every territory (including the buffer), the lead still goes through and the RAQ email is routed to `OUTSIDE_TERRITORY_INBOX` (`ahoebelheinrich@gatsbyglass.com`). The email opens with a notice that the person is outside our service areas, lists the zip they entered and the single nearest franchise (name, distance, inbox via the `nearest_franchise` RPC / `findNearestLocation`), and asks the recipient to forward the full lead details below if that location is close enough to service.
+
+## Email 3: Quote Confirmation (customer)
+
+Sent to the **customer** after a quote (RAQ) submission, in addition to the franchise/triage notification above. Rendered by `sendCustomerQuoteEmail` (`packages/api-handlers/src/resend.ts`).
+
+- **Territory matched:** "We've notified your local Gatsby Glass team — they'll be in touch soon," with the support phone for questions.
+- **Outside service area:** Lets the customer know their zip is outside our current service area and points them to the support phone (`(866) 479-2870`, from `GATSBY_GLASS_CONFIG.supportPhone`) and the contact page (`https://www.gatsbyglass.com/contact-us/`, from `GATSBY_GLASS_CONFIG.contactUrl`).
+
+The on-screen confirmation in the quote popup mirrors this: `POST /api/submit-lead` returns `locationMatched` for RAQ leads, and `ContactFormModal` shows the matched ("local team will be in touch") or outside ("call/contact us") message accordingly.
 
 ### Available Data
 
@@ -224,7 +237,7 @@ DESIGN MODE
 
 ### 1. No-Territory Routing
 
-When a customer's zip code does not match any franchise territory, the `lookupLocationByZipcode` function returns `NO_TERRITORY`. The recommendation is to route RAQ emails for these leads to `CustomerJourney@horsepowerbrands.com` so they are not lost.
+When a customer's zip code does not match any franchise territory (even after the mileage buffer expansion), `lookupLocationByZipcode` returns `NO_TERRITORY`. These RAQ leads are routed to `OUTSIDE_TERRITORY_INBOX` (`ahoebelheinrich@gatsbyglass.com`) with an "Outside Service Area" notice and the single nearest franchise (resolved via the `nearest_franchise` RPC) so they can be triaged and forwarded rather than lost.
 
 ### 2. SAS Franchise Notification
 

@@ -463,8 +463,14 @@ export interface TeamLocation {
 /**
  * Resolve a franchise location from a customer's zip code by querying
  * the territory_zipcodes table (populated by sync_gatsby_glass_locations).
- * Returns the first matching active location, or a placeholder when no
+ * Returns the closest matching active location, or a placeholder when no
  * territory covers the supplied zip.
+ *
+ * A zip can match more than one franchise once the daily sync expands each
+ * territory by the configured mileage buffer (overlapping coverage). The
+ * `territory_zipcodes` rows carry a `distance_miles` ranking the customer's
+ * zip relative to each franchise's centroid, so ordering by it picks whichever
+ * franchise is closest.
  *
  * `email` is the shared inbox address for the franchise location and is
  * `null` when the zip is outside any active territory. Callers that need
@@ -485,10 +491,13 @@ export async function lookupLocationByZipcode(
   const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
   if (cleanZip.length !== 5) return NO_TERRITORY;
 
+  // Closest franchise wins for overlapping coverage: order by distance to the
+  // franchise centroid, then location_id as a stable tiebreak.
   const { data: zipRow, error: zipErr } = await supabase
     .from('territory_zipcodes')
     .select('location_id')
     .eq('zip_code', cleanZip)
+    .order('distance_miles', { ascending: true })
     .order('location_id', { ascending: true })
     .limit(1)
     .single();
@@ -509,6 +518,51 @@ export async function lookupLocationByZipcode(
     locationId: zipRow.location_id,
     locationName: locRow.location_name || zipRow.location_id,
     email: (locRow.email as string | null) || null,
+  };
+}
+
+/**
+ * Find the single nearest active Gatsby Glass franchise to a zip code, even
+ * when that zip falls outside every territory (including the mileage buffer).
+ * Backed by the `nearest_franchise` RPC, which measures the customer's zip
+ * centroid against each franchise's core zip centroids.
+ *
+ * Returns `null` when the zip is unknown to `zip_centroids` or no franchise
+ * has any geocoded core zips. Used to enrich the out-of-territory quote email
+ * with the closest location so it can be forwarded easily.
+ */
+export async function findNearestLocation(
+  config: SupabaseConfig,
+  zipCode: string
+): Promise<{
+  locationId: string;
+  locationName: string;
+  email: string | null;
+  distanceMiles: number;
+} | null> {
+  const supabase = getSupabaseClient(config);
+
+  const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
+  if (cleanZip.length !== 5) return null;
+
+  const { data, error } = await supabase.rpc('nearest_franchise', {
+    p_zip: cleanZip,
+  });
+
+  if (error || !data || data.length === 0) return null;
+
+  const row = data[0] as {
+    location_id: string;
+    location_name: string | null;
+    email: string | null;
+    distance_miles: number | null;
+  };
+
+  return {
+    locationId: row.location_id,
+    locationName: row.location_name || row.location_id,
+    email: (row.email as string | null) || null,
+    distanceMiles: row.distance_miles ?? 0,
   };
 }
 

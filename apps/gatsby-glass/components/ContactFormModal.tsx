@@ -8,6 +8,7 @@ import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { useLegalModal } from './legal/LegalModalProvider';
+import { GATSBY_GLASS_CONFIG } from '../lib/gatsby-constants/src';
 
 interface ContactFormModalProps {
   isOpen: boolean;
@@ -58,6 +59,9 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  // Whether the submitted zip resolved to a local franchise territory. Defaults
+  // to true so the matched (reassuring) copy shows if the field is ever absent.
+  const [locationMatched, setLocationMatched] = useState(true);
 
   if (!isOpen) return null;
 
@@ -143,6 +147,12 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         throw new Error(errorData.error || 'Failed to submit');
       }
 
+      const data = await response.json().catch(() => null);
+      // Only quote requests return territory status; default to matched.
+      if (mode === 'quote' && data && typeof data.locationMatched === 'boolean') {
+        setLocationMatched(data.locationMatched);
+      }
+
       setSuccess(true);
 
       setTimeout(() => {
@@ -150,7 +160,8 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
         setFormData({ name: '', email: '', phone: '', zipCode: '' });
         setTcpaConsent(false);
         setSuccess(false);
-      }, 3000);
+        setLocationMatched(true);
+      }, 6000);
 
     } catch (error) {
       setErrors({
@@ -207,12 +218,38 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 mb-4">
                 <Check className="w-8 h-8 text-green-500" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Success!</h3>
-              <p className="text-gray-400">
-                {mode === 'save'
-                  ? 'Your design preview has been sent to your email.'
-                  : 'Your estimate request has been submitted. We\'ll contact you soon!'}
-              </p>
+              <h3 className="text-lg font-semibold text-white mb-2">
+                {mode === 'save' || locationMatched ? 'Success!' : 'Thanks for your interest!'}
+              </h3>
+              {mode === 'save' ? (
+                <p className="text-gray-400">
+                  Your design preview has been sent to your email.
+                </p>
+              ) : locationMatched ? (
+                <p className="text-gray-400">
+                  We&rsquo;ve notified your local Gatsby Glass team &mdash; they&rsquo;ll be in touch soon. Check your email for confirmation.
+                </p>
+              ) : (
+                <p className="text-gray-400">
+                  Your area isn&rsquo;t covered by a local Gatsby Glass just yet. Call us at{' '}
+                  <a
+                    href={`tel:${GATSBY_GLASS_CONFIG.supportPhoneTel ?? ''}`}
+                    className="text-brand-gold underline hover:text-brand-gold/80"
+                  >
+                    {GATSBY_GLASS_CONFIG.supportPhone ?? ''}
+                  </a>{' '}
+                  or visit our{' '}
+                  <a
+                    href={GATSBY_GLASS_CONFIG.contactUrl ?? '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-gold underline hover:text-brand-gold/80"
+                  >
+                    contact page
+                  </a>
+                  . We&rsquo;ve also emailed you these details.
+                </p>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
