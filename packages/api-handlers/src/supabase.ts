@@ -467,10 +467,11 @@ export interface TeamLocation {
  * territory covers the supplied zip.
  *
  * A zip can match more than one franchise once the daily sync expands each
- * territory by the configured mileage buffer (overlapping coverage). The
- * `territory_zipcodes` rows carry a `distance_miles` ranking the customer's
- * zip relative to each franchise's centroid, so ordering by it picks whichever
- * franchise is closest.
+ * territory by the configured mileage buffer (overlapping coverage). Overlaps
+ * resolve core-first: a franchise's directly-listed (`core`) zip always wins
+ * over a neighbor's `buffer` coverage of the same zip. Within the same
+ * match_type, the `distance_miles` ranking (customer zip relative to each
+ * franchise's centroid) picks whichever franchise is closest.
  *
  * `email` is the shared inbox address for the franchise location and is
  * `null` when the zip is outside any active territory. Callers that need
@@ -491,12 +492,15 @@ export async function lookupLocationByZipcode(
   const cleanZip = zipCode.replace(/[^0-9]/g, '').slice(0, 5);
   if (cleanZip.length !== 5) return NO_TERRITORY;
 
-  // Closest franchise wins for overlapping coverage: order by distance to the
-  // franchise centroid, then location_id as a stable tiebreak.
+  // Overlapping coverage resolves core-first, then closest franchise. Only
+  // 'core'/'buffer' exist, so ordering match_type descending puts 'core' before
+  // 'buffer'; distance to the franchise centroid breaks ties within a tier, and
+  // location_id is a final stable tiebreak.
   const { data: zipRow, error: zipErr } = await supabase
     .from('territory_zipcodes')
-    .select('location_id')
+    .select('location_id, match_type')
     .eq('zip_code', cleanZip)
+    .order('match_type', { ascending: false })
     .order('distance_miles', { ascending: true })
     .order('location_id', { ascending: true })
     .limit(1)
