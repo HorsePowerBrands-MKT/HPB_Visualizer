@@ -906,7 +906,7 @@ function renderCustomerQuoteHtml(data: CustomerQuoteEmailData): string {
   const bodyBlock = data.matched
     ? `
                             <p style="margin:0 0 14px 0;color:#d5d5d5;font-size:14px;line-height:1.7;">
-                                Thanks for requesting a quote with the Gatsby Glass Visualizer! We've
+                                Thanks for requesting a quote with GatsbyView! We've
                                 notified your local Gatsby Glass team${
                                   data.locationName
                                     ? ` (<strong style="color:#ffffff;">${escapeHtml(
@@ -923,7 +923,7 @@ function renderCustomerQuoteHtml(data: CustomerQuoteEmailData): string {
                             </p>`
     : `
                             <p style="margin:0 0 14px 0;color:#d5d5d5;font-size:14px;line-height:1.7;">
-                                Thanks for requesting a quote with the Gatsby Glass Visualizer! It looks
+                                Thanks for requesting a quote with GatsbyView! It looks
                                 like the zip code you entered is just outside of our current service
                                 area, so we're looking into how we can assist you.
                             </p>
@@ -985,7 +985,7 @@ function renderCustomerQuoteText(data: CustomerQuoteEmailData): string {
   lines.push('');
   if (data.matched) {
     lines.push(
-      "Thanks for requesting a quote with the Gatsby Glass Visualizer! We've notified your local"
+      "Thanks for requesting a quote with GatsbyView! We've notified your local"
     );
     lines.push(
       `Gatsby Glass team${
@@ -996,7 +996,7 @@ function renderCustomerQuoteText(data: CustomerQuoteEmailData): string {
     lines.push(`Questions? Call us at ${data.supportPhone}.`);
   } else {
     lines.push(
-      'Thanks for requesting a quote with the Gatsby Glass Visualizer! It looks like the zip code'
+      'Thanks for requesting a quote with GatsbyView! It looks like the zip code'
     );
     lines.push(
       "you entered is just outside of our current service area, so we're looking into how we can"
