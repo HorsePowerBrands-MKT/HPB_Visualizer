@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getTeamLocationWithPermissions } from '@repo/api-handlers/supabase';
+import {
+  getTeamLocationWithPermissions,
+  getMonthlyUsageCountByUserId,
+  DEFAULT_CANDIDATE_RENDERING_CAP,
+} from '@repo/api-handlers/supabase';
 import { createClient } from '../../../lib/supabase/server';
 
 function getSupabaseConfig() {
@@ -30,11 +34,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Team authorization required' }, { status: 403 });
     }
 
-    return NextResponse.json({
+    const response: Record<string, unknown> = {
       email: user.email.toLowerCase(),
       locationName: location.locationName,
       accessLevel: location.accessLevel,
-    });
+      userType: location.userType,
+    };
+
+    if (location.userType === 'candidate') {
+      const renderingCap = location.renderingCap ?? DEFAULT_CANDIDATE_RENDERING_CAP;
+      const usageCount = await getMonthlyUsageCountByUserId(sbConfig, user.id);
+      response.renderingCap = renderingCap;
+      response.usageCount = usageCount;
+      response.remaining = Math.max(0, renderingCap - usageCount);
+    }
+
+    return NextResponse.json(response);
   } catch {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
   }

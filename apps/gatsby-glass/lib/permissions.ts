@@ -5,6 +5,8 @@ export type AccessLevel =
   | 'admin'
   | 'super_admin';
 
+export type UserType = 'team' | 'candidate';
+
 const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
   member: 0,
   social: 1,
@@ -16,4 +18,9 @@ const ACCESS_HIERARCHY: Record<AccessLevel, number> = {
 /** True when the user's access level is at least `required`. */
 export function hasAccess(userLevel: AccessLevel, required: AccessLevel): boolean {
   return (ACCESS_HIERARCHY[userLevel] ?? 0) >= ACCESS_HIERARCHY[required];
+}
+
+/** True when the user is a corporate trial candidate (not franchise/corporate staff). */
+export function isCandidate(userType: UserType | undefined | null): boolean {
+  return userType === 'candidate';
 }

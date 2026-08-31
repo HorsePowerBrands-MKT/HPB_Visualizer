@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '../../../lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { backfillAuthUserId } from '@repo/api-handlers/supabase';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -19,10 +20,11 @@ export async function GET(request: Request) {
         const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 
         if (supabaseUrl && serviceKey) {
+          const sbConfig = { url: supabaseUrl, serviceKey };
           const adminClient = createSupabaseClient(supabaseUrl, serviceKey);
           const { data: location } = await adminClient
             .from('team_locations')
-            .select('is_active')
+            .select('is_active, auth_user_id')
             .eq('email', user.email.toLowerCase())
             .single();
 
@@ -31,6 +33,10 @@ export async function GET(request: Request) {
             return NextResponse.redirect(
               `${origin}/login?error=unauthorized`
             );
+          }
+
+          if (!location.auth_user_id && user.id) {
+            await backfillAuthUserId(sbConfig, user.email, user.id);
           }
         }
       }

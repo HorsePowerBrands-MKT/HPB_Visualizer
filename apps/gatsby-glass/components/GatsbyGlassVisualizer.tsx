@@ -29,7 +29,7 @@ import { UsageCounter } from './UsageCounter';
 import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
 import { GeneratingOverlay } from './GeneratingOverlay';
 import { createClient } from '../lib/supabase/client';
-import { hasAccess, type AccessLevel } from '../lib/permissions';
+import { hasAccess, isCandidate, type AccessLevel, type UserType } from '../lib/permissions';
 import Link from 'next/link';
 
 import { 
@@ -263,7 +263,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     email: string;
     locationName: string | null;
     accessLevel: AccessLevel | null;
+    userType: UserType;
   } | null>(null);
+
+  const isUnlimitedTeamMember = !!authUser && authUser.userType === 'team';
+  const isCandidateUser = isCandidate(authUser?.userType);
 
   // Generate or retrieve fingerprint from localStorage
   useEffect(() => {
@@ -321,7 +325,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       try {
         const res = await fetch('/api/team-profile');
         if (!res.ok) {
-          setAuthUser({ email, locationName: null, accessLevel: null });
+          setAuthUser({ email, locationName: null, accessLevel: null, userType: 'team' });
           return;
         }
         const data = await res.json();
@@ -329,9 +333,14 @@ export const GatsbyGlassVisualizer: React.FC = () => {
           email: data.email ?? email,
           locationName: data.locationName ?? null,
           accessLevel: data.accessLevel ?? null,
+          userType: data.userType ?? 'team',
         });
+        if (data.userType === 'candidate') {
+          if (typeof data.usageCount === 'number') setUsageCount(data.usageCount);
+          if (typeof data.renderingCap === 'number') setUsageLimit(data.renderingCap);
+        }
       } catch {
-        setAuthUser({ email, locationName: null, accessLevel: null });
+        setAuthUser({ email, locationName: null, accessLevel: null, userType: 'team' });
       }
     };
 
@@ -677,6 +686,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         payload: updatedForm
       };
 
+      if (typeof result.usageCount === 'number') {
+        setUsageCount(result.usageCount);
+      }
+      if (typeof result.limit === 'number' && isCandidateUser) {
+        setUsageLimit(result.limit);
+      }
       setGenerationIndex(nextGenIndex);
       setResultUrl(result.image);
       addHistoryItem(newHistoryItem);
@@ -685,7 +700,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       // After the 5th generation in this session, surface the blocking
       // lead-capture popup once. Submit or explicit dismiss flips
       // `popHandled` so it never re-opens this session.
-      if (nextGenIndex === 5 && !popHandled) {
+      if (nextGenIndex === 5 && !popHandled && !isCandidateUser) {
         setLeadPopupOpen(true);
       }
 
@@ -732,7 +747,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, isCandidateUser, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -849,6 +864,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
                 resetAll();
                 goToStep(1);
               }}
+              isTeamMember={isUnlimitedTeamMember}
+              usageCount={usageCount}
+              usageLimit={usageLimit}
+              hideContactActions={isCandidateUser}
             />
           );
         }
@@ -910,9 +929,10 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             onHingedConfigChange={(config: HingedConfig) => updateFormField('hinged_config', config)}
             onPivotConfigChange={(config: PivotConfig) => updateFormField('pivot_config', config)}
             onSlidingConfigChange={(config: SlidingConfig) => updateFormField('sliding_config', config)}
-            isTeamMember={!!authUser}
+            isTeamMember={isUnlimitedTeamMember}
             usageCount={usageCount}
             usageLimit={usageLimit}
+            hideContactActions={isCandidateUser}
           />
         );
 
@@ -923,7 +943,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
 
   // Determine if we should show generate button (disabled when rate-limited for non-team users
   // or while the 5-image lead popup is blocking the user)
-  const canGenerate = authUser || !isRateLimited;
+  const canGenerate = isUnlimitedTeamMember || !isRateLimited;
   const showGenerateButton =
     ((form.mode === 'configure' && currentStep === 4) ||
     (form.mode === 'inspiration' && currentStep === 2)) && canGenerate && !leadPopupOpen;
@@ -945,6 +965,11 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             <span className="text-xs font-sans text-brand-gold truncate">
               {authUser.email}
             </span>
+            {isCandidateUser && (
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-amber-500/15 text-amber-300 font-sans shrink-0">
+                Candidate
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3 ml-3 shrink-0">
             {authUser.accessLevel && hasAccess(authUser.accessLevel, 'social') && (
@@ -957,6 +982,12 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             )}
             {authUser.accessLevel && hasAccess(authUser.accessLevel, 'corporate_team') && (
               <>
+                <Link
+                  href="/admin/candidates"
+                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
+                >
+                  Candidates
+                </Link>
                 <Link
                   href="/admin/leads"
                   className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
@@ -1005,15 +1036,23 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         />
       )}
 
+      {isCandidateUser && (
+        <UsageCounter
+          usageCount={usageCount}
+          limit={usageLimit}
+          isRateLimited={isRateLimited}
+        />
+      )}
+
       {/* Past visualizations */}
       <PastVisualizations
         items={pastVisualizations}
-        onSave={(item) => {
+        onSave={isCandidateUser ? undefined : (item) => {
           setPastVizModalItem(item);
           setContactModalMode('save');
           setContactModalOpen(true);
         }}
-        onRequestQuote={(item) => {
+        onRequestQuote={isCandidateUser ? undefined : (item) => {
           setPastVizModalItem(item);
           setContactModalMode('quote');
           setContactModalOpen(true);
@@ -1041,13 +1080,13 @@ export const GatsbyGlassVisualizer: React.FC = () => {
         onGenerate={onGenerate}
         showGenerateButton={showGenerateButton}
         isResultStep={isResultStep}
-        isTeamMember={!!authUser}
+        isTeamMember={isUnlimitedTeamMember}
         usageCount={usageCount}
         usageLimit={usageLimit}
       />
 
-      {/* Contact Form Modal — works for both active session and past visualization actions */}
-      {(pastVizModalItem || (resultUrl && imageFile)) && (
+      {/* Contact Form Modal — not available for candidate accounts */}
+      {!isCandidateUser && (pastVizModalItem || (resultUrl && imageFile)) && (
         <ContactFormModal
           isOpen={contactModalOpen}
           onClose={() => {

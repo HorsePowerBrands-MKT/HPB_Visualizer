@@ -403,6 +403,7 @@ export async function saveGeneration(
 // ---------------------------------------------------------------------------
 
 const MONTHLY_GENERATION_LIMIT = 10;
+const DEFAULT_CANDIDATE_RENDERING_CAP = 10;
 
 /**
  * Count how many generations a fingerprint has used in the current calendar month.
@@ -431,6 +432,32 @@ export async function getMonthlyUsageCount(
 }
 
 /**
+ * Count how many visualizations an authenticated user generated this calendar month.
+ */
+export async function getMonthlyUsageCountByUserId(
+  config: SupabaseConfig,
+  userId: string
+): Promise<number> {
+  const supabase = getSupabaseClient(config);
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const { count, error } = await supabase
+    .from('visualizations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', monthStart);
+
+  if (error) {
+    console.error('[getMonthlyUsageCountByUserId] Database error:', error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
  * Record a generation event for rate-limiting purposes.
  */
 export async function recordUsage(
@@ -449,15 +476,20 @@ export async function recordUsage(
   }
 }
 
-export { MONTHLY_GENERATION_LIMIT };
+export { MONTHLY_GENERATION_LIMIT, DEFAULT_CANDIDATE_RENDERING_CAP };
 
 // ---------------------------------------------------------------------------
 // Team location helpers
 // ---------------------------------------------------------------------------
 
+export type UserType = 'team' | 'candidate';
+
 export interface TeamLocation {
   locationId: string;
   locationName: string | null;
+  userType: UserType;
+  renderingCap: number | null;
+  authUserId: string | null;
 }
 
 /**
@@ -582,7 +614,7 @@ export async function getTeamLocation(
 
   const { data, error } = await supabase
     .from('team_locations')
-    .select('location_id, location_name')
+    .select('location_id, location_name, user_type, rendering_cap, auth_user_id')
     .eq('email', email.toLowerCase())
     .eq('is_active', true)
     .single();
@@ -592,7 +624,31 @@ export async function getTeamLocation(
   return {
     locationId: data.location_id,
     locationName: data.location_name,
+    userType: (data.user_type as UserType) ?? 'team',
+    renderingCap: (data.rendering_cap as number | null) ?? null,
+    authUserId: (data.auth_user_id as string | null) ?? null,
   };
+}
+
+/**
+ * Backfill auth_user_id on a team_locations row after first login.
+ */
+export async function backfillAuthUserId(
+  config: SupabaseConfig,
+  email: string,
+  authUserId: string
+): Promise<void> {
+  const supabase = getSupabaseClient(config);
+
+  const { error } = await supabase
+    .from('team_locations')
+    .update({ auth_user_id: authUserId })
+    .eq('email', email.toLowerCase())
+    .is('auth_user_id', null);
+
+  if (error) {
+    console.error('[backfillAuthUserId] Database error:', error);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -894,7 +950,7 @@ export async function getTeamLocationWithPermissions(
 
   const { data, error } = await supabase
     .from('team_locations')
-    .select('location_id, location_name, access_level')
+    .select('location_id, location_name, access_level, user_type, rendering_cap, auth_user_id')
     .eq('email', email.toLowerCase())
     .eq('is_active', true)
     .single();
@@ -905,6 +961,9 @@ export async function getTeamLocationWithPermissions(
     locationId: data.location_id,
     locationName: data.location_name,
     accessLevel: (data.access_level as AccessLevel) ?? 'member',
+    userType: (data.user_type as UserType) ?? 'team',
+    renderingCap: (data.rendering_cap as number | null) ?? null,
+    authUserId: (data.auth_user_id as string | null) ?? null,
   };
 }
 
@@ -1089,6 +1148,7 @@ export async function getApiCallReport(
 // ---------------------------------------------------------------------------
 
 export const CORPORATE_LOCATION_ID = 'CORPORATE';
+export const CANDIDATE_LOCATION_ID = 'CANDIDATE';
 
 export interface TeamUser {
   id: string;
@@ -1097,6 +1157,9 @@ export interface TeamUser {
   locationName: string | null;
   isActive: boolean;
   accessLevel: AccessLevel;
+  userType: UserType;
+  renderingCap: number | null;
+  authUserId: string | null;
   source: string;
   createdAt: string;
 }
@@ -1109,12 +1172,16 @@ function toTeamUser(row: Record<string, unknown>): TeamUser {
     locationName: (row.location_name as string | null) ?? null,
     isActive: (row.is_active as boolean) ?? false,
     accessLevel: ((row.access_level as AccessLevel) ?? 'member'),
+    userType: (row.user_type as UserType) ?? 'team',
+    renderingCap: (row.rendering_cap as number | null) ?? null,
+    authUserId: (row.auth_user_id as string | null) ?? null,
     source: (row.source as string) ?? 'manual',
     createdAt: row.created_at as string,
   };
 }
 
-const TEAM_USER_COLUMNS = 'id, email, location_id, location_name, is_active, access_level, source, created_at';
+const TEAM_USER_COLUMNS =
+  'id, email, location_id, location_name, is_active, access_level, user_type, rendering_cap, auth_user_id, source, created_at';
 
 /**
  * List every team_locations row (active and inactive) for the admin
@@ -1178,9 +1245,12 @@ export async function createTeamUser(
     locationId: string;
     locationName: string | null;
     accessLevel: AccessLevel;
+    userType?: UserType;
+    renderingCap?: number | null;
   }
 ): Promise<TeamUser> {
   const supabase = getSupabaseClient(config);
+  const userType = input.userType ?? 'team';
 
   const { data, error } = await supabase
     .from('team_locations')
@@ -1189,6 +1259,10 @@ export async function createTeamUser(
       location_id: input.locationId,
       location_name: input.locationName,
       access_level: input.accessLevel,
+      user_type: userType,
+      rendering_cap: userType === 'candidate'
+        ? (input.renderingCap ?? DEFAULT_CANDIDATE_RENDERING_CAP)
+        : null,
       is_active: true,
       source: 'manual',
     }])
@@ -1217,6 +1291,7 @@ export async function updateTeamUser(
     isActive?: boolean;
     locationId?: string;
     locationName?: string | null;
+    renderingCap?: number | null;
   }
 ): Promise<TeamUser> {
   const supabase = getSupabaseClient(config);
@@ -1226,6 +1301,7 @@ export async function updateTeamUser(
   if (updates.isActive !== undefined) payload.is_active = updates.isActive;
   if (updates.locationId !== undefined) payload.location_id = updates.locationId;
   if (updates.locationName !== undefined) payload.location_name = updates.locationName;
+  if (updates.renderingCap !== undefined) payload.rendering_cap = updates.renderingCap;
 
   const { data, error } = await supabase
     .from('team_locations')
@@ -1260,4 +1336,159 @@ export async function getTeamUserById(
   if (error || !data) return null;
 
   return toTeamUser(data);
+}
+
+// ---------------------------------------------------------------------------
+// Candidate analytics (admin dashboard)
+// ---------------------------------------------------------------------------
+
+export interface CandidateVisualization {
+  id: string;
+  visualizationImageUrl: string | null;
+  createdAt: string;
+  sessionId: string;
+}
+
+export interface CandidateMetricsRow {
+  id: string;
+  email: string;
+  locationName: string | null;
+  isActive: boolean;
+  renderingCap: number;
+  authUserId: string | null;
+  createdAt: string;
+  monthlyRenderCount: number;
+  totalRenderCount: number;
+  lastRenderAt: string | null;
+  /** Approximate total session time in seconds (sum of per-session spans). */
+  totalSessionSeconds: number;
+  /** Average session duration in seconds. */
+  avgSessionSeconds: number;
+  sessionCount: number;
+  visualizations: CandidateVisualization[];
+}
+
+/**
+ * Build candidate engagement metrics for the admin dashboard.
+ */
+export async function getCandidateMetrics(
+  config: SupabaseConfig,
+  { year, month }: { year: number; month: number }
+): Promise<CandidateMetricsRow[]> {
+  const supabase = getSupabaseClient(config);
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+  const nextMonthStart = new Date(Date.UTC(year, month, 1)).toISOString();
+
+  const { data: candidates, error: candError } = await supabase
+    .from('team_locations')
+    .select(TEAM_USER_COLUMNS)
+    .eq('user_type', 'candidate')
+    .order('created_at', { ascending: false });
+
+  if (candError || !candidates) {
+    console.error('[getCandidateMetrics] Failed to load candidates:', candError);
+    throw new Error('Failed to load candidates');
+  }
+
+  const authUserIds = candidates
+    .map((c) => c.auth_user_id as string | null)
+    .filter((id): id is string => !!id);
+
+  if (authUserIds.length === 0) {
+    return candidates.map((row) => ({
+      id: row.id as string,
+      email: row.email as string,
+      locationName: (row.location_name as string | null) ?? null,
+      isActive: (row.is_active as boolean) ?? false,
+      renderingCap: (row.rendering_cap as number | null) ?? DEFAULT_CANDIDATE_RENDERING_CAP,
+      authUserId: null,
+      createdAt: row.created_at as string,
+      monthlyRenderCount: 0,
+      totalRenderCount: 0,
+      lastRenderAt: null,
+      totalSessionSeconds: 0,
+      avgSessionSeconds: 0,
+      sessionCount: 0,
+      visualizations: [],
+    }));
+  }
+
+  const { data: vizRows, error: vizError } = await supabase
+    .from('visualizations')
+    .select('id, user_id, session_id, visualization_image_url, created_at')
+    .in('user_id', authUserIds)
+    .not('visualization_image_url', 'is', null)
+    .order('created_at', { ascending: false });
+
+  if (vizError) {
+    console.error('[getCandidateMetrics] Failed to load visualizations:', vizError);
+    throw new Error('Failed to load candidate visualizations');
+  }
+
+  const vizByUser = new Map<string, typeof vizRows>();
+  for (const viz of vizRows ?? []) {
+    const uid = viz.user_id as string;
+    const list = vizByUser.get(uid) ?? [];
+    list.push(viz);
+    vizByUser.set(uid, list);
+  }
+
+  return candidates.map((row) => {
+    const authUserId = (row.auth_user_id as string | null) ?? null;
+    const userViz = authUserId ? (vizByUser.get(authUserId) ?? []) : [];
+
+    const monthlyRenderCount = userViz.filter(
+      (v) => v.created_at >= monthStart && v.created_at < nextMonthStart
+    ).length;
+    const totalRenderCount = userViz.length;
+    const lastRenderAt = userViz.length > 0 ? userViz[0].created_at : null;
+
+    // Approximate session durations from visualization timestamps
+    const sessionMap = new Map<string, { min: number; max: number }>();
+    for (const v of userViz) {
+      const sid = v.session_id as string;
+      const ts = new Date(v.created_at).getTime();
+      const entry = sessionMap.get(sid);
+      if (!entry) {
+        sessionMap.set(sid, { min: ts, max: ts });
+      } else {
+        entry.min = Math.min(entry.min, ts);
+        entry.max = Math.max(entry.max, ts);
+      }
+    }
+
+    let totalSessionSeconds = 0;
+    for (const { min, max } of sessionMap.values()) {
+      totalSessionSeconds += Math.max(0, Math.round((max - min) / 1000));
+    }
+    const sessionCount = sessionMap.size;
+    const avgSessionSeconds = sessionCount > 0 ? Math.round(totalSessionSeconds / sessionCount) : 0;
+
+    const visualizations: CandidateVisualization[] = userViz
+      .filter((v) => v.created_at >= monthStart && v.created_at < nextMonthStart)
+      .map((v) => ({
+        id: v.id as string,
+        visualizationImageUrl: v.visualization_image_url as string | null,
+        createdAt: v.created_at as string,
+        sessionId: v.session_id as string,
+      }));
+
+    return {
+      id: row.id as string,
+      email: row.email as string,
+      locationName: (row.location_name as string | null) ?? null,
+      isActive: (row.is_active as boolean) ?? false,
+      renderingCap: (row.rendering_cap as number | null) ?? DEFAULT_CANDIDATE_RENDERING_CAP,
+      authUserId,
+      createdAt: row.created_at as string,
+      monthlyRenderCount,
+      totalRenderCount,
+      lastRenderAt,
+      totalSessionSeconds,
+      avgSessionSeconds,
+      sessionCount,
+      visualizations,
+    };
+  });
 }

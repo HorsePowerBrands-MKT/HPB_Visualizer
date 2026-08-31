@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { submitLead, lookupLocationByZipcode, findNearestLocation, logApiCall } from '@repo/api-handlers/supabase';
+import { submitLead, lookupLocationByZipcode, findNearestLocation, logApiCall, getTeamLocation } from '@repo/api-handlers/supabase';
 import { pushLeadToSharpSpring } from '@repo/api-handlers/sharpspring';
 import { sendSasEmail, sendRaqEmail, sendCustomerQuoteEmail, type SasGalleryItem } from '@repo/api-handlers/resend';
 import { validateLeadData } from '@repo/api-handlers/validation';
@@ -127,11 +127,26 @@ export async function POST(request: NextRequest) {
       'unknown';
 
     let authUserId: string | undefined;
+    let authUserEmail: string | undefined;
     try {
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.id) authUserId = user.id;
+      if (user?.email) authUserEmail = user.email;
     } catch { /* not authenticated */ }
+
+    if (authUserEmail) {
+      const location = await getTeamLocation(
+        { url: supabaseUrl, serviceKey: supabaseKey },
+        authUserEmail
+      );
+      if (location?.userType === 'candidate') {
+        return NextResponse.json(
+          { error: 'Lead submission is not available for candidate accounts.' },
+          { status: 403 }
+        );
+      }
+    }
 
     const leadData: Lead = {
       name: validatedData.name,
