@@ -7,10 +7,13 @@ import {
 } from '@repo/api-handlers/gemini';
 import {
   getMonthlyUsageCount,
+  getMonthlyUsageCountByUserId,
   recordUsage,
   getTeamLocation,
   logApiCall,
   MONTHLY_GENERATION_LIMIT,
+  DEFAULT_CANDIDATE_RENDERING_CAP,
+  CANDIDATE_LOCATION_ID,
 } from '@repo/api-handlers/supabase';
 import { uploadImage } from '@repo/api-handlers/storage';
 import type { VisualizationRequest } from '@repo/types';
@@ -52,9 +55,12 @@ export async function POST(request: NextRequest) {
 
     const sbConfig = getSupabaseConfig();
 
-    // --- Auth check: is this an authenticated team member? ---
+    // --- Auth check: team member (unlimited) vs candidate (capped) vs public ---
     let isTeamMember = false;
+    let isCandidate = false;
     let teamLocationId: string | null = null;
+    let candidateLimit = DEFAULT_CANDIDATE_RENDERING_CAP;
+    let authUserId: string | null = null;
 
     try {
       const supabase = await createClient();
@@ -63,19 +69,42 @@ export async function POST(request: NextRequest) {
       if (user?.email && sbConfig) {
         const location = await getTeamLocation(sbConfig, user.email);
         if (location) {
-          isTeamMember = true;
-          teamLocationId = location.locationId;
+          authUserId = user.id;
+          if (location.userType === 'candidate') {
+            isCandidate = true;
+            teamLocationId = CANDIDATE_LOCATION_ID;
+            candidateLimit = location.renderingCap ?? DEFAULT_CANDIDATE_RENDERING_CAP;
+          } else {
+            isTeamMember = true;
+            teamLocationId = location.locationId;
+          }
         }
       }
     } catch {
       // Auth check failed — treat as public user
     }
 
-    // --- Rate limiting (public users only) ---
+    // --- Rate limiting ---
     const fingerprint = validatedData.userFingerprint;
     let usageCount = 0;
+    let usageLimit = MONTHLY_GENERATION_LIMIT;
 
-    if (!isTeamMember && sbConfig) {
+    if (isCandidate && sbConfig && authUserId) {
+      usageLimit = candidateLimit;
+      usageCount = await getMonthlyUsageCountByUserId(sbConfig, authUserId);
+
+      if (usageCount >= usageLimit) {
+        return NextResponse.json(
+          {
+            error: 'Monthly design preview limit reached',
+            rateLimited: true,
+            usageCount,
+            limit: usageLimit,
+          },
+          { status: 429 }
+        );
+      }
+    } else if (!isTeamMember && sbConfig) {
       if (fingerprint) {
         usageCount = await getMonthlyUsageCount(sbConfig, fingerprint);
       }
@@ -136,9 +165,11 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Record usage for rate limiting ---
-    if (!isTeamMember && sbConfig && fingerprint) {
+    if (!isTeamMember && !isCandidate && sbConfig && fingerprint) {
       const ip = getClientIp(request);
       await recordUsage(sbConfig, fingerprint, ip);
+      usageCount += 1;
+    } else if (isCandidate) {
       usageCount += 1;
     }
 
@@ -181,8 +212,9 @@ export async function POST(request: NextRequest) {
       originalUrl,
       watermarkedUrl,
       usageCount,
-      limit: MONTHLY_GENERATION_LIMIT,
+      limit: isCandidate ? usageLimit : MONTHLY_GENERATION_LIMIT,
       ...(teamLocationId ? { teamLocationId } : {}),
+      ...(isCandidate ? { isCandidate: true } : {}),
     });
   } catch (error) {
     if (error instanceof ZodError) {

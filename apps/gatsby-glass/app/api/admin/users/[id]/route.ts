@@ -70,6 +70,7 @@ export async function PATCH(
     userType?: 'corporate' | 'franchise';
     locationId?: string;
     locationName?: string;
+    renderingCap?: number | null;
   };
   try {
     body = await request.json();
@@ -83,6 +84,7 @@ export async function PATCH(
     isActive?: boolean;
     locationId?: string;
     locationName?: string | null;
+    renderingCap?: number | null;
   } = {};
 
   if (body.accessLevel !== undefined) {
@@ -102,6 +104,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'You cannot deactivate yourself' }, { status: 403 });
     }
     updates.isActive = body.isActive;
+  }
+
+  if (body.renderingCap !== undefined) {
+    if (target.userType !== 'candidate') {
+      return NextResponse.json({ error: 'Rendering cap can only be set for candidate users' }, { status: 400 });
+    }
+    updates.renderingCap = body.renderingCap;
   }
 
   if (body.userType !== undefined) {

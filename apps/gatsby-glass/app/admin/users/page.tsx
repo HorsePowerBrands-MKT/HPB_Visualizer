@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { createClient } from '../../../lib/supabase/client';
 
 type AccessLevel = 'member' | 'social' | 'corporate_team' | 'admin' | 'super_admin';
+type UserType = 'team' | 'candidate';
 
 interface TeamUser {
   id: string;
@@ -22,6 +23,8 @@ interface TeamUser {
   locationName: string | null;
   isActive: boolean;
   accessLevel: AccessLevel;
+  userType: UserType;
+  renderingCap: number | null;
   source: string;
   createdAt: string;
 }
@@ -46,9 +49,14 @@ const ACCESS_LABELS: Record<AccessLevel, string> = {
 };
 
 const CORPORATE_ID = 'CORPORATE';
+const CANDIDATE_ID = 'CANDIDATE';
 
 function isCorporate(user: TeamUser): boolean {
   return user.locationId === CORPORATE_ID;
+}
+
+function isCandidateUser(user: TeamUser): boolean {
+  return user.userType === 'candidate' || user.locationId === CANDIDATE_ID;
 }
 
 function AddUserForm({
@@ -63,10 +71,11 @@ function AddUserForm({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState('');
-  const [userType, setUserType] = useState<'corporate' | 'franchise'>('corporate');
+  const [userType, setUserType] = useState<'corporate' | 'franchise' | 'candidate'>('corporate');
   const [name, setName] = useState('');
   const [locationId, setLocationId] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('member');
+  const [renderingCap, setRenderingCap] = useState(10);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -87,9 +96,10 @@ function AddUserForm({
         body: JSON.stringify({
           email,
           userType,
-          locationName: userType === 'corporate' ? name : undefined,
+          locationName: userType === 'corporate' || userType === 'candidate' ? name : undefined,
           locationId: userType === 'franchise' ? locationId : undefined,
-          accessLevel,
+          accessLevel: userType === 'candidate' ? 'member' : accessLevel,
+          renderingCap: userType === 'candidate' ? renderingCap : undefined,
         }),
       });
       const body = await res.json();
@@ -142,7 +152,7 @@ function AddUserForm({
               User Type
             </label>
             <div className="flex gap-0 border border-white/10">
-              {(['corporate', 'franchise'] as const).map((type) => (
+              {(['corporate', 'franchise', 'candidate'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -153,23 +163,23 @@ function AddUserForm({
                       : 'text-white/40 hover:text-white/70'
                   }`}
                 >
-                  {type === 'corporate' ? 'Corporate' : 'Franchise'}
+                  {type === 'corporate' ? 'Corporate' : type === 'franchise' ? 'Franchise' : 'Candidate'}
                 </button>
               ))}
             </div>
           </div>
 
-          {userType === 'corporate' ? (
+          {userType === 'corporate' || userType === 'candidate' ? (
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-white/40 font-sans mb-1.5">
-                Name
+                {userType === 'candidate' ? 'Candidate Name' : 'Name'}
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Jane Smith"
+                placeholder={userType === 'candidate' ? 'e.g. Alex Johnson' : 'e.g. Jane Smith'}
                 className={inputClass}
               />
             </div>
@@ -194,22 +204,39 @@ function AddUserForm({
             </div>
           )}
 
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-white/40 font-sans mb-1.5">
-              Access Level
-            </label>
-            <select
-              value={accessLevel}
-              onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
-              className={inputClass}
-            >
-              {grantableLevels.map((level) => (
-                <option key={level} value={level}>
-                  {ACCESS_LABELS[level]}
-                </option>
-              ))}
-            </select>
-          </div>
+          {userType === 'candidate' ? (
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-white/40 font-sans mb-1.5">
+                Monthly Rendering Cap
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                required
+                value={renderingCap}
+                onChange={(e) => setRenderingCap(parseInt(e.target.value, 10) || 10)}
+                className={inputClass}
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-white/40 font-sans mb-1.5">
+                Access Level
+              </label>
+              <select
+                value={accessLevel}
+                onChange={(e) => setAccessLevel(e.target.value as AccessLevel)}
+                className={inputClass}
+              >
+                {grantableLevels.map((level) => (
+                  <option key={level} value={level}>
+                    {ACCESS_LABELS[level]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -221,8 +248,9 @@ function AddUserForm({
 
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs text-white/35 font-sans">
-            New users sign in at <span className="text-white/60">/login</span> with a magic
-            link &mdash; no password setup needed.
+            {userType === 'candidate'
+              ? <>Share <span className="text-white/60">/login</span> so the candidate can sign in with a magic link.</>
+              : <>New users sign in at <span className="text-white/60">/login</span> with a magic link &mdash; no password setup needed.</>}
           </p>
           <button
             type="submit"
@@ -264,6 +292,7 @@ function UserRow({
 
   const disabled = readOnly || saving;
   const corporate = isCorporate(user);
+  const candidate = isCandidateUser(user);
 
   // A super_admin row viewed by a non-super-admin won't include super_admin
   // in grantableLevels; show it as a fixed label instead of a select.
@@ -285,12 +314,19 @@ function UserRow({
         <div className="flex items-center gap-2">
           <span
             className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-sans ${
-              corporate ? 'bg-purple-500/15 text-purple-300' : 'bg-sky-500/15 text-sky-300'
+              candidate
+                ? 'bg-amber-500/15 text-amber-300'
+                : corporate
+                  ? 'bg-purple-500/15 text-purple-300'
+                  : 'bg-sky-500/15 text-sky-300'
             }`}
           >
-            {corporate ? 'Corporate' : 'Franchise'}
+            {candidate ? 'Candidate' : corporate ? 'Corporate' : 'Franchise'}
           </span>
           <span className="text-white/60">{user.locationName || user.locationId}</span>
+          {candidate && user.renderingCap != null && (
+            <span className="text-[10px] text-white/35">({user.renderingCap}/mo)</span>
+          )}
         </div>
       </td>
       <td className="py-3 px-4">
@@ -344,7 +380,7 @@ export default function ManageUsersPage() {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'corporate' | 'franchise'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'corporate' | 'franchise' | 'candidate'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
 
   useEffect(() => {
@@ -430,7 +466,8 @@ export default function ManageUsersPage() {
     const q = search.trim().toLowerCase();
     return data.users.filter((u) => {
       if (typeFilter === 'corporate' && !isCorporate(u)) return false;
-      if (typeFilter === 'franchise' && isCorporate(u)) return false;
+      if (typeFilter === 'franchise' && (isCorporate(u) || isCandidateUser(u))) return false;
+      if (typeFilter === 'candidate' && !isCandidateUser(u)) return false;
       if (statusFilter === 'active' && !u.isActive) return false;
       if (statusFilter === 'inactive' && u.isActive) return false;
       if (q) {
@@ -556,7 +593,7 @@ export default function ManageUsersPage() {
               />
             </div>
             <div className="flex border border-white/10">
-              {(['all', 'corporate', 'franchise'] as const).map((t) => (
+              {(['all', 'corporate', 'franchise', 'candidate'] as const).map((t) => (
                 <button key={t} onClick={() => setTypeFilter(t)} className={filterButtonClass(typeFilter === t)}>
                   {t}
                 </button>
