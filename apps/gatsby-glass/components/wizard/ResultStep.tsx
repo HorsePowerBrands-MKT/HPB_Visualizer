@@ -133,6 +133,7 @@ interface ResultStepProps {
   isTeamMember?: boolean;
   usageCount?: number;
   usageLimit?: number;
+  hideContactActions?: boolean;
 }
 
 // Generate marketing description based on selections
@@ -243,6 +244,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   isTeamMember = false,
   usageCount = 0,
   usageLimit = 10,
+  hideContactActions = false,
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -415,20 +417,24 @@ export const ResultStep: React.FC<ResultStepProps> = ({
           {/* Action Buttons */}
           {resultUrl && (
             <div className="space-y-2">
-              <Button
-                variant="primary"
-                className="w-full animate-pulse-glow"
-                onClick={onRequestQuote}
-              >
-                Request an Estimate
-              </Button>
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={onSave}
-              >
-                Save & Send to Me
-              </Button>
+              {!hideContactActions && (
+                <>
+                  <Button
+                    variant="primary"
+                    className="w-full animate-pulse-glow"
+                    onClick={onRequestQuote}
+                  >
+                    Request an Estimate
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={onSave}
+                  >
+                    Save & Send to Me
+                  </Button>
+                </>
+              )}
 
               {/* Change Options accordion */}
               {form?.mode === 'configure' && enclosureOptions && (

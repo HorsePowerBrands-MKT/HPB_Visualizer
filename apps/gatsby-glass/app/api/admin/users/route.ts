@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   CORPORATE_LOCATION_ID,
+  CANDIDATE_LOCATION_ID,
   createTeamUser,
   getTeamLocationWithPermissions,
   hasAccess,
@@ -93,10 +94,11 @@ export async function POST(request: NextRequest) {
 
   let body: {
     email?: string;
-    userType?: 'corporate' | 'franchise';
+    userType?: 'corporate' | 'franchise' | 'candidate';
     locationId?: string;
     locationName?: string;
     accessLevel?: AccessLevel;
+    renderingCap?: number;
   };
   try {
     body = await request.json();
@@ -138,12 +140,29 @@ export async function POST(request: NextRequest) {
     }
     locationId = match.locationId;
     locationName = match.locationName;
+  } else if (body.userType === 'candidate') {
+    const name = (body.locationName ?? '').trim();
+    if (!name) {
+      return NextResponse.json({ error: 'A name is required for candidate users' }, { status: 400 });
+    }
+    locationId = CANDIDATE_LOCATION_ID;
+    locationName = name;
   } else {
-    return NextResponse.json({ error: 'userType must be "corporate" or "franchise"' }, { status: 400 });
+    return NextResponse.json({ error: 'userType must be "corporate", "franchise", or "candidate"' }, { status: 400 });
   }
 
+  const userType = body.userType === 'candidate' ? 'candidate' as const : 'team' as const;
+  const effectiveAccessLevel = body.userType === 'candidate' ? 'member' : accessLevel;
+
   try {
-    const user = await createTeamUser(sbConfig, { email, locationId, locationName, accessLevel });
+    const user = await createTeamUser(sbConfig, {
+      email,
+      locationId,
+      locationName,
+      accessLevel: effectiveAccessLevel,
+      userType,
+      renderingCap: body.userType === 'candidate' ? body.renderingCap : null,
+    });
     return NextResponse.json({ user }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to create user';

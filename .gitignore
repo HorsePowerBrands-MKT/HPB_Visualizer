@@ -39,3 +39,7 @@ temp/
 
 # Supabase email templates (managed in Supabase dashboard)
 supabase/email-templates/
+
+# ZeeDatabase export (ZDB) — private data, never commit publicly
+ZDB/
+ZDB.zip
