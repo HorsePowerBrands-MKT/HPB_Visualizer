@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
       team: body.team || null,
       userFingerprint: body.userFingerprint || null,
       userId: authUserId,
+      product: body.product === 'railing' ? 'railing' : 'shower',
+      productConfig:
+        body.productConfig && typeof body.productConfig === 'object' && !Array.isArray(body.productConfig)
+          ? body.productConfig
+          : undefined,
     };
 
     const genResult = await saveGeneration(supabaseConfig, generationRecord);

@@ -2,20 +2,23 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { 
-  EnclosureType, 
-  HardwareFinish, 
-  HandleStyle, 
+import type {
+  EnclosureType,
+  HardwareFinish,
+  HandleStyle,
   TrackPreference,
+  ShowerShape,
   HistoryItem,
-  Payload,
   HingedConfig,
   PivotConfig,
   SlidingConfig
 } from '@repo/types';
 import { CATALOG } from '../lib/gatsby-constants/src';
-import { useVisualizerState, fileToBase64Data, isHeic, isSupportedImageType, convertHeicToJpeg, compressImage } from '@repo/visualizer-core';
+import { useVisualizerState } from '@repo/visualizer-core';
 import { buildVisualizationPrompt, buildInspirationPrompt } from '../lib/promptBuilder';
+import { validateUploadedPhoto } from '../lib/uploadValidation';
+import { runGenerationPipeline, GenerationRateLimitedError } from '../lib/generationPipeline';
+import { useVisualizerSession } from '../hooks/useVisualizerSession';
 import { Card, CardContent } from './ui/Card';
 import { ContactFormModal } from './ContactFormModal';
 import { LeadCapturePopup } from './LeadCapturePopup';
@@ -25,15 +28,12 @@ import { EnclosureTypeStep } from './wizard/EnclosureTypeStep';
 import { FramingHardwareStep } from './wizard/GlassFramingStep';
 import { ResultStep } from './wizard/ResultStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
-import { UsageCounter } from './UsageCounter';
-import { PastVisualizations, type PastVisualizationItem } from './PastVisualizations';
+import { VisualizerChrome } from './VisualizerChrome';
+import { pastItemToLeadConfigs, type PastVisualizationItem } from './PastVisualizations';
 import { GeneratingOverlay } from './GeneratingOverlay';
-import { createClient } from '../lib/supabase/client';
-import { hasAccess, isCandidate, type AccessLevel, type UserType } from '../lib/permissions';
-import Link from 'next/link';
 
-import { 
-  BoxSelect, Minimize, Shield, Square, Sparkles, LogOut, User as UserIcon
+import {
+  BoxSelect, Minimize, Shield, Square
 } from 'lucide-react';
 
 // Custom Icons (using HubSpot CDN)
@@ -108,33 +108,6 @@ const PlaceholderIcon = ({ icon: Icon, label }: { icon?: React.ElementType, labe
   </div>
 );
 
-/** Raw file size above which we resize before validate/generate to avoid Vercel ~4.5MB JSON body limits (base64 expands ~4/3). */
-const VALIDATE_COMPRESS_THRESHOLD_BYTES = 2.5 * 1024 * 1024;
-
-/** Hard upper bound on the raw file we'll even attempt to process in-browser.
- *  Modern iPhone JPEGs are routinely 5–15 MB and HEICs can be larger; 50 MB
- *  comfortably covers ProRAW-derived exports while still blocking absurd uploads. */
-const MAX_RAW_FILE_BYTES = 50 * 1024 * 1024;
-
-/** Maps browser fetch failures (Safari "Load failed", Chrome "Failed to fetch", etc.) to one clear message. */
-function userFacingValidationError(err: unknown): string {
-  const raw = err instanceof Error ? err.message : String(err);
-  if (
-    /load failed|failed to fetch|networkerror|network error|aborted|timeout|status 0|err_connection|err_network|net::/i.test(
-      raw
-    )
-  ) {
-    return (
-      "We couldn't reach the server to verify your photo. Check your connection (try Wi‑Fi if you're on mobile data). " +
-      'Large camera shots can also fail over slow links—try again (big images are resized automatically) or pick a smaller JPEG from your gallery or files app.'
-    );
-  }
-  if (/Failed to read file|Failed to load image/i.test(raw)) {
-    return "We couldn't read this image on your device. Try another photo or a JPEG exported from your gallery.";
-  }
-  return raw || 'Unable to verify image. Please try again.';
-}
-
 // Rich Select Option Interface (for step components)
 interface RichSelectOption {
   value: string;
@@ -166,8 +139,15 @@ const FramingIcon = ({ type }: { type: TrackPreference }) => {
   }
 };
 
+interface GatsbyGlassVisualizerProps {
+  /** Return to the product chooser. */
+  onChangeProduct?: () => void;
+}
+
 // Main Component
-export const GatsbyGlassVisualizer: React.FC = () => {
+export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
+  onChangeProduct,
+}) => {
   const {
     form,
     imageFile,
@@ -233,139 +213,29 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   const [leadPopupOpen, setLeadPopupOpen] = useState<boolean>(false);
   const [popHandled, setPopHandled] = useState<boolean>(false);
 
-  // UTM team param — read once on mount from the URL
-  const [teamUtm, setTeamUtm] = useState<string | null>(null);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const t = params.get('team');
-      if (t) setTeamUtm(t);
-    }
-  }, []);
+  // Visitor session: fingerprint, usage, auth, past visualizations, team UTM.
+  // Shared with the railing module (see hooks/useVisualizerSession.ts).
+  const {
+    userFingerprint,
+    usageCount,
+    setUsageCount,
+    usageLimit,
+    setUsageLimit,
+    isRateLimited,
+    authUser,
+    isUnlimitedTeamMember,
+    isCandidateUser,
+    pastVisualizations,
+    refreshPastVisualizations,
+    teamUtm,
+    handleLogout,
+  } = useVisualizerSession();
 
   // Track how many times the user has generated an image in this session
   const [generationIndex, setGenerationIndex] = useState(0);
 
-  // --- Rate limiting state ---
-  const [userFingerprint, setUserFingerprint] = useState<string | null>(null);
-  const [usageCount, setUsageCount] = useState(0);
-  const [usageLimit, setUsageLimit] = useState(10);
-  const isRateLimited = usageCount >= usageLimit;
-
-  // --- Past visualizations state ---
-  const [pastVisualizations, setPastVisualizations] = useState<PastVisualizationItem[]>([]);
-
   // --- Submission tracking state ---
   const [submissionId, setSubmissionId] = useState<string | null>(null);
-
-  // --- Auth state ---
-  const [authUser, setAuthUser] = useState<{
-    email: string;
-    locationName: string | null;
-    accessLevel: AccessLevel | null;
-    userType: UserType;
-  } | null>(null);
-
-  const isUnlimitedTeamMember = !!authUser && authUser.userType === 'team';
-  const isCandidateUser = isCandidate(authUser?.userType);
-
-  // Generate or retrieve fingerprint from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let fp = localStorage.getItem('hpb_user_id');
-    if (!fp) {
-      fp = uuidv4();
-      localStorage.setItem('hpb_user_id', fp);
-    }
-    setUserFingerprint(fp);
-  }, []);
-
-  // Helper: fetch past visualizations using the right strategy (auth vs fingerprint)
-  const refreshPastVisualizations = useCallback(() => {
-    const url = authUser
-      ? '/api/my-visualizations'
-      : userFingerprint
-        ? `/api/my-visualizations?fingerprint=${encodeURIComponent(userFingerprint)}`
-        : null;
-    if (!url) return;
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.visualizations)) setPastVisualizations(data.visualizations);
-      })
-      .catch(() => {});
-  }, [authUser, userFingerprint]);
-
-  // Fetch usage count + past visualizations for anonymous users
-  useEffect(() => {
-    if (!userFingerprint || authUser) return;
-
-    fetch(`/api/usage-count?fingerprint=${encodeURIComponent(userFingerprint)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (typeof data.usageCount === 'number') setUsageCount(data.usageCount);
-        if (typeof data.limit === 'number') setUsageLimit(data.limit);
-      })
-      .catch(() => {});
-
-    refreshPastVisualizations();
-  }, [userFingerprint, authUser, refreshPastVisualizations]);
-
-  // Fetch past visualizations for authenticated users
-  useEffect(() => {
-    if (!authUser) return;
-    refreshPastVisualizations();
-  }, [authUser, refreshPastVisualizations]);
-
-  // Check Supabase auth state on mount and load team permissions
-  useEffect(() => {
-    const supabase = createClient();
-
-    const loadTeamProfile = async (email: string) => {
-      try {
-        const res = await fetch('/api/team-profile');
-        if (!res.ok) {
-          setAuthUser({ email, locationName: null, accessLevel: null, userType: 'team' });
-          return;
-        }
-        const data = await res.json();
-        setAuthUser({
-          email: data.email ?? email,
-          locationName: data.locationName ?? null,
-          accessLevel: data.accessLevel ?? null,
-          userType: data.userType ?? 'team',
-        });
-        if (data.userType === 'candidate') {
-          if (typeof data.usageCount === 'number') setUsageCount(data.usageCount);
-          if (typeof data.renderingCap === 'number') setUsageLimit(data.renderingCap);
-        }
-      } catch {
-        setAuthUser({ email, locationName: null, accessLevel: null, userType: 'team' });
-      }
-    };
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        loadTeamProfile(user.email);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.email) {
-        loadTeamProfile(session.user.email);
-      } else {
-        setAuthUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setAuthUser(null);
-  };
 
   // Prepare options for Rich Select
   const enclosureOptions: RichSelectOption[] = [
@@ -394,165 +264,59 @@ export const GatsbyGlassVisualizer: React.FC = () => {
   ];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'target' | 'inspiration') => {
-    let file = e.target.files?.[0] || null;
-    console.log('[FILE UPLOAD] File selected:', file?.name, file?.size, file?.type);
-    
+    const file = e.target.files?.[0] || null;
+
     if (!file) {
       console.log('[FILE UPLOAD] No file selected');
       return;
     }
 
-    if (file.size > MAX_RAW_FILE_BYTES) {
-      console.error('[FILE UPLOAD] File too large:', file.size);
-      setError(
-        "That photo is unusually large (over 50MB). On iPhone, open the photo, tap Share → Save as JPEG, or use a screenshot — we'll automatically resize it for you."
-      );
-      return;
-    }
-
-    // Convert HEIC/HEIF (common on iPhones) to JPEG before processing
-    if (isHeic(file)) {
-      setValidating(type);
-      setError(null);
-      try {
-        console.log('[FILE UPLOAD] Converting HEIC to JPEG...');
-        file = await convertHeicToJpeg(file);
-        console.log('[FILE UPLOAD] HEIC conversion complete:', file.name, file.type);
-      } catch (err) {
-        console.error('[FILE UPLOAD] HEIC conversion failed:', err);
-        setError(
-          "Your photo is in HEIC format, which is hard to convert on a phone. " +
-          "Open the photo in your gallery, tap Share → Save as JPEG (or screenshot it), then upload the JPEG version."
-        );
-        setValidating(null);
-        return;
-      }
-    }
-
-    if (!isSupportedImageType(file)) {
-      setError("This image format isn't supported. Please upload a JPEG, PNG, or WebP photo.");
-      return;
-    }
-
-    setValidating(type);
     setError(null);
-    console.log('[FILE UPLOAD] Starting validation for:', type);
 
-    try {
-      let fileForFlow = file;
-      if (fileForFlow.size > VALIDATE_COMPRESS_THRESHOLD_BYTES) {
-        try {
-          console.log('[FILE UPLOAD] Compressing large image before upload...');
-          fileForFlow = await compressImage(fileForFlow, 1920);
-          // Fallback pass for huge originals (e.g. 20MB+ iPhone exports) where a
-          // single 1920px resize can still exceed the server's ~4.5MB body limit.
-          if (fileForFlow.size > VALIDATE_COMPRESS_THRESHOLD_BYTES) {
-            console.log('[FILE UPLOAD] Still large after first pass, compressing again to 1280px...');
-            fileForFlow = await compressImage(fileForFlow, 1280);
-          }
-        } catch (compressErr) {
-          console.error('[FILE UPLOAD] Compression failed:', compressErr);
-          setError(
-            "We couldn't resize this photo for upload. Try a smaller image or a JPEG from your gallery or files app."
-          );
-          e.target.value = '';
-          setValidating(null);
-          return;
-        }
-      }
+    // Device-side prep (size cap, HEIC, compression) + server validation.
+    // Shared with the railing module; see lib/uploadValidation.ts.
+    const outcome = await validateUploadedPhoto(file, {
+      product: 'shower',
+      onBusy: () => setValidating(type),
+    });
 
-      console.log('[FILE UPLOAD] Converting to base64...');
-      const imageData = await fileToBase64Data(fileForFlow);
-      console.log('[FILE UPLOAD] Base64 conversion complete, data length:', imageData.data.length);
-
-      console.log('[FILE UPLOAD] Calling validation API...');
-      const response = await fetch('/api/validate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(imageData)
-      });
-
-      console.log('[FILE UPLOAD] API response status:', response.status);
-
-      if (!response.ok) {
-        let message = `Couldn't verify your photo (error ${response.status}). Please try again.`;
-        try {
-          const errJson = (await response.json()) as { reason?: string; error?: string };
-          if (typeof errJson.reason === 'string') message = errJson.reason;
-          else if (typeof errJson.error === 'string') message = errJson.error;
-        } catch {
-          /* non-JSON error body */
-        }
-        if (response.status === 413) {
-          message =
-            'This photo is too large to upload. Use a smaller export from your gallery or take a new picture at lower quality.';
-        } else if (response.status >= 500) {
-          message = `${message} If this keeps happening, try Wi‑Fi or again later.`;
-        }
-        setError(message);
-        e.target.value = '';
-        setValidating(null);
-        return;
-      }
-
-      let result: {
-        valid?: boolean;
-        reason?: string;
-        shape?: string;
-        detectedHardware?: string;
-        contentFlag?: string;
-      };
-      try {
-        result = await response.json();
-      } catch {
-        setError("The server sent an unexpected response. Please try again or use a different photo.");
-        e.target.value = '';
-        setValidating(null);
-        return;
-      }
-      console.log('[FILE UPLOAD] API result:', result);
-
-      if (!result.valid) {
-        console.warn('[FILE UPLOAD] Image validation failed:', result.reason);
-        setError(result.reason || "The uploaded image does not appear to be a bathroom or shower. Please upload a valid photo.");
-        e.target.value = '';
-        setValidating(null);
-        return;
-      }
-
-      console.log('[FILE UPLOAD] Validation successful, shape detected:', result.shape);
-
-      if (type === 'target') {
-        setImageFile(fileForFlow);
-        setPreviewUrl(URL.createObjectURL(fileForFlow));
-        setResultUrl(null);
-        setShowResult(false);
-        
-        const detectedHw = result.detectedHardware || 'none';
-        setForm({
-          ...form,
-          shower_shape: result.shape,
-          detected_hardware: detectedHw,
-          ...(detectedHw !== 'none' ? { hardware_finish: detectedHw as HardwareFinish } : {}),
-          ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
-        });
-        if (result.shape === 'neo_angle') {
-          setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
-          setTimeout(() => setInfoMessage(null), 8000);
-        }
-        // No auto-advance: user must check the upload consent checkbox before proceeding
-
-      } else {
-        setInspirationFile(fileForFlow);
-        setInspirationPreviewUrl(URL.createObjectURL(fileForFlow));
-      }
-    } catch (err) {
-      console.error('[FILE UPLOAD] Error during validation:', err);
-      setError(userFacingValidationError(err));
-    } finally {
+    if (!outcome.ok) {
+      setError(outcome.message);
+      e.target.value = '';
       setValidating(null);
-      console.log('[FILE UPLOAD] Validation process complete');
+      return;
     }
+
+    const { file: fileForFlow, result } = outcome;
+    console.log('[FILE UPLOAD] Validation successful, shape detected:', result.shape);
+
+    if (type === 'target') {
+      setImageFile(fileForFlow);
+      setPreviewUrl(URL.createObjectURL(fileForFlow));
+      setResultUrl(null);
+      setShowResult(false);
+
+      const detectedHw = result.detectedHardware || 'none';
+      setForm({
+        ...form,
+        shower_shape: (result.shape ?? 'standard') as ShowerShape,
+        detected_hardware: detectedHw,
+        ...(detectedHw !== 'none' ? { hardware_finish: detectedHw as HardwareFinish } : {}),
+        ...(result.shape === 'neo_angle' ? { enclosure_type: 'hinged' as EnclosureType } : {})
+      });
+      if (result.shape === 'neo_angle') {
+        setInfoMessage("We detected a Neo-Angle corner shower. We've automatically set your door type to 'Hinged' to match this specific layout.");
+        setTimeout(() => setInfoMessage(null), 8000);
+      }
+      // No auto-advance: user must check the upload consent checkbox before proceeding
+
+    } else {
+      setInspirationFile(fileForFlow);
+      setInspirationPreviewUrl(URL.createObjectURL(fileForFlow));
+    }
+
+    setValidating(null);
+    console.log('[FILE UPLOAD] Validation process complete');
   };
 
   const onGenerate = useCallback(async () => {
@@ -575,169 +339,97 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     setShowResult(false);
 
     try {
-      const bathroomImageData = await fileToBase64Data(imageFile);
-      const prompt = form.mode === 'configure' 
+      const prompt = form.mode === 'configure'
         ? buildVisualizationPrompt(form)
         : buildInspirationPrompt(form.shower_shape);
 
       const sessionId = form.session_id || uuidv4();
       const nextGenIndex = generationIndex + 1;
 
-      // Upload original photo and create submission record
-      let currentSubmissionId = submissionId;
-      try {
-        const imageDataUrl = `data:${bathroomImageData.mimeType || 'image/png'};base64,${bathroomImageData.data}`;
-        const submissionRes = await fetch('/api/upload-submission', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageData: imageDataUrl,
-            uploadConsent: true,
-            marketingConsent,
-            sourceUrl: typeof window !== 'undefined' ? window.location.href : null,
-            metadata: {
-              mode: form.mode,
-              enclosureType: form.enclosure_type,
-              framingStyle: form.track_preference,
-              hardwareFinish: form.hardware_finish,
-              handleStyle: form.handle_style,
-              showerShape: form.shower_shape,
-              hingedConfig: form.hinged_config ?? null,
-              pivotConfig: form.pivot_config ?? null,
-              slidingConfig: form.sliding_config ?? null,
-            },
-          }),
-        });
-        if (submissionRes.ok) {
-          const submissionData = await submissionRes.json();
-          currentSubmissionId = submissionData.submissionId;
-          setSubmissionId(currentSubmissionId);
-        }
-      } catch (subErr) {
-        console.error('[SUBMISSION] Failed to create submission:', subErr);
-      }
-
-      const requestBody: any = {
-        bathroomImage: bathroomImageData,
+      // Upload submission → generate → attach image → save record.
+      // Shared with the railing module; see lib/generationPipeline.ts.
+      await runGenerationPipeline({
+        product: 'shower',
+        imageFile,
+        inspirationFile: form.mode === 'inspiration' ? inspirationFile : null,
         prompt,
-        targetWidth: bathroomImageData.width,
-        targetHeight: bathroomImageData.height,
         sessionId,
         generationIndex: nextGenIndex,
+        userFingerprint,
+        marketingConsent,
+        submissionId,
+        teamUtm,
+        onSubmissionCreated: setSubmissionId,
+        submissionMetadata: {
+          mode: form.mode,
+          enclosureType: form.enclosure_type,
+          framingStyle: form.track_preference,
+          hardwareFinish: form.hardware_finish,
+          handleStyle: form.handle_style,
+          showerShape: form.shower_shape,
+        },
         // Pass the structured door config so the server route can attach
         // anatomy reference images for door types with a wrong-default bias
         // (currently pivot). Hinged + sliding pass through unchanged.
-        doorType: form.enclosure_type,
-        ...(form.pivot_config?.direction
-          ? { pivotDirection: form.pivot_config.direction }
-          : {}),
-        ...(userFingerprint ? { userFingerprint } : {}),
-      };
+        generateExtras: {
+          doorType: form.enclosure_type,
+          ...(form.pivot_config?.direction
+            ? { pivotDirection: form.pivot_config.direction }
+            : {}),
+        },
+        saveRecord: {
+          mode: form.mode,
+          enclosureType: form.enclosure_type,
+          framingStyle: form.track_preference,
+          hardwareFinish: form.hardware_finish,
+          handleStyle: form.handle_style,
+          showerShape: form.shower_shape,
+          hingedConfig: form.hinged_config ?? null,
+          pivotConfig: form.pivot_config ?? null,
+          slidingConfig: form.sliding_config ?? null,
+        },
+        onGenerated: (outcome) => {
+          const updatedForm = { ...form, session_id: sessionId };
+          setForm(updatedForm);
 
-      if (form.mode === 'inspiration' && inspirationFile) {
-        requestBody.inspirationImage = await fileToBase64Data(inspirationFile);
-      }
+          const newHistoryItem: HistoryItem = {
+            id: uuidv4(),
+            timestamp: Date.now(),
+            imageUrl: outcome.image,
+            label: createHistoryLabel(form),
+            payload: updatedForm
+          };
 
-      const response = await fetch('/api/generate-visualization', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+          if (typeof outcome.usageCount === 'number') {
+            setUsageCount(outcome.usageCount);
+          }
+          if (typeof outcome.limit === 'number' && isCandidateUser) {
+            setUsageLimit(outcome.limit);
+          }
+          setGenerationIndex(nextGenIndex);
+          setResultUrl(outcome.image);
+          addHistoryItem(newHistoryItem);
+          setShowResult(true);
+
+          // After the 5th generation in this session, surface the blocking
+          // lead-capture popup once. Submit or explicit dismiss flips
+          // `popHandled` so it never re-opens this session.
+          if (nextGenIndex === 5 && !popHandled && !isCandidateUser) {
+            setLeadPopupOpen(true);
+          }
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.rateLimited) {
-          setUsageCount(errorData.usageCount ?? usageLimit);
-          throw new Error('Monthly design preview limit reached');
-        }
-        throw new Error(errorData.error || 'Failed to generate design preview');
-      }
+      refreshPastVisualizations();
 
-      const result = await response.json();
-
-      if (typeof result.usageCount === 'number') {
-        setUsageCount(result.usageCount);
-      }
-
-      // Update submission with the generated image URL
-      if (currentSubmissionId && (result.watermarkedUrl || result.originalUrl)) {
-        try {
-          await fetch('/api/upload-submission', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              submissionId: currentSubmissionId,
-              generatedImageUrl: result.watermarkedUrl || result.originalUrl,
-            }),
-          });
-        } catch (patchErr) {
-          console.error('[SUBMISSION] Failed to update submission with generated image:', patchErr);
-        }
-      }
-
-      const updatedForm = { ...form, session_id: sessionId };
-      setForm(updatedForm);
-
-      const newHistoryItem: HistoryItem = {
-        id: uuidv4(),
-        timestamp: Date.now(),
-        imageUrl: result.image,
-        label: createHistoryLabel(form),
-        payload: updatedForm
-      };
-
-      if (typeof result.usageCount === 'number') {
-        setUsageCount(result.usageCount);
-      }
-      if (typeof result.limit === 'number' && isCandidateUser) {
-        setUsageLimit(result.limit);
-      }
-      setGenerationIndex(nextGenIndex);
-      setResultUrl(result.image);
-      addHistoryItem(newHistoryItem);
-      setShowResult(true);
-
-      // After the 5th generation in this session, surface the blocking
-      // lead-capture popup once. Submit or explicit dismiss flips
-      // `popHandled` so it never re-opens this session.
-      if (nextGenIndex === 5 && !popHandled && !isCandidateUser) {
-        setLeadPopupOpen(true);
-      }
-
-      // Save visualization record (images already uploaded by generate endpoint)
-      try {
-        await fetch('/api/save-visualization', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sessionId,
-            generationIndex: nextGenIndex,
-            mode: form.mode,
-            enclosureType: form.enclosure_type,
-            framingStyle: form.track_preference,
-            hardwareFinish: form.hardware_finish,
-            handleStyle: form.handle_style,
-            showerShape: form.shower_shape,
-            hingedConfig: form.hinged_config ?? null,
-            pivotConfig: form.pivot_config ?? null,
-            slidingConfig: form.sliding_config ?? null,
-            visualizationImage: result.watermarkedUrl || null,
-            originalImageUrl: result.originalUrl || null,
-            team: result.teamLocationId || teamUtm || null,
-            userFingerprint: userFingerprint || null,
-          })
-        });
-
-        refreshPastVisualizations();
-      } catch (saveError) {
-        console.error('[AUTO-SAVE] Failed to save visualization:', saveError);
-      }
-      
       // Auto-advance to result step
       goToNextStep();
 
     } catch (err) {
-      if (err instanceof Error) {
+      if (err instanceof GenerationRateLimitedError) {
+        setUsageCount(err.usageCount ?? usageLimit);
+        setError(err.message);
+      } else if (err instanceof Error) {
         setError(err.message);
       } else if (typeof err === 'string') {
         setError(err);
@@ -747,7 +439,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, isCandidateUser, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, isCandidateUser, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations, setForm, setUsageCount, setUsageLimit]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -851,7 +543,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               sessionId={form.session_id}
               team={teamUtm}
               onToggleView={() => setShowResult(!showResult)}
-              onSelectHistory={(item) => selectHistoryItem(item, false)}
+              onSelectHistory={(item) => selectHistoryItem(item as HistoryItem, false)}
               onSave={() => {
                 setContactModalMode('save');
                 setContactModalOpen(true);
@@ -903,7 +595,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
             sessionId={form.session_id}
             team={teamUtm}
             onToggleView={() => setShowResult(!showResult)}
-            onSelectHistory={(item) => selectHistoryItem(item, false)}
+            onSelectHistory={(item) => selectHistoryItem(item as HistoryItem, false)}
             onSave={() => {
               setContactModalMode('save');
               setContactModalOpen(true);
@@ -957,102 +649,22 @@ export const GatsbyGlassVisualizer: React.FC = () => {
       {/* Full-screen generation loading overlay */}
       <GeneratingOverlay visible={loading} />
 
-      {/* Team Login / Auth badge */}
-      {authUser ? (
-        <div className="flex items-center justify-between bg-brand-black/40 border border-white/[0.06] px-4 py-3 mb-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <UserIcon className="w-3.5 h-3.5 text-brand-gold shrink-0" />
-            <span className="text-xs font-sans text-brand-gold truncate">
-              {authUser.email}
-            </span>
-            {isCandidateUser && (
-              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-amber-500/15 text-amber-300 font-sans shrink-0">
-                Candidate
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 ml-3 shrink-0">
-            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'social') && (
-              <Link
-                href="/admin/submissions"
-                className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-              >
-                Submissions
-              </Link>
-            )}
-            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'corporate_team') && (
-              <>
-                <Link
-                  href="/admin/candidates"
-                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-                >
-                  Candidates
-                </Link>
-                <Link
-                  href="/admin/leads"
-                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-                >
-                  Leads
-                </Link>
-                <Link
-                  href="/admin/usage-report"
-                  className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-                >
-                  Usage Report
-                </Link>
-              </>
-            )}
-            {authUser.accessLevel && hasAccess(authUser.accessLevel, 'admin') && (
-              <Link
-                href="/admin/users"
-                className="text-[11px] text-white/40 hover:text-brand-gold font-sans transition-colors"
-              >
-                Users
-              </Link>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 font-sans transition-colors"
-            >
-              <LogOut className="w-3 h-3" />
-              Sign out
-            </button>
-          </div>
-        </div>
-      ) : (
-        <UsageCounter
-          usageCount={usageCount}
-          limit={usageLimit}
-          isRateLimited={isRateLimited}
-          loginSlot={
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1 text-[11px] font-sans text-white/40 hover:text-brand-gold transition-colors"
-            >
-              <UserIcon className="w-3 h-3" />
-              Team Login
-            </Link>
-          }
-        />
-      )}
-
-      {isCandidateUser && (
-        <UsageCounter
-          usageCount={usageCount}
-          limit={usageLimit}
-          isRateLimited={isRateLimited}
-        />
-      )}
-
-      {/* Past visualizations */}
-      <PastVisualizations
-        items={pastVisualizations}
-        onSave={isCandidateUser ? undefined : (item) => {
+      {/* Change product / auth badge / usage counter / past visualizations */}
+      <VisualizerChrome
+        onChangeProduct={onChangeProduct}
+        authUser={authUser}
+        isCandidateUser={isCandidateUser}
+        usageCount={usageCount}
+        usageLimit={usageLimit}
+        isRateLimited={isRateLimited}
+        onLogout={handleLogout}
+        pastVisualizations={pastVisualizations}
+        onPastSave={(item) => {
           setPastVizModalItem(item);
           setContactModalMode('save');
           setContactModalOpen(true);
         }}
-        onRequestQuote={isCandidateUser ? undefined : (item) => {
+        onPastRequestQuote={(item) => {
           setPastVizModalItem(item);
           setContactModalMode('quote');
           setContactModalOpen(true);
@@ -1098,14 +710,7 @@ export const GatsbyGlassVisualizer: React.FC = () => {
               ? {
                   resultUrl: pastVizModalItem.visualization_image_url || '',
                   uploadedImage: pastVizModalItem.original_image_url || '',
-                  configs: {
-                    mode: pastVizModalItem.mode ?? undefined,
-                    enclosure_type: pastVizModalItem.enclosure_type ?? undefined,
-                    glass_style: pastVizModalItem.framing_style ?? undefined,
-                    hardware_finish: pastVizModalItem.hardware_finish ?? undefined,
-                    handle_style: pastVizModalItem.handle_style ?? undefined,
-                    shower_shape: pastVizModalItem.shower_shape ?? undefined,
-                  } as Partial<Payload>
+                  configs: pastItemToLeadConfigs(pastVizModalItem),
                 }
               : {
                   resultUrl: resultUrl || '',

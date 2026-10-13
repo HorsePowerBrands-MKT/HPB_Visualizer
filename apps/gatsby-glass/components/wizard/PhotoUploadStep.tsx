@@ -14,7 +14,15 @@ interface SingleUploadProps {
 }
 
 interface PhotoUploadStepProps extends SingleUploadProps {
-  type: 'bathroom' | 'inspiration' | 'both';
+  /** 'space' is the single-upload variant for non-bathroom products (railing). */
+  type: 'bathroom' | 'inspiration' | 'both' | 'space';
+  /** Copy overrides so other product modules can reuse this step. */
+  title?: string;
+  description?: string;
+  primaryLabel?: string;
+  primaryHint?: string;
+  inspirationLabel?: string;
+  inspirationHint?: string;
   // Second upload props — only used when type === 'both'
   inspirationFile?: File | null;
   inspirationPreviewUrl?: string | null;
@@ -156,6 +164,12 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   marketingConsent = false,
   onUploadConsentChange,
   onMarketingConsentChange,
+  title,
+  description,
+  primaryLabel,
+  primaryHint,
+  inspirationLabel,
+  inspirationHint,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
 
@@ -165,8 +179,10 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="text-center space-y-2">
-          <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Upload Your Photos</h2>
-          <p className="text-gray-400 text-base md:text-lg">Upload your bathroom and the shower style you want to match</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">{title ?? 'Upload Your Photos'}</h2>
+          <p className="text-gray-400 text-base md:text-lg">
+            {description ?? 'Upload your bathroom and the shower style you want to match'}
+          </p>
         </div>
 
         {error && (
@@ -182,8 +198,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
             validating={validating}
             onFileChange={onFileChange}
             onRemove={onRemove}
-            label="Your Bathroom"
-            hint="Take a clear, straight-on photo of your shower area"
+            label={primaryLabel ?? 'Your Bathroom'}
+            hint={primaryHint ?? 'Take a clear, straight-on photo of your shower area'}
             tall={false}
           />
           <UploadBox
@@ -192,8 +208,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
             validating={inspirationValidating ?? false}
             onFileChange={onInspirationFileChange ?? (() => {})}
             onRemove={onInspirationRemove ?? (() => {})}
-            label="Inspiration Photo"
-            hint="Upload a photo of the shower style you love"
+            label={inspirationLabel ?? 'Inspiration Photo'}
+            hint={inspirationHint ?? 'Upload a photo of the shower style you love'}
             tall={false}
           />
         </div>
@@ -212,16 +228,26 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
     );
   }
 
-  const title = type === 'bathroom' ? 'Upload Your Bathroom Photo' : 'Upload Your Inspiration Photo';
-  const description = type === 'bathroom'
-    ? 'Take a clear, straight-on photo of your shower area for the best results'
-    : 'Upload a photo of a shower style you love and we\'ll apply it to your bathroom';
+  const resolvedTitle =
+    title ??
+    (type === 'bathroom'
+      ? 'Upload Your Bathroom Photo'
+      : type === 'space'
+        ? 'Upload Your Space Photo'
+        : 'Upload Your Inspiration Photo');
+  const resolvedDescription =
+    description ??
+    (type === 'bathroom'
+      ? 'Take a clear, straight-on photo of your shower area for the best results'
+      : type === 'space'
+        ? 'Take a clear photo of the stairs, balcony, deck, or pool area where the railing will go'
+        : 'Upload a photo of a shower style you love and we\'ll apply it to your bathroom');
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">{title}</h2>
-        <p className="text-gray-400 text-base md:text-lg">{description}</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">{resolvedTitle}</h2>
+        <p className="text-gray-400 text-base md:text-lg">{resolvedDescription}</p>
       </div>
 
       {error && (

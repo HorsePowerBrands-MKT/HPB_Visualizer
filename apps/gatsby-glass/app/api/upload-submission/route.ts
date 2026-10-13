@@ -66,7 +66,11 @@ export async function POST(request: NextRequest) {
 
     // Sanitize metadata: only allow known string keys, drop anything unexpected
     const safeMeta: Record<string, string | null> = {};
-    const allowedMetaKeys = ['mode', 'enclosureType', 'framingStyle', 'hardwareFinish', 'handleStyle', 'showerShape'];
+    const allowedMetaKeys = [
+      'mode', 'enclosureType', 'framingStyle', 'hardwareFinish', 'handleStyle', 'showerShape',
+      // Railing module
+      'product', 'application', 'railingSystem', 'handrail', 'finish',
+    ];
     if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
       for (const key of allowedMetaKeys) {
         if (key in metadata) {

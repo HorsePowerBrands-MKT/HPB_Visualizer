@@ -7,12 +7,19 @@ interface ModeSelectionStepProps {
   mode: 'configure' | 'inspiration';
   onModeSelect: (mode: 'configure' | 'inspiration') => void;
   onNext: () => void;
+  /** Copy overrides so other product modules can reuse this step. Defaults are the shower copy. */
+  subtitle?: string;
+  configureDescription?: string;
+  inspirationDescription?: string;
 }
 
 export const ModeSelectionStep: React.FC<ModeSelectionStepProps> = ({
   mode,
   onModeSelect,
-  onNext
+  onNext,
+  subtitle = 'How would you like to design your shower?',
+  configureDescription = 'Customize every detail - choose your enclosure type, glass, hardware, and finishes',
+  inspirationDescription = "Upload a photo of a shower you love and we'll match the style to your bathroom",
 }) => {
   const handleModeSelect = (selectedMode: 'configure' | 'inspiration') => {
     onModeSelect(selectedMode);
@@ -24,7 +31,7 @@ export const ModeSelectionStep: React.FC<ModeSelectionStepProps> = ({
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="text-center space-y-2">
         <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Choose Your Design Method</h2>
-        <p className="text-gray-400 text-base md:text-lg">How would you like to design your shower?</p>
+        <p className="text-gray-400 text-base md:text-lg">{subtitle}</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
@@ -51,7 +58,7 @@ export const ModeSelectionStep: React.FC<ModeSelectionStepProps> = ({
               Design Your Own
             </h3>
             <p className={`text-sm md:text-base ${mode === 'configure' ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'}`}>
-              Customize every detail - choose your enclosure type, glass, hardware, and finishes
+              {configureDescription}
             </p>
           </div>
         </button>
@@ -79,7 +86,7 @@ export const ModeSelectionStep: React.FC<ModeSelectionStepProps> = ({
               Match Inspiration
             </h3>
             <p className={`text-sm md:text-base ${mode === 'inspiration' ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'}`}>
-              Upload a photo of a shower you love and we'll match the style to your bathroom
+              {inspirationDescription}
             </p>
           </div>
         </button>
