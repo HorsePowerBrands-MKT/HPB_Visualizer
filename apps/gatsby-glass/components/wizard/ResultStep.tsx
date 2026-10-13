@@ -5,7 +5,22 @@ import { RefreshCw, Check, AlertCircle, History, Sparkles, Flag, ChevronDown, Ch
 import { Button } from '../ui/Button';
 import { Label } from '../ui/Label';
 import { ReportIssueModal } from '../ReportIssueModal';
-import type { HistoryItem, Payload, EnclosureType, TrackPreference, HardwareFinish, HandleStyle, HingedConfig, PivotConfig, SlidingConfig, DoorDirection, SlidingDirection, SlidingConfiguration } from '@repo/types';
+import type { Payload, EnclosureType, TrackPreference, HardwareFinish, HandleStyle, HingedConfig, PivotConfig, SlidingConfig, DoorDirection, SlidingDirection, SlidingConfiguration } from '@repo/types';
+
+/** The subset of a history entry the gallery needs; product modules add their own payload. */
+export interface ResultHistoryItem {
+  id: string;
+  timestamp: number;
+  imageUrl: string;
+  label: string;
+}
+
+/** Marketing-style description shown beside the result. */
+export interface ResultDescription {
+  title: string;
+  features: string[];
+  summary: string;
+}
 import { CATALOG } from '../../lib/gatsby-constants/src';
 
 interface OptionItem {
@@ -108,11 +123,19 @@ interface ResultStepProps {
   previewUrl: string | null;
   showResult: boolean;
   error: string | null;
-  history: HistoryItem[];
+  history: ResultHistoryItem[];
+  /** Shower form; drives the description and the Change Options panel. */
   form?: Payload;
+  /** Header copy overrides for other product modules. */
+  title?: string;
+  subtitle?: string;
+  /** Description for non-shower products (used when `form` is absent). */
+  description?: ResultDescription;
+  /** Replaces the shower dropdowns inside the Change Options accordion. */
+  changeOptionsPanel?: React.ReactNode;
   sessionId?: string;
   onToggleView: () => void;
-  onSelectHistory: (item: HistoryItem) => void;
+  onSelectHistory: (item: ResultHistoryItem) => void;
   onSave: () => void;
   onRequestQuote: () => void;
   onTryAgain: () => void;
@@ -221,6 +244,10 @@ export const ResultStep: React.FC<ResultStepProps> = ({
   error,
   history,
   form,
+  title = 'Your Custom Shower Design',
+  subtitle = 'See how your shower will look',
+  description: descriptionProp,
+  changeOptionsPanel,
   sessionId,
   onToggleView,
   onSelectHistory,
@@ -248,14 +275,14 @@ export const ResultStep: React.FC<ResultStepProps> = ({
 }) => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
-  const description = form ? generateDescription(form) : null;
+  const description = descriptionProp ?? (form ? generateDescription(form) : null);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Your Custom Shower Design</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">{title}</h2>
         <p className="text-gray-400 text-sm md:text-base">
-          {loading ? 'Generating your design preview...' : 'See how your shower will look'}
+          {loading ? 'Generating your design preview...' : subtitle}
         </p>
       </div>
 
@@ -437,7 +464,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
               )}
 
               {/* Change Options accordion */}
-              {form?.mode === 'configure' && enclosureOptions && (
+              {(changeOptionsPanel || (form?.mode === 'configure' && enclosureOptions)) && (
                 <div className="border border-white/30">
                   <button
                     onClick={() => setIsOptionsOpen(!isOptionsOpen)}
@@ -450,6 +477,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                   {isOptionsOpen && (
                     <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="border-t border-white/20 p-5 space-y-4">
+                        {changeOptionsPanel ?? (form && enclosureOptions && (
                         <div className="space-y-3">
                           {onEnclosureChange && (
                             <>
@@ -538,6 +566,7 @@ export const ResultStep: React.FC<ResultStepProps> = ({
                             />
                           )}
                         </div>
+                        ))}
 
                         {onRegenerate && (
                           <div className="flex justify-end pt-1">

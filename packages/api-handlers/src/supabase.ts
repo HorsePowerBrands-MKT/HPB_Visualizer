@@ -58,7 +58,7 @@ async function collectAllVisualizationUrls(
 
   let query = supabase
     .from('visualizations')
-    .select('visualization_image_url, original_image_url, created_at, mode, enclosure_type, framing_style, hardware_finish, handle_style')
+    .select('visualization_image_url, original_image_url, created_at, mode, enclosure_type, framing_style, hardware_finish, handle_style, product, product_config')
     .not('visualization_image_url', 'is', null)
     .order('created_at', { ascending: true });
 
@@ -84,6 +84,8 @@ async function collectAllVisualizationUrls(
         framing_style: r.framing_style ?? null,
         hardware_finish: r.hardware_finish ?? null,
         handle_style: r.handle_style ?? null,
+        product: r.product ?? null,
+        product_config: r.product_config ?? null,
       }))
     : [];
 }
@@ -386,6 +388,8 @@ export async function saveGeneration(
       team: record.team || null,
       user_fingerprint: record.userFingerprint || null,
       user_id: record.userId || null,
+      product: record.product || 'shower',
+      product_config: record.productConfig || null,
     }])
     .select('id')
     .single();
@@ -666,6 +670,8 @@ export interface PastVisualization {
   handle_style: string | null;
   shower_shape: string | null;
   created_at: string;
+  product?: string | null;
+  product_config?: Record<string, unknown> | null;
 }
 
 /**
@@ -680,7 +686,7 @@ export async function getVisualizationsByFingerprint(
 
   const { data, error } = await supabase
     .from('visualizations')
-    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at')
+    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at, product, product_config')
     .eq('user_fingerprint', fingerprint)
     .not('visualization_image_url', 'is', null)
     .order('created_at', { ascending: false })
@@ -706,7 +712,7 @@ export async function getVisualizationsByUserId(
 
   const { data, error } = await supabase
     .from('visualizations')
-    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at')
+    .select('id, visualization_image_url, original_image_url, mode, enclosure_type, framing_style, hardware_finish, handle_style, shower_shape, created_at, product, product_config')
     .eq('user_id', userId)
     .not('visualization_image_url', 'is', null)
     .order('created_at', { ascending: false })

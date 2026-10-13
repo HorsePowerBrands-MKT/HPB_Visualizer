@@ -8,6 +8,38 @@ import { LeadSubmissionSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
 import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION, OUTSIDE_TERRITORY_INBOX } from '../../../lib/gatsby-constants/src';
+import {
+  formatRailingSummary,
+  railingApplications,
+  railingSystems,
+  railingHandrailOptions,
+  railingFinishes,
+} from '../../../lib/railing/catalog';
+import type {
+  RailingApplication,
+  RailingSystem,
+  RailingHandrail,
+  RailingFinish,
+} from '../../../lib/railing/types';
+
+/** Narrow the free-form product_config JSON to the railing selection keys. */
+function railingConfigOf(viz: VisualizationHistoryItem): {
+  mode?: string | null;
+  application?: string | null;
+  railing_system?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+} {
+  const cfg = (viz.product_config ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === 'string' ? v : null);
+  return {
+    mode: str(cfg.mode) ?? viz.mode ?? null,
+    application: str(cfg.application),
+    railing_system: str(cfg.railing_system),
+    handrail: str(cfg.handrail),
+    finish: str(cfg.finish),
+  };
+}
 
 /**
  * Build a human-readable label for a visualization history item using the
@@ -15,6 +47,10 @@ import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION, OUTSIDE_TERRITORY_INBOX } 
  * customer can tell their generated variants apart.
  */
 function buildImageLabel(viz: VisualizationHistoryItem): string {
+  if (viz.product === 'railing') {
+    return formatRailingSummary(railingConfigOf(viz));
+  }
+
   if (viz.mode === 'inspiration') {
     const stamp = viz.created_at
       ? new Date(viz.created_at).toLocaleString('en-US', {
@@ -71,7 +107,25 @@ function buildImageConfig(viz: VisualizationHistoryItem): {
   framing?: string | null;
   hardware?: string | null;
   handle?: string | null;
+  application?: string | null;
+  railingSystem?: string | null;
+  handrail?: string | null;
 } | null {
+  if (viz.product === 'railing') {
+    const cfg = railingConfigOf(viz);
+    return {
+      application: cfg.application
+        ? railingApplications[cfg.application as RailingApplication]?.name ?? null
+        : null,
+      railingSystem: cfg.railing_system
+        ? railingSystems[cfg.railing_system as RailingSystem]?.name ?? null
+        : null,
+      handrail: cfg.handrail
+        ? railingHandrailOptions[cfg.handrail as RailingHandrail]?.name ?? null
+        : null,
+      hardware: cfg.finish ? railingFinishes[cfg.finish as RailingFinish]?.name ?? null : null,
+    };
+  }
   if (viz.mode === 'inspiration') return null;
   return {
     enclosure: viz.enclosure_type
@@ -170,6 +224,8 @@ export async function POST(request: NextRequest) {
       userFingerprint: validatedData.userFingerprint,
       userId: authUserId,
       leadType: validatedData.leadType,
+      product: validatedData.product,
+      productSummary: validatedData.productSummary,
     };
 
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
@@ -261,6 +317,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
+              : validatedData.product === 'railing' && validatedData.productSummary
+              ? validatedData.productSummary
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,
@@ -288,6 +346,8 @@ export async function POST(request: NextRequest) {
 
             const heroConfig = hero
               ? buildImageConfig(hero)
+              : validatedData.product === 'railing'
+              ? null
               : buildImageConfig({
                   watermarked: heroImageUrl,
                   original: null,
@@ -439,6 +499,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
+              : validatedData.product === 'railing' && validatedData.productSummary
+              ? validatedData.productSummary
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,

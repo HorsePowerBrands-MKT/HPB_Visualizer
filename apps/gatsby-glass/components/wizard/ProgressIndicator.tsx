@@ -9,6 +9,8 @@ interface ProgressIndicatorProps {
   maxStepReached: number;
   onStepClick: (step: number) => void;
   mode: 'configure' | 'inspiration';
+  /** Overrides the mode-based labels; index 0 is step 1. */
+  stepLabels?: string[];
   canProceed?: boolean;
   loading?: boolean;
   onNext?: () => void;
@@ -27,6 +29,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   maxStepReached,
   onStepClick,
   mode,
+  stepLabels,
   canProceed = false,
   loading = false,
   onNext,
@@ -39,6 +42,9 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   usageLimit = 10,
 }) => {
   const getStepLabel = (step: number): string => {
+    if (stepLabels) {
+      return stepLabels[step - 1] ?? '';
+    }
     if (mode === 'configure') {
       switch (step) {
         case 1: return 'Choose Design Method';
