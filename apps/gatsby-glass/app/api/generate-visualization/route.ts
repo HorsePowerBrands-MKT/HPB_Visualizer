@@ -22,6 +22,7 @@ import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
 import { applyWatermark } from '../../../lib/watermark';
 import { loadReferenceImagesFor } from '../../../lib/referenceImages';
+import { buildRailingSystemPrompt, RAILING_EDIT_PREAMBLE } from '../../../lib/railing/promptBuilder';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -133,12 +134,15 @@ export async function POST(request: NextRequest) {
     // NOT switch this back to fs.readFile against public/, because Vercel
     // does not include public/ in serverless function bundles and the
     // request would silently fall back to text-only prompting.
+    // Railing renders pass no doorType, so this returns [] for them: the
+    // railing look is carried entirely by the prompt text.
     const referenceImages = await loadReferenceImagesFor({
       enclosureType: validatedData.doorType,
       pivotDirection: validatedData.pivotDirection,
     });
     console.log(
-      `[generate-visualization] doorType=${validatedData.doorType ?? 'unknown'}` +
+      `[generate-visualization] product=${validatedData.product ?? 'shower'}` +
+        ` doorType=${validatedData.doorType ?? 'unknown'}` +
         ` pivotDirection=${validatedData.pivotDirection ?? 'n/a'}` +
         ` referenceImages=${referenceImages.length} (${referenceImages
           .map((r) => r.label)
@@ -146,6 +150,10 @@ export async function POST(request: NextRequest) {
     );
 
     // --- Generate the visualization ---
+    // Non-shower products swap in their own system prompt and edit
+    // preamble; when `product` is absent the handler uses the shower
+    // defaults so existing behavior is unchanged.
+    const product = validatedData.product ?? 'shower';
     const visualizationRequest: VisualizationRequest = {
       bathroomImage: validatedData.bathroomImage,
       inspirationImage: validatedData.inspirationImage,
@@ -155,13 +163,17 @@ export async function POST(request: NextRequest) {
       // output aspect ratio to match input_1.
       targetWidth: validatedData.targetWidth,
       targetHeight: validatedData.targetHeight,
+      ...(product === 'railing'
+        ? { systemPrompt: buildRailingSystemPrompt(), editPreamble: RAILING_EDIT_PREAMBLE }
+        : {}),
     };
 
     const result = await generateVisualization({ apiKey }, visualizationRequest);
 
     if (sbConfig) {
       const genIndex = body.generationIndex || 1;
-      logApiCall(sbConfig, genIndex > 1 ? 'update_generation' : 'initial_generation');
+      const callType = genIndex > 1 ? 'update_generation' : 'initial_generation';
+      logApiCall(sbConfig, product === 'railing' ? `railing_${callType}` : callType);
     }
 
     // --- Record usage for rate limiting ---

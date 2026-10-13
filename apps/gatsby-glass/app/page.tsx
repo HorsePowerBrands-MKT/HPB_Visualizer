@@ -1,5 +1,5 @@
-import { GatsbyGlassVisualizer } from '@/components/GatsbyGlassVisualizer';
+import { GatsbyVisualizer } from '@/components/GatsbyVisualizer';
 
 export default function Home() {
-  return <GatsbyGlassVisualizer />;
+  return <GatsbyVisualizer />;
 }

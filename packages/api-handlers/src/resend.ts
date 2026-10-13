@@ -34,6 +34,10 @@ export interface SasEmailData {
     framing?: string | null;
     hardware?: string | null;
     handle?: string | null;
+    // Glass railing product line
+    application?: string | null;
+    railingSystem?: string | null;
+    handrail?: string | null;
   };
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
@@ -174,6 +178,9 @@ function renderHtml(data: SasEmailData): string {
                           </tr>`;
 
   const configRows: string[] = [];
+  if (data.heroConfig?.application) configRows.push(configRow('Application', data.heroConfig.application));
+  if (data.heroConfig?.railingSystem) configRows.push(configRow('Railing System', data.heroConfig.railingSystem));
+  if (data.heroConfig?.handrail) configRows.push(configRow('Handrail', data.heroConfig.handrail));
   if (data.heroConfig?.enclosure) configRows.push(configRow('Enclosure', data.heroConfig.enclosure));
   if (data.heroConfig?.framing) configRows.push(configRow('Framing', data.heroConfig.framing));
   if (data.heroConfig?.hardware) configRows.push(configRow('Hardware', data.heroConfig.hardware));
@@ -356,6 +363,9 @@ function renderText(data: SasEmailData): string {
     lines.push("  Based on your uploaded inspiration photo, tailored to your");
     lines.push("  bathroom's unique layout.");
   } else if (data.heroConfig) {
+    if (data.heroConfig.application) lines.push(`  Application: ${data.heroConfig.application}`);
+    if (data.heroConfig.railingSystem) lines.push(`  Railing System: ${data.heroConfig.railingSystem}`);
+    if (data.heroConfig.handrail) lines.push(`  Handrail: ${data.heroConfig.handrail}`);
     if (data.heroConfig.enclosure) lines.push(`  Enclosure: ${data.heroConfig.enclosure}`);
     if (data.heroConfig.framing) lines.push(`  Framing: ${data.heroConfig.framing}`);
     if (data.heroConfig.hardware) lines.push(`  Hardware: ${data.heroConfig.hardware}`);

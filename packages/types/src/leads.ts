@@ -34,6 +34,10 @@ export interface Lead extends ContactFormData {
   locationId?: string;
   locationName?: string;
   leadType?: 'SAS' | 'RAQ' | 'POP';
+  /** Product line the lead came from. Absent = shower. */
+  product?: 'shower' | 'railing';
+  /** Human-readable selections for non-shower products (used in emails). */
+  productSummary?: string;
 }
 
 // A single visualization image collected for a session/user, with the
@@ -48,6 +52,10 @@ export interface VisualizationHistoryItem {
   framing_style?: TrackPreference | null;
   hardware_finish?: HardwareFinish | null;
   handle_style?: HandleStyle | null;
+  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  product?: string | null;
+  /** Product-specific selections for non-shower rows. */
+  product_config?: Record<string, unknown> | null;
 }
 
 // Lead submission response
@@ -96,6 +104,10 @@ export interface GenerationRecord {
   team?: string;
   userFingerprint?: string;
   userId?: string;
+  /** Product line. Absent = 'shower'. */
+  product?: 'shower' | 'railing';
+  /** Product-specific selections (stored as JSONB). */
+  productConfig?: Record<string, unknown>;
 }
 
 // Issue report data (many per session)

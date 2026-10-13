@@ -45,6 +45,10 @@ export type {
 // API types
 export type {
   ImageValidationResponse,
+  VisualizerProduct,
+  RailingExistingCondition,
+  RailingDetectedApplication,
+  RailingImageValidationResponse,
   ImageData,
   ReferenceImage,
   VisualizationRequest,
