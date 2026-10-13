@@ -272,6 +272,14 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
           handrail: currentPayload.handrail,
           finish: currentPayload.finish,
         },
+        // Lets the server attach real-install reference photos matched to
+        // the selections (text-only when a selection is left to the
+        // inspiration photo).
+        generateExtras: {
+          railingApplication: currentPayload.application,
+          ...(currentPayload.railing_system ? { railingSystem: currentPayload.railing_system } : {}),
+          ...(currentPayload.handrail ? { railingHandrail: currentPayload.handrail } : {}),
+        },
         saveRecord: {
           mode: currentPayload.mode,
           // Mirrors the finish into the legacy column so existing admin

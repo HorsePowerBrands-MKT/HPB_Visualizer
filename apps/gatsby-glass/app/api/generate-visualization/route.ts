@@ -23,6 +23,7 @@ import { createClient } from '../../../lib/supabase/server';
 import { applyWatermark } from '../../../lib/watermark';
 import { loadReferenceImagesFor } from '../../../lib/referenceImages';
 import { buildRailingSystemPrompt, RAILING_EDIT_PREAMBLE } from '../../../lib/railing/promptBuilder';
+import { loadRailingReferenceImagesFor } from '../../../lib/railing/referenceImages';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -134,13 +135,24 @@ export async function POST(request: NextRequest) {
     // NOT switch this back to fs.readFile against public/, because Vercel
     // does not include public/ in serverless function bundles and the
     // request would silently fall back to text-only prompting.
-    const referenceImages = await loadReferenceImagesFor({
-      enclosureType: validatedData.doorType,
-      pivotDirection: validatedData.pivotDirection,
-    });
+    // Railing renders attach real-install photos matched to the selected
+    // system / handrail instead (see lib/railing/referenceImages.ts).
+    const isRailing = validatedData.product === 'railing';
+    const referenceImages = isRailing
+      ? await loadRailingReferenceImagesFor({
+          railingSystem: validatedData.railingSystem,
+          handrail: validatedData.railingHandrail,
+          application: validatedData.railingApplication,
+        })
+      : await loadReferenceImagesFor({
+          enclosureType: validatedData.doorType,
+          pivotDirection: validatedData.pivotDirection,
+        });
     console.log(
-      `[generate-visualization] doorType=${validatedData.doorType ?? 'unknown'}` +
+      `[generate-visualization] product=${validatedData.product ?? 'shower'}` +
+        ` doorType=${validatedData.doorType ?? 'unknown'}` +
         ` pivotDirection=${validatedData.pivotDirection ?? 'n/a'}` +
+        ` railing=${validatedData.railingSystem ?? '-'}/${validatedData.railingHandrail ?? '-'}/${validatedData.railingApplication ?? '-'}` +
         ` referenceImages=${referenceImages.length} (${referenceImages
           .map((r) => r.label)
           .join(', ') || 'none'})`
