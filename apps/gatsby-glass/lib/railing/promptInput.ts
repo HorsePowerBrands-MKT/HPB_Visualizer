@@ -16,6 +16,7 @@ import {
   railingFinishes,
   RAILING_CATALOG_VERSION,
 } from './catalog';
+import { assertRailingSelectionsRenderable } from './rules';
 
 /**
  * True once every consumer selection the current mode needs has been made.
@@ -56,8 +57,14 @@ const select = <T extends string>(
     ? null
     : { id, name: catalog[id].name, prompt_descriptor: catalog[id].promptDescriptor };
 
-/** Resolves catalog ids to the backend-facing descriptors the prompt layer needs. */
+/**
+ * Resolves catalog ids to the backend-facing descriptors the prompt layer
+ * needs. Throws `RailingRuleViolationError` for any selection outside the
+ * approved families (see ./rules.ts), so unsupported railing types are
+ * blocked before prompt assembly.
+ */
 export const buildRailingPromptInput = (payload: RailingPayload): RailingPromptInput => {
+  assertRailingSelectionsRenderable(payload);
   const application = railingApplications[payload.application];
 
   return {

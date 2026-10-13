@@ -43,3 +43,16 @@ export {
   railingPromptVariables,
   RAILING_EDIT_PREAMBLE,
 } from './promptBuilder';
+
+export {
+  APPROVED_RAILING_SYSTEMS,
+  APPROVED_HANDRAILS,
+  APPROVED_FINISHES,
+  SYSTEM_HANDRAIL_COMPATIBILITY,
+  UNSUPPORTED_RAILING_TYPES,
+  validateRailingSelections,
+  assertRailingSelectionsRenderable,
+  RailingRuleViolationError,
+  type RailingRuleIssue,
+  type UnsupportedRailingType,
+} from './rules';
