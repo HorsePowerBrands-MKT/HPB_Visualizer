@@ -62,6 +62,7 @@ export interface RailingValidationResult {
   reason?: string;
   setting?: 'interior' | 'exterior';
   existingCondition?: string;
+  detectedApplication?: string;
   contentFlag?: string;
 }
 

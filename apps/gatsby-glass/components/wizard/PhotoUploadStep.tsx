@@ -23,6 +23,8 @@ interface PhotoUploadStepProps extends SingleUploadProps {
   primaryHint?: string;
   inspirationLabel?: string;
   inspirationHint?: string;
+  /** Rendered after the consent checkboxes (e.g. detected-setting banner). */
+  footer?: React.ReactNode;
   // Second upload props — only used when type === 'both'
   inspirationFile?: File | null;
   inspirationPreviewUrl?: string | null;
@@ -170,6 +172,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   primaryHint,
   inspirationLabel,
   inspirationHint,
+  footer,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
 
@@ -223,6 +226,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           />
         )}
 
+        {footer}
+
         <DisclaimerText openPrivacyPolicy={openPrivacyPolicy} />
       </div>
     );
@@ -273,6 +278,8 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
             onMarketingConsentChange={onMarketingConsentChange}
           />
         )}
+
+        {footer}
 
         <DisclaimerText openPrivacyPolicy={openPrivacyPolicy} />
       </div>

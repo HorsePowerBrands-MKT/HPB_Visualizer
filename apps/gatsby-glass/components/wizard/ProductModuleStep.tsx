@@ -48,7 +48,7 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
         <p className="text-gray-400 text-base md:text-lg">Choose a product to get started</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+      <div className="grid grid-cols-1 gap-4 mt-8 max-w-2xl mx-auto">
         {modules.map(({ value: moduleValue, label, description, Icon, cornerClass, cornerStyle }) => {
           const isSelected = value === moduleValue;
           return (

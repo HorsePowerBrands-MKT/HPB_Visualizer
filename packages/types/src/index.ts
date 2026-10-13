@@ -47,6 +47,7 @@ export type {
   ImageValidationResponse,
   VisualizerProduct,
   RailingExistingCondition,
+  RailingDetectedApplication,
   RailingImageValidationResponse,
   ImageData,
   ReferenceImage,

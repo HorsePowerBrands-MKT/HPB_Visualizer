@@ -24,8 +24,12 @@ export type RailingSetting = 'interior' | 'exterior';
 /** How the glass panels are mounted. */
 export type RailingSystem = 'base_shoe' | 'spigot';
 
-/** Whether a continuous top handrail is included. */
-export type RailingHandrail = 'handrail' | 'no_handrail';
+/**
+ * Handrail treatment. The two rail styles are deliberately explicit because
+ * the model otherwise drifts between a cap rail on the glass edge and a
+ * rail mounted on the glass face.
+ */
+export type RailingHandrail = 'top_mount' | 'side_mount' | 'no_handrail';
 
 /** Metal finish for base shoe, spigots, handrail, clamps and gate hardware. */
 export type RailingFinish = 'matte_black' | 'brushed_stainless' | 'polished_stainless';
@@ -56,6 +60,8 @@ export interface RailingForm {
   existing_condition: RailingExistingCondition | null;
   /** From image validation. Advisory only; the Application selection wins. */
   detected_setting: RailingSetting | null;
+  /** True when the validator identified the application (vs. a setting-based fallback). */
+  application_detected: boolean;
 }
 
 /** A fully completed set of consumer selections. */

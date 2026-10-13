@@ -270,6 +270,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- BASE SHOE (hard system lock): install {{system_descriptor}}.',
             '- Every fixed glass panel sits in ONE continuous low-profile base shoe along the required railing line. If ANY spigots, posts or vertical frames appear in the fixed runs, the render FAILS.',
+            '- SIZE: the base shoe is SLIM and LOW. It reads as a thin channel at the floor line, roughly the height of a baseboard, in the selected finish. Do NOT render it as a tall curb, a raised box, a wide plinth or a thick frame. The glass should dominate; the shoe is a detail.',
           ],
         },
         {
@@ -279,6 +280,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- SPIGOT (hard system lock): install {{system_descriptor}}.',
             '- Spigots read as ONE consistent hardware family, two per panel at even spacing, with open space beneath the glass. If a continuous bottom channel, base shoe, posts or vertical framing appear, the render FAILS.',
+            '- SIZE: spigots are SMALL and compact — short clamps at the very base of the glass, in the selected finish. Do NOT render tall posts, oversized blocks or bulky brackets. The glass should dominate; the spigots are a detail.',
           ],
         },
         {
@@ -308,11 +310,21 @@ export const railingVisualizationTemplate: PromptTemplate = {
       content: ['HANDRAIL:'],
       children: [
         {
-          id: 'B06_handrail',
+          id: 'B06_top_mount',
           type: 'hardware_detail',
-          condition: { variable: 'handrail', operator: 'equals', value: 'handrail' },
+          condition: { variable: 'handrail', operator: 'equals', value: 'top_mount' },
           content: [
-            '- Add {{handrail_descriptor}}. Do NOT substitute a top cap rail for a true handrail.',
+            '- TOP-MOUNTED (hard lock): add {{handrail_descriptor}}.',
+            '- The rail sits ON the top edge of the glass and caps it. Do NOT add any second rail on the glass face, and do NOT leave the glass edge exposed above the rail.',
+          ],
+        },
+        {
+          id: 'B06_side_mount',
+          type: 'hardware_detail',
+          condition: { variable: 'handrail', operator: 'equals', value: 'side_mount' },
+          content: [
+            '- SIDE-MOUNTED (hard lock): add {{handrail_descriptor}}.',
+            '- The rail is on the FACE of the glass on small brackets, slightly below the top edge; the glass edge stays visible above it. Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.',
           ],
         },
         {
@@ -334,7 +346,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the handrail treatment shown in input_2: either a true graspable handrail running along the glass, or a clean open glass edge with no top rail. Do not invent a cap rail unless input_2 clearly shows an approved one.',
+            '- Match the handrail treatment shown in input_2, mapped to exactly one approved treatment: a TOP-MOUNTED cap rail seated on the glass edge, a SIDE-MOUNTED rail on the glass face on small brackets, or NO handrail (clean exposed glass edge). Use one treatment consistently along the whole run.',
           ],
         },
         { id: 'handrail_end', type: 'custom', content: [''] },
@@ -593,6 +605,13 @@ export const railingValidationTemplate: PromptTemplate = {
         "- 'existing_fence': a pool or yard fence / barrier is present around the area",
         "- 'open_edge': a clear open edge, drop-off, or stair with NO barrier at all",
         "- 'none': cannot tell",
+        'detectedApplication — which railing application the photo best fits:',
+        "- 'interior_staircase': an indoor staircase or stair run is the main subject (the guard follows the stair slope)",
+        "- 'interior_balcony': an indoor loft, landing, mezzanine, or balcony edge overlooking a space below (level guard)",
+        "- 'exterior_deck': an outdoor deck, patio, porch, terrace, rooftop, or walkway edge",
+        "- 'pool_balustrade': a swimming pool or spa area where a pool fence / balustrade would go",
+        "- 'unknown': cannot tell",
+        'If the photo shows both an interior stair and a landing / balcony, prefer interior_staircase.',
       ],
     },
     {
@@ -601,7 +620,7 @@ export const railingValidationTemplate: PromptTemplate = {
       content: [
         '',
         'RESPONSE:',
-        'Return JSON with isValid (boolean), reason (string, only if invalid), contentFlag (string), setting (string), and existingCondition (string).',
+        'Return JSON with isValid (boolean), reason (string, only if invalid), contentFlag (string), setting (string), existingCondition (string), and detectedApplication (string).',
         '',
         'When in doubt, ACCEPT the image as valid.',
       ],

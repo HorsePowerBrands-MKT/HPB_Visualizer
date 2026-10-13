@@ -77,7 +77,7 @@ export const railingSystems: Record<RailingSystem, RailingCatalogEntry> = {
     details:
       'A slim channel runs along the floor edge and holds the bottom of each glass panel, so the glass rises straight from the floor with no posts. The cleanest, most seamless look.',
     promptDescriptor:
-      'clear frameless glass seated continuously in a low-profile base shoe along the required railing line; the bottom edge of every fixed glass panel visibly enters the continuous base shoe; no individual spigots, floor-mounted posts, clamps or vertical framing',
+      'clear frameless glass seated continuously in a slim, low-profile base shoe along the required railing line — a shallow aluminum channel only a few inches tall that hugs the floor edge, never a tall curb, box or wide plinth; the bottom edge of every fixed glass panel visibly enters the continuous base shoe; no individual spigots, floor-mounted posts, clamps or vertical framing',
   },
   spigot: {
     name: 'Spigot',
@@ -85,18 +85,26 @@ export const railingSystems: Record<RailingSystem, RailingCatalogEntry> = {
     details:
       'Small individual clamps anchor each panel to the floor, leaving open space beneath the glass. A lighter, more open look that works well on decks and around pools.',
     promptDescriptor:
-      'clear frameless glass supported by individual floor-mounted spigots at consistent, intentional spacing along the fixed glass runs; no continuous bottom channel or base shoe, no posts, no vertical framing',
+      'clear frameless glass supported by individual compact floor-mounted spigots — small, short, unobtrusive clamps at the base of each panel, two per panel at consistent, intentional spacing along the fixed glass runs; no continuous bottom channel or base shoe, no posts, no vertical framing',
   },
 };
 
 export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry> = {
-  handrail: {
-    name: 'Handrail',
-    description: 'Continuous rail along the glass',
+  top_mount: {
+    name: 'Top-Mounted Handrail',
+    description: 'Rail caps the top edge of the glass',
     details:
-      'A continuous rail runs along the glass at hand height. Adds a comfortable grab point and a defined top line.',
+      'A continuous rail sits directly on the top edge of the glass, capping it from end to end. Gives a clean, finished top line and a comfortable grip.',
     promptDescriptor:
-      'a true graspable handrail running along the glass at the appropriate guard height and following the railing geometry, mounted along the glass rather than a cap rail sitting directly on top of the glass',
+      'a continuous top-mounted handrail (cap rail) seated directly on the top edge of the glass and running its full length, following the railing geometry; the rail caps the glass — there is NO separate rail mounted on the face of the glass and NO rail standing off the glass on brackets',
+  },
+  side_mount: {
+    name: 'Side-Mounted Handrail',
+    description: 'Rail mounted along the face of the glass',
+    details:
+      'A continuous rail is mounted on the inside face of the glass on small standoff brackets, just below the top edge. The glass edge stays exposed above it.',
+    promptDescriptor:
+      'a continuous side-mounted handrail fixed to the inside face of the glass on small standoff brackets at hand height, running the full length and following the railing geometry; the polished top edge of the glass remains exposed above the rail — there is NO cap rail on top of the glass',
   },
   no_handrail: {
     name: 'No Handrail',
@@ -148,7 +156,7 @@ export const RAILING_APPLICATION_ORDER: RailingApplication[] = [
   'pool_balustrade',
 ];
 export const RAILING_SYSTEM_ORDER: RailingSystem[] = ['base_shoe', 'spigot'];
-export const RAILING_HANDRAIL_ORDER: RailingHandrail[] = ['handrail', 'no_handrail'];
+export const RAILING_HANDRAIL_ORDER: RailingHandrail[] = ['top_mount', 'side_mount', 'no_handrail'];
 export const RAILING_FINISH_ORDER: RailingFinish[] = [
   'matte_black',
   'brushed_stainless',

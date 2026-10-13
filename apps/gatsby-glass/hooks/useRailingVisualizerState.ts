@@ -6,9 +6,12 @@
  * Mirrors the navigation contract of the shower `useVisualizerState` so the
  * shared ProgressIndicator, PhotoUploadStep and ResultStep drive both flows.
  *
- * Design Your Own (configure):  1 mode → 2 upload → 3 application →
- *                               4 system / handrail / finish (generate) → 5 result
- * Match Inspiration:            1 mode → 2 upload both → 3 application (generate) → 4 result
+ * The Application (stairs / balcony / deck / pool) is detected from the
+ * uploaded photo during validation, so there is no step for it; the
+ * consumer can correct it on the upload step or the result page.
+ *
+ * Design Your Own (configure):  1 mode → 2 upload → 3 system / handrail / finish (generate) → 4 result
+ * Match Inspiration:            1 mode → 2 upload both (generate) → 3 result
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -30,21 +33,19 @@ export const RAILING_STEP_LABELS: Record<RailingMode, readonly string[]> = {
   configure: [
     'Choose Design Method',
     'Upload Your Space Photo',
-    'Choose Application',
     'Railing System, Handrail & Finish',
     'View Your Design',
   ],
   inspiration: [
     'Choose Design Method',
     'Upload Your Photos',
-    'Choose Application',
     'View Your Design',
   ],
 };
 
 export const railingTotalSteps = (mode: RailingMode): number => RAILING_STEP_LABELS[mode].length;
 /** The step whose primary action is "Generate Preview". */
-export const railingGenerateStep = (mode: RailingMode): number => (mode === 'configure' ? 4 : 3);
+export const railingGenerateStep = (mode: RailingMode): number => (mode === 'configure' ? 3 : 2);
 export const railingResultStep = (mode: RailingMode): number => railingTotalSteps(mode);
 
 const createInitialForm = (): RailingForm => ({
@@ -55,6 +56,7 @@ const createInitialForm = (): RailingForm => ({
   finish: null,
   existing_condition: null,
   detected_setting: null,
+  application_detected: false,
 });
 
 export interface RailingVisualizerState {
@@ -162,14 +164,14 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
       case 1:
         return true;
       case 2: {
-        const hasSpacePhoto = imageFile !== null && previewUrl !== null && uploadConsent;
+        // Photo validated + consent + application resolved (auto-detected on
+        // upload). In inspiration mode this is also the generate step.
+        const hasSpacePhoto =
+          imageFile !== null && previewUrl !== null && uploadConsent && form.application !== null;
         if (form.mode === 'configure') return hasSpacePhoto;
         return hasSpacePhoto && inspirationFile !== null && inspirationPreviewUrl !== null;
       }
       case 3:
-        // Application. In inspiration mode this is also the generate step.
-        return form.application !== null;
-      case 4:
         if (form.mode === 'configure') {
           return form.railing_system !== null && form.handrail !== null && form.finish !== null;
         }

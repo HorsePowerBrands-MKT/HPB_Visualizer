@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Building2, Home, Sun, Waves } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type {
   RailingApplication,
   RailingSystem,
@@ -41,10 +41,7 @@ import { ModeSelectionStep } from './wizard/ModeSelectionStep';
 import { PhotoUploadStep } from './wizard/PhotoUploadStep';
 import { ProgressIndicator } from './wizard/ProgressIndicator';
 import { ResultStep, type ResultDescription, type ResultHistoryItem } from './wizard/ResultStep';
-import { RailingOptionStep, type RailingOption } from './wizard/railing/RailingOptionStep';
 import { RailingSystemStep, RailingFinishSwatch } from './wizard/railing/RailingSystemStep';
-
-const APPLICATION_ICON_CLASS = 'w-16 h-16 text-brand-gold';
 
 interface GatsbyRailingVisualizerProps {
   /** Return to the product chooser. */
@@ -172,24 +169,6 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
   const [generationIndex, setGenerationIndex] = useState(0);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
-  // --- Option lists -------------------------------------------------------
-
-  const applicationOptions = useMemo<RailingOption<RailingApplication>[]>(() => {
-    const icons: Record<RailingApplication, React.ReactNode> = {
-      interior_staircase: <Building2 className={APPLICATION_ICON_CLASS} strokeWidth={1.25} />,
-      interior_balcony: <Home className={APPLICATION_ICON_CLASS} strokeWidth={1.25} />,
-      exterior_deck: <Sun className={APPLICATION_ICON_CLASS} strokeWidth={1.25} />,
-      pool_balustrade: <Waves className={APPLICATION_ICON_CLASS} strokeWidth={1.25} />,
-    };
-    return RAILING_APPLICATION_ORDER.map((id) => ({
-      value: id,
-      label: railingApplications[id].name,
-      description: railingApplications[id].description,
-      icon: icons[id],
-      badge: railingApplications[id].setting === 'interior' ? 'Interior' : 'Exterior',
-    }));
-  }, []);
-
   // --- Upload + validation ------------------------------------------------
 
   const handleFileChange = async (
@@ -227,6 +206,17 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
         (result.existingCondition as RailingHistoryItem['payload']['existing_condition']) ?? 'none'
       );
       updateFormField('detected_setting', result.setting ?? null);
+      // The validator also identifies the application (stairs / balcony /
+      // deck / pool) so the consumer never has to answer "where will your
+      // railing go?". Fall back on the detected setting when it can't tell;
+      // the banner under the photo lets them correct it either way.
+      const detected = result.detectedApplication;
+      const isKnown =
+        !!detected && (RAILING_APPLICATION_ORDER as string[]).includes(detected);
+      const fallback: RailingApplication =
+        result.setting === 'interior' ? 'interior_balcony' : 'exterior_deck';
+      updateFormField('application', isKnown ? (detected as RailingApplication) : fallback);
+      updateFormField('application_detected', isKnown);
       // No auto-advance: user must check the upload consent checkbox before proceeding
     } else {
       setInspirationFile(fileForFlow);
@@ -374,7 +364,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
 
     const features: string[] = [`${app.name} application`];
     if (sys) features.push(`${sys.name} mounting system`);
-    if (rail) features.push(rail.name === 'Handrail' ? 'Continuous handrail' : 'Clean open glass edge');
+    if (rail) features.push(form.handrail === 'no_handrail' ? 'Clean open glass edge' : rail.name);
     if (fin) features.push(`${fin.name} hardware`);
     if (form.mode === 'inspiration') features.push('Style matched from your inspiration photo');
 
@@ -436,6 +426,28 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
       />
     </div>
   );
+
+  // Shown under the uploaded photo: what we detected, with a way to change it.
+  const applicationBanner =
+    previewUrl && form.application ? (
+      <div className="mt-4 p-4 bg-brand-gold/10 border border-brand-gold/30 space-y-3 animate-in fade-in">
+        <div className="flex items-start gap-3 text-brand-gold text-sm">
+          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <span>
+            {form.application_detected
+              ? `We detected ${railingApplications[form.application].name.toLowerCase()} in your photo and will place the railing accordingly.`
+              : `We couldn't tell exactly where this railing goes, so we've assumed ${railingApplications[form.application].name.toLowerCase()}.`}{' '}
+            Not right? Pick a different setting below.
+          </span>
+        </div>
+        <PillRow
+          label="Setting"
+          options={RAILING_APPLICATION_ORDER.map((id) => ({ value: id, label: railingApplications[id].name }))}
+          value={form.application}
+          onChange={(v) => updateFormField('application', v as RailingApplication)}
+        />
+      </div>
+    ) : null;
 
   const renderResultStep = () => (
     <ResultStep
@@ -513,6 +525,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
               marketingConsent={marketingConsent}
               onUploadConsentChange={setUploadConsent}
               onMarketingConsentChange={setMarketingConsent}
+              footer={applicationBanner}
             />
           );
         }
@@ -550,22 +563,11 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
             marketingConsent={marketingConsent}
             onUploadConsentChange={setUploadConsent}
             onMarketingConsentChange={setMarketingConsent}
+            footer={applicationBanner}
           />
         );
 
       case 3:
-        return (
-          <RailingOptionStep
-            title="Where Will Your Railing Go?"
-            subtitle="Choose the setting that best matches your project"
-            options={applicationOptions}
-            value={form.application}
-            onSelect={(v) => updateFormField('application', v)}
-            columnsClassName="md:grid-cols-2 lg:grid-cols-4"
-          />
-        );
-
-      case 4:
         if (form.mode === 'configure') {
           return (
             <RailingSystemStep
@@ -580,7 +582,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
         }
         return renderResultStep();
 
-      case 5:
+      case 4:
         return form.mode === 'configure' ? renderResultStep() : null;
 
       default:
