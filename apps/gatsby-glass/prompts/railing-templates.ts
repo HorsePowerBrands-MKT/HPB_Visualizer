@@ -270,7 +270,12 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- BASE SHOE (hard system lock): install {{system_descriptor}}.',
             '- Every fixed glass panel sits in ONE continuous low-profile base shoe along the required railing line. If ANY spigots, posts or vertical frames appear in the fixed runs, the render FAILS.',
-            '- SIZE: the base shoe is SLIM and LOW. It reads as a thin channel at the floor line, roughly the height of a baseboard, in the selected finish. Do NOT render it as a tall curb, a raised box, a wide plinth or a thick frame. The glass should dominate; the shoe is a detail.',
+            '- MOUNTING PROPORTIONS (critical — the most common error is a shoe that is far too tall):',
+            '  • HEIGHT: about 2 to 2.5 inches above the finished floor — the height of a baseboard or a hand held sideways. Never more than 3 inches. Against a 42-inch glass panel the shoe is under one-fifteenth of the total height. If the shoe looks taller than a hand is wide, it is WRONG — make it thinner.',
+            '  • WIDTH: about 2.5 inches, barely wider than the glass. From above it is a narrow strip; from the side it is a thin dark band. It is NOT a curb, a step, a ledge, a planter, a bench or a box — nothing you could stand on or set a cup on.',
+            '  • FORM: one straight, crisp rectangular extrusion with flat faces, continuous and uniform along the whole run, in the selected finish; flat top face with the glass entering a narrow slot in the center; no visible bolts, no segment gaps, no end caps sticking up, no trim or cladding bulk.',
+            '  • PLACEMENT: sits directly ON the finished floor / deck surface at the edge, tight to the edge. On a stair it runs as a continuous raked channel parallel to the stair pitch along the nosing line. Do not sink it into the floor and do not raise it on a curb.',
+            '  • The glass dominates the view; the shoe is a thin line of hardware at the bottom.',
           ],
         },
         {
@@ -280,7 +285,11 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- SPIGOT (hard system lock): install {{system_descriptor}}.',
             '- Spigots read as ONE consistent hardware family, two per panel at even spacing, with open space beneath the glass. If a continuous bottom channel, base shoe, posts or vertical framing appear, the render FAILS.',
-            '- SIZE: spigots are SMALL and compact — short clamps at the very base of the glass, in the selected finish. Do NOT render tall posts, oversized blocks or bulky brackets. The glass should dominate; the spigots are a detail.',
+            '- MOUNTING PROPORTIONS (critical — the most common error is spigots that are far too tall or too bulky):',
+            '  • Each spigot is a small clamp about 5 inches tall and about 2 inches wide — no taller than a coffee mug, a fraction of the 42-inch glass height. If a spigot looks like a post or a block, it is WRONG — make it smaller.',
+            '  • Two per panel, set in about 8 to 10 inches from each panel edge, evenly repeated along the run; the glass bottom edge floats about 3 to 4 inches above the floor with clear open space beneath between spigots.',
+            '  • Each spigot is a simple rounded or square clamp in the selected finish, bolted flat to the floor / deck surface, gripping only the bottom edge of the glass. No base plates larger than a hand, no vertical posts, no continuous channel.',
+            '  • The glass dominates the view; the spigots are small, repeated details at the floor line.',
           ],
         },
         {
@@ -316,6 +325,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- TOP-MOUNTED (hard lock): add {{handrail_descriptor}}.',
             '- The rail sits ON the top edge of the glass and caps it. Do NOT add any second rail on the glass face, and do NOT leave the glass edge exposed above the rail.',
+            '- PROPORTIONS: a thin square channel about 1 inch tall and 1 inch wide — about finger-thick — hugging the glass edge, continuous and mitered at corners. Not a round tube, not a thick wooden or boxy rail. If the cap looks thicker than two fingers, it is WRONG — make it thinner.',
           ],
         },
         {
@@ -325,6 +335,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- SIDE-MOUNTED (hard lock): add {{handrail_descriptor}}.',
             '- The rail is on the FACE of the glass on small brackets, slightly below the top edge; the glass edge stays visible above it. Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.',
+            '- PROPORTIONS: a slim bar about 1.5 inches thick held about 2 inches off the glass by small round standoff pins spaced every few feet, mounted about 3 to 4 inches below the top edge of the glass. Not a thick tube, not a wide flat board, no large brackets.',
           ],
         },
         {
@@ -453,11 +464,11 @@ export const railingVisualizationTemplate: PromptTemplate = {
       content: [
         'REAL GATSBY GLASS INSTALL LOOK (modeled on actual Gatsby Glass installs):',
         '- Glass: tall full-height guard panels (about 42 in / 1.07 m above the walking surface), clear low-iron look with only a faint green edge, polished exposed edges, WIDE panels with as few vertical joints as the run allows (narrow gaps between panels, no frames, no tint, no visible clips on the glass face).',
-        '- Base shoe: a slim continuous channel flush at the floor edge, a few inches tall, in the selected finish, no visible fasteners.',
-        '- Spigots: small, compact, two per panel at the very base, in the selected finish.',
-        '- Cap rail: a thin square-profile channel hugging the glass edge; never a round tube.',
-        '- Side rail: a slim bar on small standoff pins, a few inches below the glass edge.',
-        '- The glass dominates the view; all hardware reads as fine detail.',
+        '- Base shoe: a thin dark band at the floor line, about 2 to 2.5 inches tall and 2.5 inches wide, sitting on the floor; under one-fifteenth of the glass height; no visible fasteners.',
+        '- Spigots: small clamps about 5 inches tall, two per panel at the very base, glass floating 3 to 4 inches above the floor.',
+        '- Cap rail: a thin square channel about 1 inch tall hugging the glass edge; never a round tube.',
+        '- Side rail: a slim 1.5-inch bar on small standoff pins about 2 inches off the glass, 3 to 4 inches below the glass edge.',
+        '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in; shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
         'NOT APPROVED (never render these, even if they appear in an inspiration photo):',
         '- vertical posts between panels, stainless or black posts with glass clamps, round tube top rails on posts',
@@ -476,6 +487,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment and ONE finish on all hardware?',
         '4. For pools: is there an obvious operable gate with no fixed support beneath it, and is the water unobstructed?',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
+        '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
       ],
     },
   ],
