@@ -451,7 +451,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
       id: 'guardrails',
       type: 'instructions',
       content: [
-        'REAL GATSBY GLASS INSTALL LOOK (match the attached reference photos when present):',
+        'REAL GATSBY GLASS INSTALL LOOK (modeled on actual Gatsby Glass installs):',
         '- Glass: tall full-height guard panels (about 42 in / 1.07 m above the walking surface), clear low-iron look with only a faint green edge, polished exposed edges, WIDE panels with as few vertical joints as the run allows (narrow gaps between panels, no frames, no tint, no visible clips on the glass face).',
         '- Base shoe: a slim continuous channel flush at the floor edge, a few inches tall, in the selected finish, no visible fasteners.',
         '- Spigots: small, compact, two per panel at the very base, in the selected finish.',
