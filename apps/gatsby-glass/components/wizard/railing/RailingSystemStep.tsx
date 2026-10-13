@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Columns3, Anchor, Grip, Minus } from 'lucide-react';
+import { Columns3, Anchor, PanelTop, Grip, Minus } from 'lucide-react';
 import type { RailingSystem, RailingHandrail, RailingFinish } from '../../../lib/railing';
 import {
   railingSystems,
@@ -52,7 +52,9 @@ export const railingHandrailSelectOptions: RichSelectOption[] = RAILING_HANDRAIL
   label: railingHandrailOptions[id].name,
   icon: (
     <IconBox>
-      {id === 'handrail' ? (
+      {id === 'top_mount' ? (
+        <PanelTop className={ICON} strokeWidth={1} />
+      ) : id === 'side_mount' ? (
         <Grip className={ICON} strokeWidth={1} />
       ) : (
         <Minus className={ICON} strokeWidth={1} />

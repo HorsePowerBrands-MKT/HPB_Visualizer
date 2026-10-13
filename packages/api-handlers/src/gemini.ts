@@ -486,8 +486,12 @@ export async function validateRailingImage(
             type: Type.STRING,
             enum: ['existing_railing', 'open_edge', 'half_wall', 'existing_fence', 'none'],
           },
+          detectedApplication: {
+            type: Type.STRING,
+            enum: ['interior_staircase', 'interior_balcony', 'exterior_deck', 'pool_balustrade', 'unknown'],
+          },
         },
-        required: ['isValid', 'contentFlag', 'setting', 'existingCondition'],
+        required: ['isValid', 'contentFlag', 'setting', 'existingCondition', 'detectedApplication'],
       },
     },
   });
@@ -501,6 +505,7 @@ export async function validateRailingImage(
       reason: 'Could not analyze image.',
       setting: 'exterior',
       existingCondition: 'none',
+      detectedApplication: 'unknown',
     };
   }
 
@@ -521,6 +526,7 @@ export async function validateRailingImage(
     reason,
     setting: result.setting === 'interior' ? 'interior' : 'exterior',
     existingCondition: result.existingCondition || 'none',
+    detectedApplication: result.detectedApplication || 'unknown',
     contentFlag,
   };
 }

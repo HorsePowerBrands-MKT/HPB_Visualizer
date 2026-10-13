@@ -20,12 +20,22 @@ export type RailingExistingCondition =
   | 'existing_fence'
   | 'none';
 
+/** Which railing application the validator believes the photo shows. */
+export type RailingDetectedApplication =
+  | 'interior_staircase'
+  | 'interior_balcony'
+  | 'exterior_deck'
+  | 'pool_balustrade'
+  | 'unknown';
+
 // Railing image validation response
 export interface RailingImageValidationResponse {
   valid: boolean;
   reason?: string;
   setting: 'interior' | 'exterior';
   existingCondition: RailingExistingCondition;
+  /** Auto-detected so the consumer never has to pick where the railing goes. */
+  detectedApplication: RailingDetectedApplication;
   contentFlag?: 'safe' | 'pii' | 'inappropriate';
 }
 
