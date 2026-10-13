@@ -96,7 +96,7 @@ export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry
     details:
       'A continuous rail sits directly on the top edge of the glass, capping it from end to end. Gives a clean, finished top line and a comfortable grip.',
     promptDescriptor:
-      'a continuous top-mounted handrail (cap rail) seated directly on the top edge of the glass and running its full length, following the railing geometry; the rail caps the glass — there is NO separate rail mounted on the face of the glass and NO rail standing off the glass on brackets',
+      'a continuous top-mounted cap rail: a thin, square-profile channel (about finger-thick, low-profile) seated directly on the top edge of the glass and running its full length, mitered at corners, following the railing geometry; it is NOT a round tube grab bar, there is NO separate rail on the face of the glass and NO rail standing off the glass on brackets',
   },
   side_mount: {
     name: 'Side-Mounted Handrail',
@@ -104,7 +104,7 @@ export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry
     details:
       'A continuous rail is mounted on the inside face of the glass on small standoff brackets, just below the top edge. The glass edge stays exposed above it.',
     promptDescriptor:
-      'a continuous side-mounted handrail fixed to the inside face of the glass on small standoff brackets at hand height, running the full length and following the railing geometry; the polished top edge of the glass remains exposed above the rail — there is NO cap rail on top of the glass',
+      'a continuous side-mounted handrail: a slim rectangular or round bar held a couple of inches off the inside face of the glass on small standoff pins, mounted a few inches below the top edge at hand height, running the full length and following the railing geometry; the polished top edge of the glass remains exposed above the rail — there is NO cap rail on top of the glass',
   },
   no_handrail: {
     name: 'No Handrail',

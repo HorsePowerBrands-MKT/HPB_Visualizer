@@ -55,6 +55,12 @@ export const VisualizationRequestSchema = z.object({
   prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
   // Selects the server-side system prompt + edit preamble. Absent = shower.
   product: VisualizerProductSchema.optional(),
+  // Railing selections, used only to pick reference photos server-side.
+  railingSystem: z.enum(['base_shoe', 'spigot']).optional(),
+  railingHandrail: z.enum(['top_mount', 'side_mount', 'no_handrail']).optional(),
+  railingApplication: z
+    .enum(['interior_staircase', 'interior_balcony', 'exterior_deck', 'pool_balustrade'])
+    .optional(),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
   pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
