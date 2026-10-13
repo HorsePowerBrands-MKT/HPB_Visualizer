@@ -18,6 +18,16 @@
  */
 
 import type { PromptTemplate } from '@repo/prompt-templates';
+import {
+  SYSTEM_RULES,
+  HANDRAIL_RULES,
+  FINISH_RULES,
+  POOL_GATE_RULES,
+  POOL_GATE_GENERIC_SUPPORT,
+  EXISTING_RAILING_REPLACEMENT_RULES,
+  INSPIRATION_RULES,
+  UNSUPPORTED_TYPE_RULES,
+} from '../lib/railing/rules';
 
 export const RAILING_VISUALIZATION_TEMPLATE_ID = 'railing-visualization-v1';
 export const RAILING_SYSTEM_TEMPLATE_ID = 'railing-system-v1';
@@ -123,9 +133,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           id: 'B09_existing_railing',
           type: 'instructions',
           condition: { variable: 'existing_condition', operator: 'equals', value: 'existing_railing' },
-          content: [
-            '- An existing railing / guard is visible. REMOVE only the existing railing system and replace it along the SAME railing location, stair slope, landing geometry, balcony edge or deck perimeter. Preserve the supporting architecture. Do not extend the new railing onto adjacent walls or surfaces.',
-          ],
+          content: [...EXISTING_RAILING_REPLACEMENT_RULES],
         },
         {
           id: 'B10_open_edge',
@@ -256,7 +264,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
     },
 
     // -----------------------------------------------------------------
-    // System — B04 / B05 (or from inspiration)
+    // System — B04 / B05 (or from inspiration). Text from lib/railing/rules.ts
     // -----------------------------------------------------------------
     {
       id: 'system',
@@ -269,13 +277,9 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'railing_system', operator: 'equals', value: 'base_shoe' },
           content: [
             '- BASE SHOE (hard system lock): install {{system_descriptor}}.',
-            '- Every fixed glass panel sits in ONE continuous low-profile base shoe along the required railing line. If ANY spigots, posts or vertical frames appear in the fixed runs, the render FAILS.',
-            '- MOUNTING PROPORTIONS (critical — the most common error is a shoe that is far too tall):',
-            '  • HEIGHT: about 2 to 2.5 inches above the finished floor — the height of a baseboard or a hand held sideways. Never more than 3 inches. Against a 42-inch glass panel the shoe is under one-fifteenth of the total height. If the shoe looks taller than a hand is wide, it is WRONG — make it thinner.',
-            '  • WIDTH: about 2.5 inches, barely wider than the glass. From above it is a narrow strip; from the side it is a thin dark band. It is NOT a curb, a step, a ledge, a planter, a bench or a box — nothing you could stand on or set a cup on.',
-            '  • FORM: one straight, crisp rectangular extrusion with flat faces, continuous and uniform along the whole run, in the selected finish; flat top face with the glass entering a narrow slot in the center; no visible bolts, no segment gaps, no end caps sticking up, no trim or cladding bulk.',
-            '  • PLACEMENT: sits directly ON the finished floor / deck surface at the edge, tight to the edge. On a stair it runs as a continuous raked channel parallel to the stair pitch along the nosing line. Do not sink it into the floor and do not raise it on a curb.',
-            '  • The glass dominates the view; the shoe is a thin line of hardware at the bottom.',
+            ...SYSTEM_RULES.base_shoe.must,
+            ...SYSTEM_RULES.base_shoe.forbidden,
+            ...SYSTEM_RULES.base_shoe.proportions,
           ],
         },
         {
@@ -284,12 +288,9 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'railing_system', operator: 'equals', value: 'spigot' },
           content: [
             '- SPIGOT (hard system lock): install {{system_descriptor}}.',
-            '- Spigots read as ONE consistent hardware family, two per panel at even spacing, with open space beneath the glass. If a continuous bottom channel, base shoe, posts or vertical framing appear, the render FAILS.',
-            '- MOUNTING PROPORTIONS (critical — the most common error is spigots that are far too tall or too bulky):',
-            '  • Each spigot is a small clamp about 5 inches tall and about 2 inches wide — no taller than a coffee mug, a fraction of the 42-inch glass height. If a spigot looks like a post or a block, it is WRONG — make it smaller.',
-            '  • Two per panel, set in about 8 to 10 inches from each panel edge, evenly repeated along the run; the glass bottom edge floats about 3 to 4 inches above the floor with clear open space beneath between spigots.',
-            '  • Each spigot is a simple rounded or square clamp in the selected finish, bolted flat to the floor / deck surface, gripping only the bottom edge of the glass. No base plates larger than a hand, no vertical posts, no continuous channel.',
-            '  • The glass dominates the view; the spigots are small, repeated details at the floor line.',
+            ...SYSTEM_RULES.spigot.must,
+            ...SYSTEM_RULES.spigot.forbidden,
+            ...SYSTEM_RULES.spigot.proportions,
           ],
         },
         {
@@ -304,6 +305,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           },
           content: [
             '- Use the railing system shown in input_2, mapped to the nearest approved Gatsby Glass system: a continuous BASE SHOE channel, or individual SPIGOT clamps. Use exactly one system consistently for every fixed panel. Do not mix systems.',
+            '- Whichever system you choose, obey its proportions: a base shoe is a thin band about 2 inches tall sitting on the floor; spigots are small clamps about 5 inches tall, two per panel.',
           ],
         },
         { id: 'system_end', type: 'custom', content: [''] },
@@ -311,7 +313,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
     },
 
     // -----------------------------------------------------------------
-    // Handrail — B06 / B07 (or from inspiration)
+    // Handrail — B06 / B07 (or from inspiration). Text from lib/railing/rules.ts
     // -----------------------------------------------------------------
     {
       id: 'handrail',
@@ -324,8 +326,9 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'handrail', operator: 'equals', value: 'top_mount' },
           content: [
             '- TOP-MOUNTED (hard lock): add {{handrail_descriptor}}.',
-            '- The rail sits ON the top edge of the glass and caps it. Do NOT add any second rail on the glass face, and do NOT leave the glass edge exposed above the rail.',
-            '- PROPORTIONS: a thin square channel about 1 inch tall and 1 inch wide — about finger-thick — hugging the glass edge, continuous and mitered at corners. Not a round tube, not a thick wooden or boxy rail. If the cap looks thicker than two fingers, it is WRONG — make it thinner.',
+            ...HANDRAIL_RULES.top_mount.must,
+            ...HANDRAIL_RULES.top_mount.forbidden,
+            ...HANDRAIL_RULES.top_mount.proportions,
           ],
         },
         {
@@ -334,8 +337,9 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'handrail', operator: 'equals', value: 'side_mount' },
           content: [
             '- SIDE-MOUNTED (hard lock): add {{handrail_descriptor}}.',
-            '- The rail is on the FACE of the glass on small brackets, slightly below the top edge; the glass edge stays visible above it. Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.',
-            '- PROPORTIONS: a slim bar about 1.5 inches thick held about 2 inches off the glass by small round standoff pins spaced every few feet, mounted about 3 to 4 inches below the top edge of the glass. Not a thick tube, not a wide flat board, no large brackets.',
+            ...HANDRAIL_RULES.side_mount.must,
+            ...HANDRAIL_RULES.side_mount.forbidden,
+            ...HANDRAIL_RULES.side_mount.proportions,
           ],
         },
         {
@@ -343,7 +347,9 @@ export const railingVisualizationTemplate: PromptTemplate = {
           type: 'hardware_detail',
           condition: { variable: 'handrail', operator: 'equals', value: 'no_handrail' },
           content: [
-            '- HARD NEGATIVE: {{handrail_descriptor}}.',
+            '- NO HANDRAIL (hard lock): {{handrail_descriptor}}.',
+            ...HANDRAIL_RULES.no_handrail.must,
+            ...HANDRAIL_RULES.no_handrail.forbidden,
           ],
         },
         {
@@ -365,7 +371,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
     },
 
     // -----------------------------------------------------------------
-    // Finish — B08 (or from inspiration)
+    // Finish — B08 (or from inspiration). Text from lib/railing/rules.ts
     // -----------------------------------------------------------------
     {
       id: 'finish',
@@ -376,9 +382,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           id: 'B08_finish',
           type: 'hardware_detail',
           condition: { variable: 'finish', operator: 'exists' },
-          content: [
-            '- Apply {{finish_descriptor}} consistently to ALL visible railing hardware: base shoe or spigots, handrail, clamps, connectors and gate hardware. One finish only. This explicit selection overrides any finish shown in an inspiration image.',
-          ],
+          content: ['- Selected finish: {{finish_descriptor}}.', ...FINISH_RULES],
         },
         {
           id: 'finish_from_inspiration',
@@ -391,7 +395,8 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the hardware finish shown in input_2 (matte black, brushed stainless, or polished stainless) and apply it consistently to ALL visible railing hardware. One finish only.',
+            '- Match the hardware finish shown in input_2 (matte black, brushed stainless, or polished stainless).',
+            ...FINISH_RULES,
           ],
         },
         { id: 'finish_end', type: 'custom', content: [''] },
@@ -399,64 +404,48 @@ export const railingVisualizationTemplate: PromptTemplate = {
     },
 
     // -----------------------------------------------------------------
-    // Pool gate — B16 / B17 / B18 (pool only)
+    // Pool gate — B16 / B17 / B18 (pool only). Text from lib/railing/rules.ts
     // -----------------------------------------------------------------
     {
       id: 'pool_gate',
       type: 'instructions',
       condition: { variable: 'application', operator: 'equals', value: 'pool_balustrade' },
-      content: [
-        'POOL GATE (mandatory for every pool render):',
-        '- Include at least one clearly identifiable, functional access gate at a logical pedestrian approach to the pool area. Use appropriate hinges and latch hardware in the selected finish. The gate must read visually as operable and distinct from the fixed glass panels.',
-      ],
+      content: ['POOL GATE (mandatory for every pool render):', ...POOL_GATE_RULES],
       children: [
         {
           id: 'B17_gate_base_shoe',
           type: 'instructions',
           condition: { variable: 'railing_system', operator: 'equals', value: 'base_shoe' },
-          content: [
-            '- Run the continuous base shoe ONLY beneath fixed glass panels. Interrupt the base shoe at the operable gate opening. Do not place a base shoe, spigot or other fixed support directly beneath the gate panel.',
-          ],
+          content: [...SYSTEM_RULES.base_shoe.poolGate],
         },
         {
           id: 'B18_gate_spigot',
           type: 'instructions',
           condition: { variable: 'railing_system', operator: 'equals', value: 'spigot' },
-          content: [
-            '- Use spigots ONLY beneath fixed glass panels. Do not place a spigot directly beneath the operable gate panel. Use gate-specific hinge / latch hardware at the gate.',
-          ],
+          content: [...SYSTEM_RULES.spigot.poolGate],
         },
         {
           id: 'gate_generic_support',
           type: 'instructions',
           condition: { variable: 'railing_system', operator: 'not_exists' },
-          content: [
-            '- Never place a base shoe, spigot or other fixed support directly beneath the gate panel; the gate hangs on gate-specific hinges with a latch.',
-          ],
+          content: [...POOL_GATE_GENERIC_SUPPORT],
         },
         { id: 'pool_gate_end', type: 'custom', content: [''] },
       ],
     },
 
     // -----------------------------------------------------------------
-    // Inspiration rules — B20 / B21 / B22
+    // Inspiration rules — B20 / B21 / B22 + unsupported-type mapping
     // -----------------------------------------------------------------
     {
       id: 'inspiration_rules',
       type: 'instructions',
       condition: { variable: 'mode', operator: 'equals', value: 'inspiration' },
-      content: [
-        'INSPIRATION RULES (B20–B22):',
-        '- input_2 controls STYLE only: railing system appearance, glass configuration, handrail treatment, hardware style, and gate treatment where applicable.',
-        '- input_1 controls SPACE and GEOMETRY. Do NOT copy the railing path, dimensions, background, landscaping or architecture from input_2. Determine railing placement from input_1 and the placement rules above.',
-        '- Precedence: explicit consumer selection > inspiration image > backend defaults. Any selection listed in the RAILING_SPECIFICATION overrides what input_2 shows.',
-        '- If input_2 shows a non-approved system (cable rail, picket rail, framed posts, wood), map it to the nearest approved Gatsby Glass configuration instead of copying it.',
-        '',
-      ],
+      content: ['INSPIRATION RULES (B20–B22):', ...INSPIRATION_RULES, ''],
     },
 
     // -----------------------------------------------------------------
-    // Guardrails — B26 / B27 / B29 + self-check
+    // Guardrails — real-install look, B26 / B27 / B29 + self-check
     // -----------------------------------------------------------------
     {
       id: 'guardrails',
@@ -470,15 +459,12 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '- Side rail: a slim 1.5-inch bar on small standoff pins about 2 inches off the glass, 3 to 4 inches below the glass edge.',
         '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in; shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
-        'NOT APPROVED (never render these, even if they appear in an inspiration photo):',
-        '- vertical posts between panels, stainless or black posts with glass clamps, round tube top rails on posts',
-        '- horizontal bar / cable / picket rails, framed panels, wood rails',
+        ...UNSUPPORTED_TYPE_RULES,
         '',
         'RENDER QUALITY (B26 / B27):',
         '- Keep glass panels, joints, spigots, clamps and base-shoe runs visually consistent, evenly organized and realistic for the available geometry. Avoid random support spacing, unnecessary panel breaks or mixed hardware systems.',
-        '- Restrict visuals to Gatsby Glass approved system families: Base Shoe or Spigot, with the approved handrail treatment and selected finish. Never invent cable rail, picket rail, framed-post systems, wood rail or any unrelated railing type.',
         '- Glass must be clearly VISIBLE: render edge highlights, subtle reflections and the hardware in the selected finish. A render where the glass cannot be seen is a FAILED render.',
-        '- Match input_1\'s lighting direction, color temperature, shadows, perspective and lens. The result must look like a professional installation photo of the SAME space.',
+        "- Match input_1's lighting direction, color temperature, shadows, perspective and lens. The result must look like a professional installation photo of the SAME space.",
         '- This is a design visualization, not an engineered or code-approved drawing. Keep heights and spacing plausible and code-conscious; exact engineering is confirmed later by the local Gatsby Glass team.',
         '',
         'SELF-CHECK BEFORE OUTPUT:',
@@ -488,6 +474,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '4. For pools: is there an obvious operable gate with no fixed support beneath it, and is the water unobstructed?',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
         '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
+        '7. Does the render contain any NOT APPROVED element (posts, clamps on posts, cable, pickets, bars, wood, framed glass)? If yes, redo.',
       ],
     },
   ],

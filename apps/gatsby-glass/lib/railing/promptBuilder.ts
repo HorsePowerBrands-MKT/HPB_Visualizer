@@ -13,7 +13,8 @@
 // template lookup. Idempotent.
 import '../registerTemplates';
 import { getTemplateById, processTemplate, cachePrompt } from '@repo/prompt-templates';
-import type { RailingPromptInput } from './types';
+import type { RailingPromptInput, RailingPayload } from './types';
+import { assertRailingSelectionsRenderable } from './rules';
 import {
   RAILING_VISUALIZATION_TEMPLATE_ID,
   RAILING_SYSTEM_TEMPLATE_ID,
@@ -45,8 +46,13 @@ export function railingPromptVariables(input: RailingPromptInput): Record<string
   };
 }
 
-/** The consumer-facing generation prompt (hidden from the consumer). */
+/**
+ * The consumer-facing generation prompt (hidden from the consumer).
+ * Throws `RailingRuleViolationError` if the selections fall outside the
+ * approved families, so unsupported railing types never reach the model.
+ */
 export function buildRailingPrompt(input: RailingPromptInput): string {
+  assertRailingSelectionsRenderable(payloadFromInput(input));
   const variables = railingPromptVariables(input);
   const result = processTemplate(getTemplateById(RAILING_VISUALIZATION_TEMPLATE_ID), variables);
   cachePrompt(result, variables);
@@ -68,6 +74,21 @@ export function getRailingValidationPrompt(): string {
  * "edit this photo, install the railing" before it sees any image. Mirrors
  * the shower preamble in `@repo/api-handlers/gemini`.
  */
+/** Re-derives the id-level payload the rules validate from a resolved prompt input. */
+function payloadFromInput(input: RailingPromptInput): RailingPayload {
+  return {
+    product: 'railing',
+    mode: input.mode,
+    application: input.application.id,
+    railing_system: input.railing_system?.id ?? null,
+    handrail: input.handrail?.id ?? null,
+    finish: input.finish?.id ?? null,
+    existing_condition: input.existing_condition,
+    session_id: input.session_id,
+    catalog_version: input.catalog_version,
+  };
+}
+
 export const RAILING_EDIT_PREAMBLE = [
   'EDIT TASK — READ THIS BEFORE LOOKING AT ANY IMAGE.',
   '',
