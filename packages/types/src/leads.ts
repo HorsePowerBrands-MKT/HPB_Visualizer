@@ -8,6 +8,22 @@ export interface ContactFormData {
   zipCode: string;
 }
 
+/**
+ * Product-specific selections stored on a lead for non-shower product lines.
+ * Mirrors the shape of `visualizations.product_config` so the lead row and the
+ * generation rows agree. All keys optional: inspiration-mode railing leads may
+ * leave system/handrail/finish null.
+ */
+export interface LeadProductConfig {
+  mode?: 'configure' | 'inspiration' | null;
+  application?: string | null;
+  railing_system?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+  existing_condition?: string | null;
+  catalog_version?: string | null;
+}
+
 // Lead submission data
 export interface Lead extends ContactFormData {
   visualizationImage?: string;
@@ -38,6 +54,8 @@ export interface Lead extends ContactFormData {
   product?: 'shower' | 'railing';
   /** Human-readable selections for non-shower products (used in emails). */
   productSummary?: string;
+  /** Structured selections for non-shower products (stored as product_config). */
+  productConfig?: LeadProductConfig | null;
 }
 
 // A single visualization image collected for a session/user, with the

@@ -20,6 +20,7 @@ import {
   RAILING_SYSTEM_ORDER,
   RAILING_HANDRAIL_ORDER,
   RAILING_FINISH_ORDER,
+  RAILING_CATALOG_VERSION,
   buildRailingPrompt,
   formatRailingSummary,
 } from '../lib/railing';
@@ -96,6 +97,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
     previewUrl,
     inspirationPreviewUrl,
     resultUrl,
+    resultStorageUrl,
     history,
     loading,
     validating,
@@ -114,6 +116,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
     setPreviewUrl,
     setInspirationPreviewUrl,
     setResultUrl,
+    setResultStorageUrl,
     addHistoryItem,
     selectHistoryItem,
     setLoading,
@@ -198,6 +201,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
       setImageFile(fileForFlow);
       setPreviewUrl(URL.createObjectURL(fileForFlow));
       setResultUrl(null);
+      setResultStorageUrl(null);
       setShowResult(false);
       // Hidden image interpretation that feeds the backend placement rules.
       // Never shown to the consumer; the Application selection still wins.
@@ -292,6 +296,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
             id: uuidv4(),
             timestamp: Date.now(),
             imageUrl: outcome.image,
+            storageUrl: outcome.watermarkedUrl,
             label: createHistoryLabel(currentPayload),
             payload: currentPayload,
           };
@@ -300,6 +305,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
           if (typeof outcome.limit === 'number' && isCandidateUser) setUsageLimit(outcome.limit);
           setGenerationIndex(nextGenIndex);
           setResultUrl(outcome.image);
+          setResultStorageUrl(outcome.watermarkedUrl);
           addHistoryItem(newHistoryItem);
           setShowResult(true);
 
@@ -345,6 +351,7 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
     setError,
     setShowResult,
     setResultUrl,
+    setResultStorageUrl,
     addHistoryItem,
     createHistoryLabel,
     setUsageCount,
@@ -595,9 +602,21 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
     currentStep === railingGenerateStep(form.mode) && canGenerate && !leadPopupOpen;
   const isResultStep = currentStep === railingResultStep(form.mode);
 
+  // Lead payload for the contact form / popup. `productConfig` mirrors the
+  // product_config saved with each generation so the lead row and the
+  // visualization rows agree.
   const leadConfigs = {
     product: 'railing' as const,
     productSummary: formatRailingSummary(form),
+    productConfig: {
+      mode: form.mode,
+      application: form.application,
+      railing_system: form.railing_system,
+      handrail: form.handrail,
+      finish: form.finish,
+      existing_condition: form.existing_condition,
+      catalog_version: RAILING_CATALOG_VERSION,
+    },
     mode: form.mode,
     session_id: sessionId,
   };
@@ -665,7 +684,9 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
                   configs: pastItemToLeadConfigs(pastVizModalItem),
                 }
               : {
-                  resultUrl: resultUrl || '',
+                  // Prefer the storage URL so the server can match the hero
+                  // against the saved history (the data URL never matches).
+                  resultUrl: resultStorageUrl || resultUrl || '',
                   uploadedImage: previewUrl || '',
                   configs: leadConfigs,
                 }
@@ -677,6 +698,10 @@ export const GatsbyRailingVisualizer: React.FC<GatsbyRailingVisualizerProps> = (
 
       <LeadCapturePopup
         isOpen={leadPopupOpen}
+        defaultProduct="railing"
+        productSummary={leadConfigs.productSummary}
+        productConfig={leadConfigs.productConfig}
+        sessionId={sessionId}
         userFingerprint={userFingerprint ?? undefined}
         onSubmitted={() => {
           setLeadPopupOpen(false);

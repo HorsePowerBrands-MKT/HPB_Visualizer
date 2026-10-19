@@ -26,6 +26,7 @@ export type {
 export type {
   ContactFormData,
   Lead,
+  LeadProductConfig,
   LeadSubmissionResponse,
   VisualizationHistoryItem,
   GenerationRecord,

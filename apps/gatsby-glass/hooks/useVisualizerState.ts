@@ -66,6 +66,8 @@ export interface VisualizerState {
   previewUrl: string | null;
   inspirationPreviewUrl: string | null;
   resultUrl: string | null;
+  /** Storage URL of the image currently shown (see HistoryItem.storageUrl). */
+  resultStorageUrl: string | null;
   history: HistoryItem[];
   loading: boolean;
   validating: 'target' | 'inspiration' | null;
@@ -89,6 +91,7 @@ export interface VisualizerActions {
   setPreviewUrl: (url: string | null) => void;
   setInspirationPreviewUrl: (url: string | null) => void;
   setResultUrl: (url: string | null) => void;
+  setResultStorageUrl: (url: string | null) => void;
   addHistoryItem: (item: HistoryItem) => void;
   selectHistoryItem: (item: HistoryItem, restoreConfig?: boolean) => void;
   setLoading: (loading: boolean) => void;
@@ -114,6 +117,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [inspirationPreviewUrl, setInspirationPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [resultStorageUrl, setResultStorageUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [validating, setValidating] = useState<'target' | 'inspiration' | null>(null);
@@ -160,6 +164,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
 
   const selectHistoryItem = useCallback((item: HistoryItem, restoreConfig: boolean = false) => {
     setResultUrl(item.imageUrl);
+    setResultStorageUrl(item.storageUrl ?? null);
     setShowResult(true);
     if (restoreConfig) {
       setForm(item.payload);
@@ -233,6 +238,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     setPreviewUrl(null);
     setInspirationPreviewUrl(null);
     setResultUrl(null);
+    setResultStorageUrl(null);
     setHistory([]);
     setLoading(false);
     setError(null);
@@ -249,6 +255,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     previewUrl,
     inspirationPreviewUrl,
     resultUrl,
+    resultStorageUrl,
     history,
     loading,
     validating,
@@ -265,6 +272,7 @@ export function useVisualizerState(config?: VisualizerConfig): VisualizerState &
     setPreviewUrl,
     setInspirationPreviewUrl,
     setResultUrl,
+    setResultStorageUrl,
     addHistoryItem,
     selectHistoryItem,
     setLoading,

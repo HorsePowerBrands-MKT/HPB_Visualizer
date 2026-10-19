@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { Lead, LeadSubmissionResponse, VisualizationHistoryItem, IssueReport, GenerationRecord, VisualizerSubmission, VisualizerSubmissionInput } from '@repo/types';
+import type { Lead, LeadProductConfig, LeadSubmissionResponse, VisualizationHistoryItem, IssueReport, GenerationRecord, VisualizerSubmission, VisualizerSubmissionInput } from '@repo/types';
 
 export interface SupabaseConfig {
   url: string;
@@ -120,7 +120,21 @@ export async function submitLead(
     consentUserAgent,
     userFingerprint,
     userId,
+    product,
+    productSummary,
+    productConfig,
   } = leadData;
+
+  // Product columns (migration 025). Shower posts may omit `product`; the
+  // insert defaults to 'shower' and the update branch leaves the columns
+  // untouched so legacy callers never clobber a stored value.
+  const productColumns = product
+    ? {
+        product,
+        product_summary: productSummary || null,
+        product_config: productConfig ?? null,
+      }
+    : {};
 
   // Validate required fields
   if (!name || !email || !zipCode) {
@@ -160,6 +174,7 @@ export async function submitLead(
           tcpa_consent_text: tcpaConsentText || null,
           consent_ip: consentIp || null,
           consent_user_agent: consentUserAgent || null,
+          ...productColumns,
           updated_at: new Date().toISOString()
         })
         .eq('session_id', sessionId)
@@ -215,6 +230,9 @@ export async function submitLead(
         tcpa_consent_text: tcpaConsentText || null,
         consent_ip: consentIp || null,
         consent_user_agent: consentUserAgent || null,
+        product: product ?? 'shower',
+        product_summary: productSummary || null,
+        product_config: productConfig ?? null,
       }
     ])
     .select()
@@ -301,6 +319,12 @@ export interface AdminLeadRow {
   visualizationImageUrl: string | null;
   allVisualizationUrls: VisualizationHistoryItem[] | null;
   tcpaConsent: boolean;
+  /** 'shower' | 'railing'. Legacy rows read as 'shower'. */
+  product: string;
+  /** Human-readable selections for non-shower products. */
+  productSummary: string | null;
+  /** Structured selections for non-shower products. */
+  productConfig: LeadProductConfig | null;
 }
 
 /**
@@ -319,7 +343,7 @@ export async function getLeads(
   let query = supabase
     .from('leads')
     .select(
-      'id, name, email, phone, zip_code, location_id, location_name, created_at, status, door_type, finish, hardware, handle_style, track_preference, shower_shape, mode, visualization_image_url, all_visualization_urls, tcpa_consent'
+      'id, name, email, phone, zip_code, location_id, location_name, created_at, status, door_type, finish, hardware, handle_style, track_preference, shower_shape, mode, visualization_image_url, all_visualization_urls, tcpa_consent, product, product_summary, product_config'
     )
     .gte('created_at', monthStart)
     .lt('created_at', nextMonthStart)
@@ -356,6 +380,9 @@ export async function getLeads(
     visualizationImageUrl: row.visualization_image_url ?? null,
     allVisualizationUrls: row.all_visualization_urls ?? null,
     tcpaConsent: row.tcpa_consent ?? false,
+    product: row.product ?? 'shower',
+    productSummary: row.product_summary ?? null,
+    productConfig: row.product_config ?? null,
   }));
 }
 

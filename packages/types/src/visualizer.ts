@@ -95,7 +95,12 @@ export interface Configs {
 export interface HistoryItem {
   id: string;
   timestamp: number;
+  /** Data URL shown on screen. */
   imageUrl: string;
+  /** Public (watermarked) Supabase Storage URL for the same image, when the
+   *  upload succeeded. Posted with leads so the server can match the hero
+   *  against the stored visualization history. */
+  storageUrl?: string | null;
   label: string;
   payload: Payload;
 }
