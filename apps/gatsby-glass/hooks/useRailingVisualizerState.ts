@@ -66,6 +66,8 @@ export interface RailingVisualizerState {
   previewUrl: string | null;
   inspirationPreviewUrl: string | null;
   resultUrl: string | null;
+  /** Storage URL of the image currently shown (see RailingHistoryItem.storageUrl). */
+  resultStorageUrl: string | null;
   history: RailingHistoryItem[];
   loading: boolean;
   validating: 'target' | 'inspiration' | null;
@@ -90,6 +92,7 @@ export interface RailingVisualizerActions {
   setPreviewUrl: (url: string | null) => void;
   setInspirationPreviewUrl: (url: string | null) => void;
   setResultUrl: (url: string | null) => void;
+  setResultStorageUrl: (url: string | null) => void;
   addHistoryItem: (item: RailingHistoryItem) => void;
   selectHistoryItem: (item: RailingHistoryItem, restoreConfig?: boolean) => void;
   setLoading: (loading: boolean) => void;
@@ -115,6 +118,7 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [inspirationPreviewUrl, setInspirationPreviewUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [resultStorageUrl, setResultStorageUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<RailingHistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [validating, setValidating] = useState<'target' | 'inspiration' | null>(null);
@@ -139,6 +143,7 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
 
   const selectHistoryItem = useCallback((item: RailingHistoryItem, restoreConfig = false) => {
     setResultUrl(item.imageUrl);
+    setResultStorageUrl(item.storageUrl ?? null);
     setShowResult(true);
     if (restoreConfig) {
       setForm((prev) => ({
@@ -219,6 +224,7 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
     setPreviewUrl(null);
     setInspirationPreviewUrl(null);
     setResultUrl(null);
+    setResultStorageUrl(null);
     setHistory([]);
     setLoading(false);
     setValidating(null);
@@ -244,6 +250,7 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
     previewUrl,
     inspirationPreviewUrl,
     resultUrl,
+    resultStorageUrl,
     history,
     loading,
     validating,
@@ -263,6 +270,7 @@ export function useRailingVisualizerState(): RailingVisualizerState & RailingVis
     setPreviewUrl,
     setInspirationPreviewUrl,
     setResultUrl,
+    setResultStorageUrl,
     addHistoryItem,
     selectHistoryItem,
     setLoading,

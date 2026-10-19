@@ -155,6 +155,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
     previewUrl,
     inspirationPreviewUrl,
     resultUrl,
+    resultStorageUrl,
     history,
     loading,
     validating,
@@ -170,6 +171,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
     setPreviewUrl,
     setInspirationPreviewUrl,
     setResultUrl,
+    setResultStorageUrl,
     addHistoryItem,
     selectHistoryItem,
     setLoading,
@@ -294,6 +296,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
       setImageFile(fileForFlow);
       setPreviewUrl(URL.createObjectURL(fileForFlow));
       setResultUrl(null);
+      setResultStorageUrl(null);
       setShowResult(false);
 
       const detectedHw = result.detectedHardware || 'none';
@@ -396,6 +399,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
             id: uuidv4(),
             timestamp: Date.now(),
             imageUrl: outcome.image,
+            storageUrl: outcome.watermarkedUrl,
             label: createHistoryLabel(form),
             payload: updatedForm
           };
@@ -408,6 +412,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
           }
           setGenerationIndex(nextGenIndex);
           setResultUrl(outcome.image);
+          setResultStorageUrl(outcome.watermarkedUrl);
           addHistoryItem(newHistoryItem);
           setShowResult(true);
 
@@ -439,7 +444,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, isCandidateUser, setLoading, setError, setResultUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations, setForm, setUsageCount, setUsageLimit]);
+  }, [imageFile, inspirationFile, form, generationIndex, teamUtm, userFingerprint, usageLimit, marketingConsent, submissionId, leadPopupOpen, popHandled, isCandidateUser, setLoading, setError, setResultUrl, setResultStorageUrl, addHistoryItem, setShowResult, createHistoryLabel, goToNextStep, refreshPastVisualizations, setForm, setUsageCount, setUsageLimit]);
 
   // Render current step
   const renderCurrentStep = () => {
@@ -713,7 +718,9 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
                   configs: pastItemToLeadConfigs(pastVizModalItem),
                 }
               : {
-                  resultUrl: resultUrl || '',
+                  // Prefer the storage URL so the server can match the hero
+                  // against the saved history (the data URL never matches).
+                  resultUrl: resultStorageUrl || resultUrl || '',
                   uploadedImage: previewUrl || '',
                   configs: form
                 }
@@ -728,6 +735,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
           the user is unblocked and never re-prompted this session. */}
       <LeadCapturePopup
         isOpen={leadPopupOpen}
+        defaultProduct="shower"
         userFingerprint={userFingerprint ?? undefined}
         onSubmitted={() => {
           setLeadPopupOpen(false);

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
-import type { Payload } from '@repo/types';
+import type { LeadProductConfig, Payload } from '@repo/types';
 import {
   formatRailingSummary,
   railingApplications,
@@ -52,12 +52,27 @@ function railingConfigOf(item: PastVisualizationItem) {
  */
 export function pastItemToLeadConfigs(
   item: PastVisualizationItem
-): Partial<Payload> & { product?: 'shower' | 'railing'; productSummary?: string } {
+): Partial<Payload> & {
+  product?: 'shower' | 'railing';
+  productSummary?: string;
+  productConfig?: LeadProductConfig;
+} {
   if (item.product === 'railing') {
     const cfg = railingConfigOf(item);
+    const stored = (item.product_config ?? {}) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' ? v : null);
     return {
       product: 'railing',
       productSummary: formatRailingSummary(cfg),
+      productConfig: {
+        mode: cfg.mode === 'inspiration' ? 'inspiration' : 'configure',
+        application: cfg.application,
+        railing_system: cfg.railing_system,
+        handrail: cfg.handrail,
+        finish: cfg.finish,
+        existing_condition: str(stored.existing_condition),
+        catalog_version: str(stored.catalog_version),
+      },
       mode: (cfg.mode === 'inspiration' ? 'inspiration' : 'configure') as Payload['mode'],
     };
   }

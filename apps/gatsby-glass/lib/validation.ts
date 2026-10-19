@@ -91,6 +91,21 @@ export const LeadSubmissionSchema = z.object({
   // summary (e.g. "Exterior Deck · Base Shoe · Handrail · Matte Black").
   product: VisualizerProductSchema.optional(),
   productSummary: z.string().max(200).optional(),
+  // Structured selections for non-shower products. Mirrors the shape the
+  // client saves to visualizations.product_config; `.strict()` keeps
+  // arbitrary JSON out of the lead row, so keep both sides in lockstep.
+  productConfig: z
+    .object({
+      mode: z.enum(['configure', 'inspiration']).nullable().optional(),
+      application: z.string().max(50).nullable().optional(),
+      railing_system: z.string().max(50).nullable().optional(),
+      handrail: z.string().max(50).nullable().optional(),
+      finish: z.string().max(50).nullable().optional(),
+      existing_condition: z.string().max(50).nullable().optional(),
+      catalog_version: z.string().max(50).nullable().optional(),
+    })
+    .strict()
+    .optional(),
   sessionId: z.string().optional(),
   source: z.string().optional(),
   tcpaConsent: z.boolean().optional(),
