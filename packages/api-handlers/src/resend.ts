@@ -120,13 +120,27 @@ const EMAIL_FOOTER_BORDER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/GG%20Email%20Border%204.png';
 
 // Base URL the email images are served from. The logo PNG lives in this app's
-// public/email-assets folder, so it resolves at the deployed site origin.
-// Override with EMAIL_ASSET_BASE_URL if the asset is hosted elsewhere (e.g. a CDN).
-const EMAIL_ASSET_BASE_URL = (
-  process.env.EMAIL_ASSET_BASE_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  DEFAULT_BRAND_URL
-).replace(/\/$/, '');
+// public/email-assets folder, so it resolves at the deployed visualizer origin
+// (NOT the marketing site, which does not host it). Override with
+// EMAIL_ASSET_BASE_URL if the asset is hosted elsewhere (e.g. a CDN).
+//
+// A localhost NEXT_PUBLIC_SITE_URL (local dev) is ignored: the recipient's
+// mail client can't reach it, so the logo would render as a broken image.
+const DEFAULT_EMAIL_ASSET_ORIGIN = 'https://visualizer.gatsbyglass.com';
+
+function isLocalOrigin(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?(\/|$)/i.test(url);
+}
+
+function resolveEmailAssetBaseUrl(): string {
+  const explicit = process.env.EMAIL_ASSET_BASE_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl && !isLocalOrigin(siteUrl)) return siteUrl.replace(/\/$/, '');
+  return DEFAULT_EMAIL_ASSET_ORIGIN;
+}
+
+const EMAIL_ASSET_BASE_URL = resolveEmailAssetBaseUrl();
 const BRAND_LOGO_URL = `${EMAIL_ASSET_BASE_URL}/email-assets/gg-logo-horizontal.png`;
 
 // Brand header: the Gatsby Glass logo (gold wordmark + white tagline) on black.
