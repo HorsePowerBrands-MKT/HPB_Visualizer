@@ -3,11 +3,77 @@ import { submitLead, lookupLocationByZipcode, findNearestLocation, logApiCall, g
 import { pushLeadToSharpSpring } from '@repo/api-handlers/sharpspring';
 import { sendSasEmail, sendRaqEmail, sendCustomerQuoteEmail, type SasGalleryItem } from '@repo/api-handlers/resend';
 import { validateLeadData } from '@repo/api-handlers/validation';
-import type { Lead, VisualizationHistoryItem, EnclosureType, TrackPreference, HardwareFinish, HandleStyle } from '@repo/types';
+import type { Lead, LeadProductConfig, VisualizationHistoryItem, EnclosureType, TrackPreference, HardwareFinish, HandleStyle } from '@repo/types';
 import { LeadSubmissionSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
 import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION, OUTSIDE_TERRITORY_INBOX } from '../../../lib/gatsby-constants/src';
+import {
+  formatRailingSummary,
+  railingApplications,
+  railingSystems,
+  railingHandrailOptions,
+  railingFinishes,
+} from '../../../lib/railing/catalog';
+import type {
+  RailingApplication,
+  RailingSystem,
+  RailingHandrail,
+  RailingFinish,
+} from '../../../lib/railing/types';
+
+/** Narrow the free-form product_config JSON to the railing selection keys. */
+function railingConfigOf(viz: VisualizationHistoryItem): {
+  mode?: string | null;
+  application?: string | null;
+  railing_system?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+} {
+  const cfg = (viz.product_config ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === 'string' ? v : null);
+  return {
+    mode: str(cfg.mode) ?? viz.mode ?? null,
+    application: str(cfg.application),
+    railing_system: str(cfg.railing_system),
+    handrail: str(cfg.handrail),
+    finish: str(cfg.finish),
+  };
+}
+
+/** Shape shared by `railingConfigOf` (history rows) and the posted `productConfig`. */
+type RailingSelectionIds = {
+  mode?: string | null;
+  application?: string | null;
+  railing_system?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+};
+
+/**
+ * Map railing selection ids to the labeled Application / Railing System /
+ * Handrail / Finish rows the emails render. Used both for history rows and
+ * for the posted `productConfig` when the hero isn't found in history.
+ */
+function railingHeroConfig(cfg: RailingSelectionIds): {
+  application?: string | null;
+  railingSystem?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+} {
+  return {
+    application: cfg.application
+      ? railingApplications[cfg.application as RailingApplication]?.name ?? null
+      : null,
+    railingSystem: cfg.railing_system
+      ? railingSystems[cfg.railing_system as RailingSystem]?.name ?? null
+      : null,
+    handrail: cfg.handrail
+      ? railingHandrailOptions[cfg.handrail as RailingHandrail]?.name ?? null
+      : null,
+    finish: cfg.finish ? railingFinishes[cfg.finish as RailingFinish]?.name ?? null : null,
+  };
+}
 
 /**
  * Build a human-readable label for a visualization history item using the
@@ -15,6 +81,10 @@ import { CATALOG, GATSBY_GLASS_CONFIG, TEST_LOCATION, OUTSIDE_TERRITORY_INBOX } 
  * customer can tell their generated variants apart.
  */
 function buildImageLabel(viz: VisualizationHistoryItem): string {
+  if (viz.product === 'railing') {
+    return formatRailingSummary(railingConfigOf(viz));
+  }
+
   if (viz.mode === 'inspiration') {
     const stamp = viz.created_at
       ? new Date(viz.created_at).toLocaleString('en-US', {
@@ -71,7 +141,14 @@ function buildImageConfig(viz: VisualizationHistoryItem): {
   framing?: string | null;
   hardware?: string | null;
   handle?: string | null;
+  application?: string | null;
+  railingSystem?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
 } | null {
+  if (viz.product === 'railing') {
+    return railingHeroConfig(railingConfigOf(viz));
+  }
   if (viz.mode === 'inspiration') return null;
   return {
     enclosure: viz.enclosure_type
@@ -170,7 +247,22 @@ export async function POST(request: NextRequest) {
       userFingerprint: validatedData.userFingerprint,
       userId: authUserId,
       leadType: validatedData.leadType,
+      product: validatedData.product,
+      productSummary: validatedData.productSummary,
+      productConfig: validatedData.productConfig as LeadProductConfig | undefined,
     };
+
+    // Railing context posted with the form. Used for the email fallbacks when
+    // the hero image can't be matched against the stored history, and for the
+    // email copy. `postedRailingLabel` prefers the structured selections over
+    // the free-text summary so both paths render identical text.
+    const isRailingLead = validatedData.product === 'railing';
+    const postedRailingConfig = isRailingLead ? validatedData.productConfig ?? null : null;
+    const postedRailingLabel = isRailingLead
+      ? postedRailingConfig
+        ? formatRailingSummary(postedRailingConfig)
+        : validatedData.productSummary ?? 'Glass Railing'
+      : null;
 
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
 
@@ -216,6 +308,7 @@ export async function POST(request: NextRequest) {
             zipCode: validatedData.zipCode,
             locationName: resolvedLocation?.locationName ?? 'No Territory',
             leadType: validatedData.leadType,
+            product: validatedData.product,
           },
         );
 
@@ -261,6 +354,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
+              : postedRailingLabel
+              ? postedRailingLabel
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,
@@ -288,6 +383,10 @@ export async function POST(request: NextRequest) {
 
             const heroConfig = hero
               ? buildImageConfig(hero)
+              : isRailingLead
+              ? postedRailingConfig
+                ? railingHeroConfig(postedRailingConfig)
+                : null
               : buildImageConfig({
                   watermarked: heroImageUrl,
                   original: null,
@@ -313,6 +412,7 @@ export async function POST(request: NextRequest) {
                 heroConfig: heroConfig ?? undefined,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
+                product: isRailingLead || hero?.product === 'railing' ? 'railing' : 'shower',
               }
             );
 
@@ -439,6 +539,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
+              : postedRailingLabel
+              ? postedRailingLabel
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,
@@ -498,6 +600,7 @@ export async function POST(request: NextRequest) {
                 heroLabel,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
+                product: isRailingLead || hero?.product === 'railing' ? 'railing' : 'shower',
               }
             );
 

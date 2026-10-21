@@ -22,12 +22,17 @@ export const ImageDataSchema = z.object({
 });
 
 // Image validation request
+// `product` selects the validation prompt + response shape. Absent = shower.
+export const VisualizerProductSchema = z.enum(['shower', 'railing']);
+
 export const ValidationRequestSchema = z.object({
   imageData: z.string().min(100, 'Image data required'),
   mimeType: z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']),
+  product: VisualizerProductSchema.optional(),
 }).or(z.object({
   data: z.string().min(100, 'Image data required'),
   mimeType: z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']),
+  product: VisualizerProductSchema.optional(),
 }));
 
 // Visualization generation request
@@ -48,6 +53,8 @@ export const VisualizationRequestSchema = z.object({
   bathroomImage: ImageDataSchema,
   inspirationImage: ImageDataSchema.optional(),
   prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
+  // Selects the server-side system prompt + edit preamble. Absent = shower.
+  product: VisualizerProductSchema.optional(),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
   pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
@@ -80,6 +87,25 @@ export const LeadSubmissionSchema = z.object({
   trackPreference: z.string().optional(),
   mode: z.string().optional(),
   showerShape: z.string().optional(),
+  // Non-shower products: which product and a human-readable selection
+  // summary (e.g. "Exterior Deck · Base Shoe · Handrail · Matte Black").
+  product: VisualizerProductSchema.optional(),
+  productSummary: z.string().max(200).optional(),
+  // Structured selections for non-shower products. Mirrors the shape the
+  // client saves to visualizations.product_config; `.strict()` keeps
+  // arbitrary JSON out of the lead row, so keep both sides in lockstep.
+  productConfig: z
+    .object({
+      mode: z.enum(['configure', 'inspiration']).nullable().optional(),
+      application: z.string().max(50).nullable().optional(),
+      railing_system: z.string().max(50).nullable().optional(),
+      handrail: z.string().max(50).nullable().optional(),
+      finish: z.string().max(50).nullable().optional(),
+      existing_condition: z.string().max(50).nullable().optional(),
+      catalog_version: z.string().max(50).nullable().optional(),
+    })
+    .strict()
+    .optional(),
   sessionId: z.string().optional(),
   source: z.string().optional(),
   tcpaConsent: z.boolean().optional(),
