@@ -7,19 +7,23 @@
     "dev:gatsby": "pnpm --filter gatsby-glass dev",
     "build": "pnpm -r build",
     "build:gatsby": "pnpm --filter gatsby-glass build",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm --filter \"./packages/**\" --if-present run build && pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "check:docs": "node scripts/check-doc-drift.mjs",
     "clean": "pnpm -r clean",
     "preview:emails": "pnpm --filter gatsby-glass preview:emails",
-    "seed:zip-centroids": "node scripts/seed-zip-centroids.mjs"
+    "seed:zip-centroids": "node scripts/seed-zip-centroids.mjs",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "tsx": "^4.19.3",
     "typescript": "^5.3.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "protobufjs", "unrs-resolver"]
   },
   "engines": {
     "node": ">=18.0.0",

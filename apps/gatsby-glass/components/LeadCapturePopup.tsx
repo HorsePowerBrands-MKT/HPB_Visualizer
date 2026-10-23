@@ -198,7 +198,7 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-brand-gold">
-              You're on a roll!
+              You&apos;re on a roll!
             </CardTitle>
             <button
               onClick={onDismissed}
@@ -219,13 +219,13 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Thanks!</h3>
               <p className="text-gray-400">
-                You're all set — keep designing.
+                You&apos;re all set — keep designing.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
-                You've been busy! Drop your details below to keep the design previews flowing. If any of these designs catch your eye, your local Gatsby Glass team would love to help bring it to life.
+                You&apos;ve been busy! Drop your details below to keep the design previews flowing. If any of these designs catch your eye, your local Gatsby Glass team would love to help bring it to life.
               </p>
 
               {errors.submit && (

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf .next node_modules",
     "preview:emails": "node --experimental-strip-types --no-warnings scripts/preview-emails.mjs",
     "check:railing-rules": "npx -y tsx scripts/check-railing-rules.ts"

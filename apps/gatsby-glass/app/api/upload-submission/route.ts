@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
       originalPhotoPath,
       uploadConsent: true,
       marketingConsent: !!marketingConsent,
-      sourceUrl: typeof sourceUrl === 'string' ? sourceUrl.slice(0, 500) : null,
+      sourceUrl:
+        typeof sourceUrl === 'string' ? sourceUrl.slice(0, 500) : undefined,
       metadata: safeMeta,
     });
 

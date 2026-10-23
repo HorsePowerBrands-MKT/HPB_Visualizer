@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       originalImageUrl: body.originalImageUrl || null,
       team: body.team || null,
       userFingerprint: body.userFingerprint || null,
-      userId: authUserId,
+      userId: authUserId ?? undefined,
       product: body.product === 'railing' ? 'railing' : 'shower',
       productConfig:
         body.productConfig && typeof body.productConfig === 'object' && !Array.isArray(body.productConfig)
