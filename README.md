@@ -169,6 +169,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for a full example with file tree and dep
 
 ## Documentation
 
+- [AGENTS.md](AGENTS.md) - AI agent workflow, Cursor skills, CI, and repo boundaries
+- [docs/README.md](docs/README.md) - Documentation index (conventions, patterns)
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design decisions
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [packages/prompt-templates/README.md](packages/prompt-templates/README.md) - Prompt system docs

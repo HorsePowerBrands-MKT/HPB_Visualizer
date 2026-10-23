@@ -15,7 +15,7 @@ import { z } from 'zod';
 export const ImageDataSchema = z.object({
   data: z.string().min(100, 'Image data too short'),
   mimeType: z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp'], {
-    errorMap: () => ({ message: 'Invalid image type. Must be JPEG, PNG, or WebP' })
+    message: 'Invalid image type. Must be JPEG, PNG, or WebP',
   }),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
