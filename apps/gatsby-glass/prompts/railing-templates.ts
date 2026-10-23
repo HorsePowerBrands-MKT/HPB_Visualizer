@@ -21,8 +21,12 @@ import type { PromptTemplate } from '@repo/prompt-templates';
 import {
   SYSTEM_RULES,
   HANDRAIL_RULES,
+  HANDRAIL_COVERAGE_RULES,
   FINISH_RULES,
   POOL_GATE_RULES,
+  POOL_SETBACK_RULES,
+  INSPIRATION_HANDRAIL_MAPPING,
+  INSPIRATION_FINISH_MAPPING,
   POOL_GATE_GENERIC_SUPPORT,
   EXISTING_RAILING_REPLACEMENT_RULES,
   INSPIRATION_RULES,
@@ -35,7 +39,7 @@ export const RAILING_VALIDATION_TEMPLATE_ID = 'railing-validation-v1';
 
 const META = {
   createdAt: '2026-10-12T00:00:00.000Z',
-  updatedAt: '2026-10-12T00:00:00.000Z',
+  updatedAt: '2026-10-23T00:00:00.000Z',
   author: 'Gatsby Glass Team',
 };
 
@@ -45,7 +49,7 @@ const META = {
 
 export const railingVisualizationTemplate: PromptTemplate = {
   id: RAILING_VISUALIZATION_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'Glass Railing Visualization Prompt',
   type: 'visualization',
   description:
@@ -227,6 +231,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'application', operator: 'equals', value: 'exterior_deck' },
           content: [
             '- Use the existing deck / patio perimeter and existing railing line as the guide. Replace only the railing. If no railing is present, follow the clearly defined open deck / patio edge rather than inventing a new perimeter.',
+            '- Apply the glass AND the selected handrail to EVERY open edge of the deck visible in the photo: the front run, BOTH side returns, and any stair edge. Do not leave a visible open edge unguarded, and do not drop the handrail on a side run.',
             '- Preserve decking, stairs, furniture, house, siding, landscaping, pets, lighting, planters and surrounding structures exactly as shown.',
           ],
         },
@@ -243,6 +248,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- No existing pool barrier. Create a code-conscious glass pool enclosure on the surrounding usable deck / patio area. Do NOT trace or snake around the exact shape of the pool. Favor clean, straighter runs and intentional corners, positioned back from the pool edge to preserve practical circulation space. Do not place the barrier directly on the pool coping unless the site geometry clearly requires it.',
             '- Use the property hardscape and circulation pattern to infer a practical enclosure zone. Keep the pool, pool steps and water completely unobstructed. The perimeter must read as a fence around the pool AREA, not a railing attached to the pool itself. Do not place glass through water, furniture or planting.',
+            ...POOL_SETBACK_RULES,
           ],
         },
         {
@@ -363,7 +369,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the handrail treatment shown in input_2, mapped to exactly one approved treatment: a TOP-MOUNTED cap rail seated on the glass edge, a SIDE-MOUNTED rail on the glass face on small brackets, or NO handrail (clean exposed glass edge). Use one treatment consistently along the whole run.',
+            ...INSPIRATION_HANDRAIL_MAPPING,
           ],
         },
         { id: 'handrail_end', type: 'custom', content: [''] },
@@ -395,7 +401,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the hardware finish shown in input_2 (matte black, brushed stainless, or polished stainless).',
+            ...INSPIRATION_FINISH_MAPPING,
             ...FINISH_RULES,
           ],
         },
@@ -470,8 +476,8 @@ export const railingVisualizationTemplate: PromptTemplate = {
         'SELF-CHECK BEFORE OUTPUT:',
         '1. Is the output the same space as input_1 with the same viewpoint, crop and surroundings?',
         '2. Is the new glass railing clearly visible along the correct railing line / edge, and nowhere else?',
-        '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment and ONE finish on all hardware?',
-        '4. For pools: is there an obvious operable gate with no fixed support beneath it, and is the water unobstructed?',
+        '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment on EVERY glass run (no run missing its rail) and ONE finish on all hardware?',
+        '4. For pools: is there an obvious operable gate with no fixed support beneath it, is the water unobstructed, and is there a clear walkway of at least 4 feet between the glass and the coping on every side? If any run hugs the water, redo.',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
         '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
         '7. Does the render contain any NOT APPROVED element (posts, clamps on posts, cable, pickets, bars, wood, framed glass)? If yes, redo.',

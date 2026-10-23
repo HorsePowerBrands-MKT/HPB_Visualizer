@@ -40,12 +40,26 @@ coffee mug.
   glass face, 3–4 in below the edge. No cap rail on top.
 - **No Handrail** — clean polished glass edge; no rail, cap or channel of any
   kind except gate hardware.
+- **Coverage** (`HANDRAIL_COVERAGE_RULES`) — a top- or side-mounted rail runs
+  along every glass run in the render: every side of a deck or balcony,
+  every return, the stair flight and the landing. A run missing its rail is
+  a failed render. The exterior deck placement rule repeats this for the
+  front run, both side returns and any stair edge.
 
 ## Finish
 
 The selected finish is applied to every visible piece of hardware: shoe or
 spigots, rail, standoffs, clamps, connectors, gate hinges and latch. One finish
 only. An explicit selection overrides any finish in an inspiration photo.
+
+## Pool setback (pool application, no existing fence)
+
+`POOL_SETBACK_RULES`: at least 4 ft (about 1.2 m) of clear deck between the
+glass and the coping on every side, never on the coping, the first row of
+deck beside it, or over the water. Where the hardscape is narrower than
+4 ft, the glass follows the outer boundary of the hardscape instead. With an
+existing fence the enclosure stays on the fence line and no setback rule is
+rendered.
 
 ## Pool gate (pool application only)
 
@@ -73,6 +87,21 @@ On the Match Inspiration path an inspiration photo of any of these is mapped to
 an approved system (`UNSUPPORTED_RAILING_TYPES[].mapsTo`): cable → spigot,
 everything else → base shoe. The consumer's explicit selections always win
 over the inspiration photo.
+
+## Match Inspiration fallbacks (no explicit selection)
+
+When the consumer leaves handrail or finish as "Match photo", the prompt
+renders an explicit mapping instead of a bare "match input_2":
+
+- **Handrail** (`INSPIRATION_HANDRAIL_MAPPING`) — any separate graspable bar
+  on the glass face → Side-Mounted; a channel on the top edge → Top-Mounted;
+  a bare edge → No Handrail. A cap rail is never substituted for a true
+  handrail (B06), and the coverage rule applies.
+- **Finish** (`INSPIRATION_FINISH_MAPPING`) — silver / grey / nickel / chrome /
+  satin → Brushed Stainless; mirror-bright silver → Polished Stainless;
+  black / charcoal / gunmetal / dark bronze → Matte Black. Brass, gold,
+  copper, bronze, wood and painted colors map to the nearest approved finish.
+  The model is told not to default to black.
 
 ## Where the rules are enforced
 

@@ -54,6 +54,15 @@ const sm = prompt({ ...base, handrail: 'side_mount' });
 check('side-mount: face rail, no cap rail', sm.includes('SIDE-MOUNTED (hard lock)') && sm.includes('Do NOT add a cap rail on top of the glass'));
 const nh = prompt({ ...base, handrail: 'no_handrail' });
 check('no handrail: hard negative, no rail sections', nh.includes('NO HANDRAIL (hard lock)') && !nh.includes('TOP-MOUNTED (hard lock)') && !nh.includes('SIDE-MOUNTED (hard lock)'));
+const COVERAGE = 'the handrail runs along EVERY glass run in the render';
+check('top-mount: rail on every run', bs.includes(COVERAGE));
+check('side-mount: rail on every run', sm.includes(COVERAGE));
+check('no handrail: no coverage rule', !nh.includes(COVERAGE));
+check('self-check: handrail on every run', bs.includes('on EVERY glass run (no run missing its rail)'));
+
+// --- Deck: every open edge guarded -----------------------------------------
+check('deck: glass + handrail on every open edge', bs.includes('EVERY open edge of the deck') && bs.includes('BOTH side returns'));
+check('non-deck: no deck edge rule', !prompt({ ...base, application: 'interior_balcony' }).includes('EVERY open edge of the deck'));
 
 // --- Finish across visible hardware ----------------------------------------
 check('finish: applied to all visible hardware, one finish', bs.includes('ALL visible railing hardware') && bs.includes('ONE finish only'));
@@ -65,6 +74,11 @@ check('pool + base shoe: gate mandatory + shoe interrupted at gate', poolBs.incl
 const poolSp = prompt({ ...base, application: 'pool_balustrade', railing_system: 'spigot', existing_condition: 'none' });
 check('pool + spigot: no spigot beneath gate', poolSp.includes('Do not place a spigot directly beneath the operable gate panel'));
 check('non-pool: no gate section', !bs.includes('POOL GATE'));
+const SETBACK = 'at least 4 feet (about 1.2 m';
+check('pool, no fence: 4 ft setback from coping', poolBs.includes(SETBACK) && poolBs.includes('Never place glass on the coping'));
+check('pool, existing fence: keeps fence line, no setback rule', !prompt({ ...base, application: 'pool_balustrade', existing_condition: 'existing_fence' }).includes(SETBACK));
+check('non-pool: no setback rule', !bs.includes(SETBACK));
+check('self-check: pool setback', poolBs.includes('clear walkway of at least 4 feet between the glass and the coping'));
 
 // --- Existing railing replacement geometry ---------------------------------
 check('existing railing: same location / slope / edge / perimeter', bs.includes('SAME railing location, stair slope, landing geometry, balcony edge or deck perimeter'));
@@ -80,8 +94,14 @@ const insp = prompt({ ...base, mode: 'inspiration', railing_system: null, handra
 check('inspiration: maps unsupported types to approved systems', insp.includes('Never copy an unsupported railing type from input_2') && insp.includes('render as frameless glass'));
 check('inspiration: one approved system, no mixing', insp.includes('Use exactly one system consistently for every fixed panel'));
 check('inspiration: unsupported list still present', insp.includes('NOT APPROVED (never render these'));
+check('inspiration: separate graspable rail maps to side-mount', insp.includes('If input_2 shows any separate graspable handrail, render SIDE-MOUNTED') && insp.includes('Do NOT substitute a top-mounted cap rail for a true handrail'));
+check('inspiration: handrail fallback carries coverage rule', insp.includes(COVERAGE));
+check('inspiration: silver / nickel maps to brushed stainless', insp.includes('silver, grey, nickel, chrome, satin, brushed') && insp.includes('BRUSHED (satin) STAINLESS STEEL'));
+check('inspiration: no default to black', insp.includes('Do NOT default to matte black'));
+const inspHandrailOverride = prompt({ ...base, mode: 'inspiration', railing_system: null, handrail: 'top_mount', finish: null });
+check('inspiration + handrail override: explicit handrail wins', inspHandrailOverride.includes('TOP-MOUNTED (hard lock)') && !inspHandrailOverride.includes('Read the handrail in input_2'));
 const inspOverride = prompt({ ...base, mode: 'inspiration', railing_system: null, handrail: null, finish: 'brushed_stainless' });
-check('inspiration + finish override: explicit finish wins', inspOverride.includes('brushed (satin) stainless steel') && !inspOverride.includes('Match the hardware finish shown in input_2'));
+check('inspiration + finish override: explicit finish wins', inspOverride.includes('brushed (satin) stainless steel') && !inspOverride.includes('Read the hardware color in input_2'));
 
 // --- Validation blocks unsupported selections ------------------------------
 const bad = {
