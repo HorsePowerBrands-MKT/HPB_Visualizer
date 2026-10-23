@@ -132,9 +132,22 @@ export interface HandrailRuleSet {
   proportions: readonly string[];
 }
 
+/**
+ * Coverage: a handrail selection applies to EVERY run of glass in the
+ * render, not only the run nearest the camera. Spread into the top- and
+ * side-mounted rule sets and used by the Match Inspiration fallback.
+ * (Feedback 2026-10-23: a deck render dropped the side rail on the left run.)
+ */
+export const HANDRAIL_COVERAGE_RULES: readonly string[] = [
+  '- COVERAGE: the handrail runs along EVERY glass run in the render — every side of a deck or balcony, every return and corner, the stair flight AND the landing — wrapping continuously around corners. A glass run with no rail while another run has one is a FAILED render.',
+];
+
 export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
   top_mount: {
-    must: ['- The rail sits ON the top edge of the glass and caps it, continuous along the whole run.'],
+    must: [
+      '- The rail sits ON the top edge of the glass and caps it, continuous along the whole run.',
+      ...HANDRAIL_COVERAGE_RULES,
+    ],
     forbidden: [
       '- Do NOT add any second rail on the glass face, and do NOT leave the glass edge exposed above the rail.',
     ],
@@ -145,6 +158,7 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
   side_mount: {
     must: [
       '- The rail is on the FACE of the glass on small brackets, slightly below the top edge; the glass edge stays visible above it.',
+      ...HANDRAIL_COVERAGE_RULES,
     ],
     forbidden: ['- Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.'],
     proportions: [
@@ -174,6 +188,46 @@ export const POOL_GATE_RULES: readonly string[] = [
 /** Gate support rule when the system is left to the inspiration photo. */
 export const POOL_GATE_GENERIC_SUPPORT: readonly string[] = [
   '- Never place a base shoe, spigot or other fixed support directly beneath the gate panel; the gate hangs on gate-specific hinges with a latch.',
+];
+
+/**
+ * B15 / B19: with no existing fence, the enclosure sits back from the
+ * water on every side. (Feedback 2026-10-23: a pool render put the
+ * right-hand run on the coping.)
+ */
+export const POOL_SETBACK_RULES: readonly string[] = [
+  '- SETBACK (critical — the most common error is glass placed right at the water): keep a clear walkway of deck at least 4 feet (about 1.2 m, the length of a lounge chair) between the glass and the pool coping on EVERY side, including the far side and the sides at the edges of the image. Never place glass on the coping, on the first row of deck beside the coping, or over the water.',
+  '- If the hardscape on one side is narrower than 4 feet, run the glass along the OUTER boundary of that hardscape (lawn edge, planting bed, wall) rather than hugging the water.',
+];
+
+/**
+ * B06 / B20: Match Inspiration with no explicit handrail selection. Maps
+ * what input_2 shows onto one approved treatment. A separate graspable
+ * rail of any kind is SIDE-MOUNTED; the model must not swap in a cap rail.
+ * (Feedback 2026-10-23: a side-rail inspiration photo rendered as a top rail.)
+ */
+export const INSPIRATION_HANDRAIL_MAPPING: readonly string[] = [
+  '- Read the handrail in input_2 and map it to exactly ONE approved treatment:',
+  '  • a separate graspable bar on the face of the glass — on brackets, standoffs or posts, at any height → SIDE-MOUNTED rail on small standoff pins, with the glass edge exposed above it',
+  '  • a channel, cap or profile sitting on the top edge of the glass → TOP-MOUNTED cap rail',
+  '  • a bare polished glass edge with no rail of any kind → NO handrail',
+  '- If input_2 shows any separate graspable handrail, render SIDE-MOUNTED. Do NOT substitute a top-mounted cap rail for a true handrail, and do NOT add a cap rail on top of a side-mounted rail.',
+  ...HANDRAIL_COVERAGE_RULES,
+];
+
+/**
+ * B08 / B20: Match Inspiration with no explicit finish selection. Maps the
+ * hardware color in input_2 onto one approved finish; the model must not
+ * fall back to black. (Feedback 2026-10-23: silver/nickel inspiration
+ * hardware rendered as matte black.)
+ */
+export const INSPIRATION_FINISH_MAPPING: readonly string[] = [
+  '- Read the hardware color in input_2 and map it to exactly ONE approved finish:',
+  '  • silver, grey, nickel, chrome, satin, brushed, or any light metal that is not mirror-bright → BRUSHED (satin) STAINLESS STEEL',
+  '  • bright mirror-polished silver → POLISHED (mirror) STAINLESS STEEL',
+  '  • black, charcoal, gunmetal, dark bronze, or any dark metal → MATTE BLACK',
+  '  • brass, gold, copper, bronze, wood, or painted colors are NOT approved: use brushed stainless for warm or light tones and matte black for dark tones',
+  '- Do NOT default to matte black. Black is correct only when the hardware in input_2 is clearly dark.',
 ];
 
 /** B09: replacement respects the existing geometry. */
