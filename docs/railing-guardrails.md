@@ -26,11 +26,14 @@ the matrix there if a combination is ever withdrawn.
 bottom edge of every panel enters it. Hard lock: any spigot, post, clamp or
 vertical frame in a fixed run is a failed render. Proportions: about 2–2.5 in
 tall and 2.5 in wide, sitting on the floor, never a curb, step or planter.
+On stairs the same shoe continues as one raked channel seated on the stringer
+or a raked curb; it never steps up tread by tread and is never dropped.
 
 **Spigot** — individual compact clamps, two per panel, glass floating 3–4 in
 above the floor. Hard lock: any continuous channel, base shoe, post or vertical
 frame is a failed render. Proportions: about 5 in tall, no taller than a
-coffee mug.
+coffee mug. Never more than two per panel (panels ~4–5 ft wide), and on stairs
+every stair panel gets its own two spigots down to the bottom step.
 
 ## Handrail behavior
 
@@ -52,6 +55,24 @@ image model.
   a failed render. The exterior deck placement rule repeats this for the
   front run, both side returns and any stair edge.
 
+## Edges, openings and stairs (all applications except pool)
+
+From railing QA on 2026-10-29 (missed dog-legs, glass across the top of the
+steps, stairs moved, railing stopping short of the house, missing stair
+spigots):
+
+- `EDGE_FOLLOWING_RULES` — follow every jog, dog-leg, notch and return in the
+  edge, however short; run the full length of the edge tight to the house
+  or wall; guard every open side.
+- `ACCESS_OPENING_RULES` — never put glass across a stair opening, doorway,
+  gate or walkway; glass runs along the sides of a stair, never across or
+  over it.
+- `STAIR_PRESERVATION_RULES` — stairs and the deck footprint are never moved
+  or rebuilt; stair glass runs from the top landing to the bottom step with
+  the same system, handrail and finish as the level runs.
+- Self-check items 5c (openings, jogs, reaches the house) and 5d (stair
+  mounting) restate these as pass/fail questions.
+
 ## Finish
 
 The selected finish is applied to every visible piece of hardware: shoe or
@@ -65,7 +86,12 @@ glass and the coping on every side, never on the coping, the first row of
 deck beside it, or over the water. Where the hardscape is narrower than
 4 ft, the glass follows the outer boundary of the hardscape instead. With an
 existing fence the enclosure stays on the fence line and no setback rule is
-rendered.
+rendered. The generic "add along the open edge" rule is not rendered for
+pools, since it contradicts the setback.
+
+`POOL_HEIGHT_RULES`: pool fence panels are about 48 in (4 ft), the usual
+minimum pool-barrier height, instead of the ~42 in used for deck and stair
+guards.
 
 ## Pool gate (pool application only)
 
@@ -84,8 +110,10 @@ and the railing never extends onto adjacent walls.
 
 ## Background railings (target railing only)
 
-`BACKGROUND_RAILING_PRESERVATION_RULES` (HP-2803): only one railing line —
-the target location — changes. Every other railing, guard, banister, fence or
+`BACKGROUND_RAILING_PRESERVATION_RULES` (HP-2803): only the target railing
+changes — the one connected railing at the selected application, including
+all of its runs, returns, landings and stair sides (every side of a pool
+enclosure). It is never limited to a single straight line. Every other railing, guard, banister, fence or
 metalwork in the photo (other levels, other stairs, neighboring decks,
 through windows, reflections, the background) keeps its exact material,
 color, finish, style and position. It is never recolored to the selected

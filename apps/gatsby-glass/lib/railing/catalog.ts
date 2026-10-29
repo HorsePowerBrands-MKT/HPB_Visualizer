@@ -79,7 +79,7 @@ export const railingSystems: Record<RailingSystem, RailingCatalogEntry> = {
     details:
       'A slim channel runs along the floor edge and holds the bottom of each glass panel, so the glass rises straight from the floor with no posts. The cleanest, most seamless look.',
     promptDescriptor:
-      'clear frameless glass seated continuously in a slim base shoe: one straight rectangular aluminum channel about 2 to 2.5 inches tall and about 2.5 inches wide (barely wider than the glass), sitting directly on the finished floor along the railing line, so it reads as a thin dark band at the floor — like a baseboard, less than one-fifteenth of the glass height — never a curb, step, ledge, planter, box or plinth; the bottom edge of every fixed glass panel enters a narrow slot in the top of the shoe; no individual spigots, floor-mounted posts, clamps or vertical framing',
+      'clear frameless glass seated continuously in a slim base shoe: one straight rectangular metal channel in the selected finish, about 2 to 2.5 inches tall and about 2.5 inches wide (barely wider than the glass), sitting directly on the finished floor along the railing line, so it reads as a thin band at the floor — like a baseboard, less than one-fifteenth of the glass height — never a curb, step, ledge, planter, box or plinth; the bottom edge of every fixed glass panel enters a narrow slot in the top of the shoe; no individual spigots, floor-mounted posts, clamps or vertical framing',
     image: '/railing-hardware/base-shoe.jpg',
   },
   spigot: {
