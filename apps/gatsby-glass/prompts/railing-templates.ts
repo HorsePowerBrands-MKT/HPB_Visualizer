@@ -25,6 +25,7 @@ import {
   FINISH_RULES,
   POOL_GATE_RULES,
   POOL_SETBACK_RULES,
+  POOL_HEIGHT_RULES,
   INSPIRATION_HANDRAIL_MAPPING,
   INSPIRATION_FINISH_MAPPING,
   POOL_GATE_GENERIC_SUPPORT,
@@ -121,7 +122,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
       type: 'instructions',
       content: [
         'PRESERVATION (B02 / B25):',
-        '- Preserve the staircase, flooring, walls, windows, doors, ceiling, deck or balcony structure, pool, coping, hardscape, furniture, landscaping, pets, people-free scene, lighting, planters, signage and ALL surrounding elements exactly as shown.',
+        '- Preserve the staircase, flooring, walls, windows, doors, ceiling, deck or balcony structure, pool, coping, hardscape, furniture, landscaping, pets, lighting, planters, signage and ALL surrounding elements exactly as shown. Do not add people.',
         '- The only exception is when the selected application specifically requires replacement of an existing guard wall (see placement rules).',
         '- Do not move, remove, add, recolor or redesign unrelated objects or surfaces. Do not alter camera viewpoint, crop, architecture, landscaping, furniture, pool shape, hardscape, pets or lighting to accommodate the railing.',
         ...BACKGROUND_RAILING_PRESERVATION_RULES,
@@ -147,9 +148,29 @@ export const railingVisualizationTemplate: PromptTemplate = {
         {
           id: 'B10_open_edge',
           type: 'instructions',
-          condition: { variable: 'existing_condition', operator: 'in', value: ['open_edge', 'none'] },
+          condition: {
+            operator: 'and',
+            conditions: [
+              { variable: 'existing_condition', operator: 'in', value: ['open_edge', 'none'] },
+              { variable: 'application', operator: 'not_equals', value: 'pool_balustrade' },
+            ],
+          },
           content: [
             '- No existing railing at the edge. ADD the selected glass railing only along the existing open edge or guard line. Use the existing geometry as the placement anchor. Do not reshape, relocate or extend the architectural edge.',
+          ],
+        },
+        {
+          id: 'B10_pool_no_barrier',
+          type: 'instructions',
+          condition: {
+            operator: 'and',
+            conditions: [
+              { variable: 'existing_condition', operator: 'in', value: ['open_edge', 'none'] },
+              { variable: 'application', operator: 'equals', value: 'pool_balustrade' },
+            ],
+          },
+          content: [
+            '- No existing pool barrier is visible. Place the new enclosure using the pool placement and setback rules below — not along the pool edge.',
           ],
         },
         {
@@ -192,6 +213,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           },
           content: [
             '- An existing pool fence is visible. Use the existing pool-fence line as the placement guide and replace that barrier with the selected glass system. The existing fence is the placement anchor: do NOT move the enclosure closer to the pool. Preserve the pool, coping, deck, landscaping, furniture and architecture. Retain a functional gate at the existing or most logical access location.',
+            ...POOL_HEIGHT_RULES,
           ],
         },
         {
@@ -260,6 +282,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             '- No existing pool barrier. Create a code-conscious glass pool enclosure on the surrounding usable deck / patio area. Do NOT trace or snake around the exact shape of the pool. Favor clean, straighter runs and intentional corners, positioned back from the pool edge to preserve practical circulation space. Do not place the barrier directly on the pool coping unless the site geometry clearly requires it.',
             '- Use the property hardscape and circulation pattern to infer a practical enclosure zone. Keep the pool, pool steps and water completely unobstructed. The perimeter must read as a fence around the pool AREA, not a railing attached to the pool itself. Do not place glass through water, furniture or planting.',
             ...POOL_SETBACK_RULES,
+            ...POOL_HEIGHT_RULES,
           ],
         },
         {
@@ -469,12 +492,12 @@ export const railingVisualizationTemplate: PromptTemplate = {
       type: 'instructions',
       content: [
         'REAL GATSBY GLASS INSTALL LOOK (modeled on actual Gatsby Glass installs):',
-        '- Glass: tall full-height guard panels (about 42 in / 1.07 m above the walking surface), clear low-iron look with only a faint green edge, polished exposed edges, WIDE panels with as few vertical joints as the run allows (narrow gaps between panels, no frames, no tint, no visible clips on the glass face).',
-        '- Base shoe: a thin dark band at the floor line, about 2 to 2.5 inches tall and 2.5 inches wide, sitting on the floor; under one-fifteenth of the glass height; no visible fasteners.',
+        '- Glass: tall full-height guard panels (about 42 in / 1.07 m above the walking surface; about 48 in for pool fences), clear low-iron look with only a faint green edge, polished exposed edges, WIDE panels with as few vertical joints as the run allows (narrow gaps between panels, no frames, no tint, no visible clips on the glass face).',
+        '- Base shoe: a thin band at the floor line in the selected finish, about 2 to 2.5 inches tall and 2.5 inches wide, sitting on the floor; under one-fifteenth of the glass height; no visible fasteners.',
         '- Spigots: small clamps about 5 inches tall, two per panel at the very base, glass floating 3 to 4 inches above the floor.',
         '- Cap rail: a thin square channel about 1 inch tall hugging the glass edge; never a round tube.',
         '- Side rail: a round 1.5-inch tube grab rail on compact disc-and-elbow standoff brackets about 2 inches off the glass, 3 to 4 inches below the glass edge.',
-        '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in; shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
+        '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in (~48 in at a pool); shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
         ...UNSUPPORTED_TYPE_RULES,
         '',
@@ -557,7 +580,7 @@ export const railingSystemTemplate: PromptTemplate = {
         'B. PRESERVATION — nothing unrelated changes',
         '   1. Preserve every element that is not the railing exactly as shown: structure, trim, floors, walls, ceilings, windows, doors, furniture, planters, pets, hardscape, pool shape and water, signage and lighting.',
         '   2. Do not move, mirror, duplicate, recolor or remove any unrelated object. Do not widen, reshape or relocate an edge, stair or deck to fit the railing.',
-        '   3. Only the target railing changes. Every other railing, fence, banister or metalwork in input_1 (other levels, neighbors, background, reflections) keeps its exact color, finish, material and style.',
+        '   3. Only the target railing changes — the one connected railing at the selected application, including all of its runs, returns and stair sides. Every SEPARATE railing, fence, banister or metalwork in input_1 (other levels, neighbors, background, reflections) keeps its exact color, finish, material and style.',
         '',
         'C. REMOVAL — only the existing guard',
         '   1. Remove ONLY an existing railing, guard, fence or guard-height half wall at the railing location when the specification says so. Never remove full-height walls or unrelated structure.',

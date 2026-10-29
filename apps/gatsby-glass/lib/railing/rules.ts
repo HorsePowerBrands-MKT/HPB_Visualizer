@@ -99,7 +99,7 @@ export const SYSTEM_RULES: Record<RailingSystem, SystemRuleSet> = {
     proportions: [
       '- MOUNTING PROPORTIONS (critical — the most common error is a shoe that is far too tall):',
       '  • HEIGHT: about 2 to 2.5 inches above the finished floor — the height of a baseboard or a hand held sideways. Never more than 3 inches. Against a 42-inch glass panel the shoe is under one-fifteenth of the total height. If the shoe looks taller than a hand is wide, it is WRONG — make it thinner.',
-      '  • WIDTH: about 2.5 inches, barely wider than the glass. From above it is a narrow strip; from the side it is a thin dark band. It is NOT a curb, a step, a ledge, a planter, a bench or a box — nothing you could stand on or set a cup on.',
+      '  • WIDTH: about 2.5 inches, barely wider than the glass. From above it is a narrow strip; from the side it is a thin band in the selected finish. It is NOT a curb, a step, a ledge, a planter, a bench or a box — nothing you could stand on or set a cup on.',
       '  • FORM: one straight, crisp rectangular extrusion with flat faces, continuous and uniform along the whole run, in the selected finish; flat top face with the glass entering a narrow slot in the center; no visible bolts, no segment gaps, no end caps sticking up, no trim or cladding bulk.',
       '  • PLACEMENT: sits directly ON the finished floor / deck surface at the edge, tight to the edge. Do not sink it into the floor and do not raise it on a curb.',
       '  • STAIRS: the stair glass uses the SAME base shoe as the level runs — never drop the shoe on the stairs. On a stair the shoe is one straight raked channel parallel to the stair pitch, seated on a continuous flat surface that runs with the slope (the stair stringer or a raked curb along the side of the stair). It never steps up tread by tread and never sits on the tread noses.',
@@ -189,7 +189,7 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
  */
 export const EDGE_FOLLOWING_RULES: readonly string[] = [
   '- EDGE GEOMETRY: follow the edge in input_1 exactly, including EVERY short jog, dog-leg, notch, offset, return and corner — even a segment only one or two feet long gets its own panel. Never cut a straight line across a jog or skip a short segment.',
-  '- FULL LENGTH: run the railing along the whole open edge, from tight against the house wall, column or post at one end to the very end of the edge. No gap between the glass and the house or wall.',
+  '- FULL LENGTH: run the railing along the whole open edge, from tight against the house wall, column or post at one end to the very end of the edge. No gap between the glass and the house or wall — the glass ends against the wall and never continues onto it.',
   '- ALL SIDES: guard every open side of the deck, balcony, landing or stair that is visible in input_1, not only the side nearest the camera.',
 ];
 
@@ -215,6 +215,11 @@ export const STAIR_PRESERVATION_RULES: readonly string[] = [
 export const FINISH_RULES: readonly string[] = [
   '- Apply the selected finish consistently to ALL visible railing hardware: base shoe or spigots, handrail or cap rail, standoff brackets, clamps, connectors, gate hinges and latch. ONE finish only — never mixed metals.',
   '- An explicit finish selection overrides any finish shown in an inspiration image.',
+];
+
+/** Pool barriers are taller than deck guards (common pool-code minimum). */
+export const POOL_HEIGHT_RULES: readonly string[] = [
+  '- HEIGHT: pool fence panels are taller than deck guards — about 48 inches (4 ft / 1.2 m) above the deck, the usual minimum pool-barrier height, uniform along every side and at the gate.',
 ];
 
 /** B16: every pool render includes an operable gate. */
@@ -281,7 +286,7 @@ export const EXISTING_RAILING_REPLACEMENT_RULES: readonly string[] = [
  * image model receives the whole photo with no mask.
  */
 export const BACKGROUND_RAILING_PRESERVATION_RULES: readonly string[] = [
-  '- TARGET RAILING ONLY: change exactly ONE railing line — the target railing location described above. Every other railing, guard, banister, fence, gate or piece of metalwork visible in input_1 is NOT the target.',
+  '- TARGET RAILING ONLY: the target railing is the ONE connected railing at the selected application — every run, return, corner, landing and stair side of it (or, for a pool, every side of the enclosure). Install glass on ALL of the target railing. Every SEPARATE railing, guard, banister, fence, gate or piece of metalwork elsewhere in input_1 is NOT the target.',
   '- Non-target railings include railings on other floors or levels, other stairs, neighboring decks or buildings, railings seen through windows or doors, in reflections, and anything in the background. Keep each one exactly as in input_1: same material, color, finish, style, position and condition.',
   '- Never recolor a non-target railing to the selected finish, never convert it to glass, never remove, extend or restyle it.',
 ];
