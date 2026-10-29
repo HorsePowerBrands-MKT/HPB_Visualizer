@@ -58,7 +58,7 @@ export const VisualizationRequestSchema = z.object({
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
   pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),
-  hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze']).optional(),
+  hardwareFinish: z.enum(['chrome', 'brushed_nickel', 'matte_black', 'polished_brass', 'oil_rubbed_bronze', 'dark_brushed_bronze', 'satin_brass', 'gunmetal']).optional(),
   showerShape: z.enum(['standard', 'neo_angle', 'tub']).optional(),
   userFingerprint: z.string().uuid('Invalid fingerprint').optional(),
   // Used by the image model to constrain the output aspect ratio to match

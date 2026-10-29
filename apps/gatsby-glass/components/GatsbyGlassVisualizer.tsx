@@ -122,7 +122,10 @@ const HardwareIcon = ({ type }: { type: HardwareFinish }) => {
     brushed_nickel: "repeating-linear-gradient(45deg, #d0d0d0, #d0d0d0 2px, #c0c0c0 2px, #c0c0c0 4px)",
     matte_black: "#171717",
     polished_brass: "linear-gradient(135deg, #fef9c3 0%, #facc15 50%, #ca8a04 100%)",
-    oil_rubbed_bronze: "#3f2e26"
+    oil_rubbed_bronze: "#3f2e26",
+    dark_brushed_bronze: "repeating-linear-gradient(45deg, #7a6650, #7a6650 2px, #6b5843 2px, #6b5843 4px)",
+    satin_brass: "repeating-linear-gradient(45deg, #d8bf88, #d8bf88 2px, #c9ad74 2px, #c9ad74 4px)",
+    gunmetal: "#504d49"
   };
 
   return (
