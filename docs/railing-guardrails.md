@@ -26,11 +26,14 @@ the matrix there if a combination is ever withdrawn.
 bottom edge of every panel enters it. Hard lock: any spigot, post, clamp or
 vertical frame in a fixed run is a failed render. Proportions: about 2–2.5 in
 tall and 2.5 in wide, sitting on the floor, never a curb, step or planter.
+On stairs the same shoe continues as one raked channel seated on the stringer
+or a raked curb; it never steps up tread by tread and is never dropped.
 
 **Spigot** — individual compact clamps, two per panel, glass floating 3–4 in
 above the floor. Hard lock: any continuous channel, base shoe, post or vertical
 frame is a failed render. Proportions: about 5 in tall, no taller than a
-coffee mug.
+coffee mug. Never more than two per panel (panels ~4–5 ft wide), and on stairs
+every stair panel gets its own two spigots down to the bottom step.
 
 ## Handrail behavior
 
@@ -51,6 +54,24 @@ image model.
   every return, the stair flight and the landing. A run missing its rail is
   a failed render. The exterior deck placement rule repeats this for the
   front run, both side returns and any stair edge.
+
+## Edges, openings and stairs (all applications except pool)
+
+From railing QA on 2026-10-29 (missed dog-legs, glass across the top of the
+steps, stairs moved, railing stopping short of the house, missing stair
+spigots):
+
+- `EDGE_FOLLOWING_RULES` — follow every jog, dog-leg, notch and return in the
+  edge, however short; run the full length of the edge tight to the house
+  or wall; guard every open side.
+- `ACCESS_OPENING_RULES` — never put glass across a stair opening, doorway,
+  gate or walkway; glass runs along the sides of a stair, never across or
+  over it.
+- `STAIR_PRESERVATION_RULES` — stairs and the deck footprint are never moved
+  or rebuilt; stair glass runs from the top landing to the bottom step with
+  the same system, handrail and finish as the level runs.
+- Self-check items 5c (openings, jogs, reaches the house) and 5d (stair
+  mounting) restate these as pass/fail questions.
 
 ## Finish
 
