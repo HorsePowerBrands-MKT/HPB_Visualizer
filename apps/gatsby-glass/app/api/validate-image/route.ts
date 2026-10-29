@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Register Gatsby Glass brand templates before any prompt is built.
 import '../../../lib/registerTemplates';
-import { validateImage, validateRailingImage } from '@repo/api-handlers/gemini';
+import {
+  validateImage,
+  validateRailingImage,
+  GeminiRateLimitError,
+  GeminiUnavailableError,
+} from '@repo/api-handlers/gemini';
 import { getRailingValidationPrompt } from '../../../lib/railing/promptBuilder';
 import { logApiCall } from '@repo/api-handlers/supabase';
 import type { ImageData } from '@repo/types';
@@ -79,6 +84,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // The AI service itself is down (billing) or busy (429). Say so plainly;
+    // `serviceUnavailable` tells the client not to add connection advice.
+    if (error instanceof GeminiUnavailableError || error instanceof GeminiRateLimitError) {
+      const unavailable = error instanceof GeminiUnavailableError;
+      console.error(`[VALIDATE-IMAGE API] Gemini ${unavailable ? 'unavailable (billing)' : 'rate-limited'}:`, error.message);
+      return NextResponse.json(
+        {
+          valid: false,
+          reason: unavailable
+            ? 'Our design preview service is temporarily unavailable. Please try again later — your photo is fine.'
+            : 'Our design preview service is busy right now. Please try again in a minute.',
+          serviceUnavailable: true,
+          shape: 'standard'
+        },
+        { status: 503 }
+      );
+    }
+
     console.error('[VALIDATE-IMAGE API] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[VALIDATE-IMAGE API] Error details:', errorMessage);
