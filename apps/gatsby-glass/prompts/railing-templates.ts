@@ -29,6 +29,7 @@ import {
   INSPIRATION_FINISH_MAPPING,
   POOL_GATE_GENERIC_SUPPORT,
   EXISTING_RAILING_REPLACEMENT_RULES,
+  BACKGROUND_RAILING_PRESERVATION_RULES,
   INSPIRATION_RULES,
   UNSUPPORTED_TYPE_RULES,
 } from '../lib/railing/rules';
@@ -39,7 +40,7 @@ export const RAILING_VALIDATION_TEMPLATE_ID = 'railing-validation-v1';
 
 const META = {
   createdAt: '2026-10-12T00:00:00.000Z',
-  updatedAt: '2026-10-23T00:00:00.000Z',
+  updatedAt: '2026-10-29T00:00:00.000Z',
   author: 'Gatsby Glass Team',
 };
 
@@ -49,7 +50,7 @@ const META = {
 
 export const railingVisualizationTemplate: PromptTemplate = {
   id: RAILING_VISUALIZATION_TEMPLATE_ID,
-  version: '1.1.0',
+  version: '1.2.0',
   name: 'Glass Railing Visualization Prompt',
   type: 'visualization',
   description:
@@ -120,6 +121,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '- Preserve the staircase, flooring, walls, windows, doors, ceiling, deck or balcony structure, pool, coping, hardscape, furniture, landscaping, pets, people-free scene, lighting, planters, signage and ALL surrounding elements exactly as shown.',
         '- The only exception is when the selected application specifically requires replacement of an existing guard wall (see placement rules).',
         '- Do not move, remove, add, recolor or redesign unrelated objects or surfaces. Do not alter camera viewpoint, crop, architecture, landscaping, furniture, pool shape, hardscape, pets or lighting to accommodate the railing.',
+        ...BACKGROUND_RAILING_PRESERVATION_RULES,
         '- Output pixel dimensions and aspect ratio must match input_1 exactly.',
         '',
       ],
@@ -462,7 +464,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '- Base shoe: a thin dark band at the floor line, about 2 to 2.5 inches tall and 2.5 inches wide, sitting on the floor; under one-fifteenth of the glass height; no visible fasteners.',
         '- Spigots: small clamps about 5 inches tall, two per panel at the very base, glass floating 3 to 4 inches above the floor.',
         '- Cap rail: a thin square channel about 1 inch tall hugging the glass edge; never a round tube.',
-        '- Side rail: a slim 1.5-inch bar on small standoff pins about 2 inches off the glass, 3 to 4 inches below the glass edge.',
+        '- Side rail: a round 1.5-inch tube grab rail on compact disc-and-elbow standoff brackets about 2 inches off the glass, 3 to 4 inches below the glass edge.',
         '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in; shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
         ...UNSUPPORTED_TYPE_RULES,
@@ -479,6 +481,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment on EVERY glass run (no run missing its rail) and ONE finish on all hardware?',
         '4. For pools: is there an obvious operable gate with no fixed support beneath it, is the water unobstructed, and is there a clear walkway of at least 4 feet between the glass and the coping on every side? If any run hugs the water, redo.',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
+        '5b. Is every railing, fence or banister OTHER than the target railing identical to input_1 — same color, finish, material and style? If any was recolored, converted to glass or removed, redo.',
         '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
         '7. Does the render contain any NOT APPROVED element (posts, clamps on posts, cable, pickets, bars, wood, framed glass)? If yes, redo.',
       ],
@@ -515,7 +518,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
 
 export const railingSystemTemplate: PromptTemplate = {
   id: RAILING_SYSTEM_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'System Prompt for Gemini (glass railing)',
   type: 'system',
   description: 'System-level instructions for frameless glass railing renders.',
@@ -543,6 +546,7 @@ export const railingSystemTemplate: PromptTemplate = {
         'B. PRESERVATION — nothing unrelated changes',
         '   1. Preserve every element that is not the railing exactly as shown: structure, trim, floors, walls, ceilings, windows, doors, furniture, planters, pets, hardscape, pool shape and water, signage and lighting.',
         '   2. Do not move, mirror, duplicate, recolor or remove any unrelated object. Do not widen, reshape or relocate an edge, stair or deck to fit the railing.',
+        '   3. Only the target railing changes. Every other railing, fence, banister or metalwork in input_1 (other levels, neighbors, background, reflections) keeps its exact color, finish, material and style.',
         '',
         'C. REMOVAL — only the existing guard',
         '   1. Remove ONLY an existing railing, guard, fence or guard-height half wall at the railing location when the specification says so. Never remove full-height walls or unrelated structure.',
@@ -563,7 +567,7 @@ export const railingSystemTemplate: PromptTemplate = {
     },
   ],
   variables: [],
-  metadata: { ...META, tags: ['railing', 'system', 'gemini'], notes: 'v1.0.0 — Initial railing system prompt.' },
+  metadata: { ...META, tags: ['railing', 'system', 'gemini'], notes: 'v1.1.0 — Target-railing-only preservation (HP-2803).' },
 };
 
 // ---------------------------------------------------------------------------

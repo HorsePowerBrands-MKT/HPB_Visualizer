@@ -23,6 +23,8 @@ export interface RailingCatalogEntry {
   details: string;
   /** Backend-facing. Never rendered to the consumer. */
   promptDescriptor: string;
+  /** Example photo for the info modal (served from public/). */
+  image?: string;
 }
 
 export interface RailingApplicationEntry extends RailingCatalogEntry {
@@ -78,6 +80,7 @@ export const railingSystems: Record<RailingSystem, RailingCatalogEntry> = {
       'A slim channel runs along the floor edge and holds the bottom of each glass panel, so the glass rises straight from the floor with no posts. The cleanest, most seamless look.',
     promptDescriptor:
       'clear frameless glass seated continuously in a slim base shoe: one straight rectangular aluminum channel about 2 to 2.5 inches tall and about 2.5 inches wide (barely wider than the glass), sitting directly on the finished floor along the railing line, so it reads as a thin dark band at the floor — like a baseboard, less than one-fifteenth of the glass height — never a curb, step, ledge, planter, box or plinth; the bottom edge of every fixed glass panel enters a narrow slot in the top of the shoe; no individual spigots, floor-mounted posts, clamps or vertical framing',
+    image: '/railing-hardware/base-shoe.jpg',
   },
   spigot: {
     name: 'Spigot',
@@ -86,25 +89,28 @@ export const railingSystems: Record<RailingSystem, RailingCatalogEntry> = {
       'Small individual clamps anchor each panel to the floor, leaving open space beneath the glass. A lighter, more open look that works well on decks and around pools.',
     promptDescriptor:
       'clear frameless glass supported by individual compact floor-mounted spigots: small clamps about 5 inches tall and about 2 inches wide (no taller than a coffee mug) bolted to the floor and gripping the bottom edge of the glass, two per panel set in from each panel edge, with the glass bottom edge floating about 3 to 4 inches above the floor and open space beneath; no continuous bottom channel or base shoe, no posts, no vertical framing',
+    image: '/railing-hardware/spigot.jpg',
   },
 };
 
 export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry> = {
   top_mount: {
     name: 'Top-Mounted Handrail',
-    description: 'Rail caps the top edge of the glass',
+    description: 'A cap rail that sits on top of the glass',
     details:
-      'A continuous rail sits directly on the top edge of the glass, capping it from end to end. Gives a clean, finished top line and a comfortable grip.',
+      'A continuous cap rail sits directly on the top edge of the glass, covering it from end to end. Gives a clean, finished top line and a comfortable surface to rest a hand on.',
     promptDescriptor:
       'a continuous top-mounted cap rail: a thin, square-profile channel (about finger-thick, low-profile) seated directly on the top edge of the glass and running its full length, mitered at corners, following the railing geometry; it is NOT a round tube grab bar, there is NO separate rail on the face of the glass and NO rail standing off the glass on brackets',
+    image: '/railing-hardware/top-mount.jpg',
   },
   side_mount: {
     name: 'Side-Mounted Handrail',
-    description: 'Rail mounted along the face of the glass',
+    description: 'A round grab rail on brackets along the glass',
     details:
-      'A continuous rail is mounted on the inside face of the glass on small standoff brackets, just below the top edge. The glass edge stays exposed above it.',
+      'A round grab rail is held off the inside face of the glass on small brackets, just below the top edge, so there is room for your hand to wrap around it. The glass edge stays exposed above it.',
     promptDescriptor:
-      'a continuous side-mounted handrail: a slim rectangular or round bar held a couple of inches off the inside face of the glass on small standoff pins, mounted a few inches below the top edge at hand height, running the full length and following the railing geometry; the polished top edge of the glass remains exposed above the rail — there is NO cap rail on top of the glass',
+      'a continuous side-mounted handrail: a round tube grab rail about 1.5 inches in diameter held a couple of inches off the inside face of the glass by compact standoff brackets (a small round disc on the glass with a short elbow arm up to the rail), mounted a few inches below the top edge at hand height, running the full length and following the railing geometry; the polished top edge of the glass remains exposed above the rail — there is NO cap rail on top of the glass',
+    image: '/railing-hardware/side-mount.jpg',
   },
   no_handrail: {
     name: 'No Handrail',
@@ -113,6 +119,7 @@ export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry
       'The polished top edge of the glass is left clean and uninterrupted for the most minimal look.',
     promptDescriptor:
       'no handrail, cap rail or top rail; the top edge of the glass stays visually clean except where gate hardware or another required connection is present',
+    image: '/railing-hardware/no-handrail.jpg',
   },
 };
 
@@ -138,6 +145,21 @@ export const railingFinishes: Record<RailingFinish, RailingCatalogEntry> = {
       'A bright, mirror-like stainless steel finish that catches the light and reads as crisp and high-end.',
     promptDescriptor: 'polished (mirror) stainless steel',
   },
+  polished_brass: {
+    name: 'Polished Brass',
+    description: 'Bright, shiny warm gold',
+    details:
+      'A luxurious, high-shine brass finish with a warm gold tone that adds a touch of glamour and pairs beautifully with warm woods and stone.',
+    promptDescriptor: 'polished (mirror) brass: bright, shiny, reflective warm gold',
+  },
+  satin_brass: {
+    name: 'Satin Brass',
+    description: 'Soft brushed champagne gold',
+    details:
+      'A soft, brushed brass finish with a warm champagne-gold tone and a gentle sheen. Elegant and understated, without the mirror shine of polished brass.',
+    promptDescriptor:
+      'satin (brushed) brass: soft warm champagne-gold with fine brush lines and a low sheen, not mirror-bright',
+  },
 };
 
 /** CSS backgrounds for finish swatches (same style as the shower hardware swatches). */
@@ -146,6 +168,9 @@ export const railingFinishSwatches: Record<RailingFinish, string> = {
   brushed_stainless:
     'repeating-linear-gradient(45deg, #d0d0d0, #d0d0d0 2px, #c0c0c0 2px, #c0c0c0 4px)',
   polished_stainless: 'linear-gradient(135deg, #e0e0e0 0%, #ffffff 50%, #a0a0a0 100%)',
+  polished_brass: 'linear-gradient(135deg, #fef9c3 0%, #facc15 50%, #ca8a04 100%)',
+  satin_brass:
+    'repeating-linear-gradient(45deg, #d8bf88, #d8bf88 2px, #c9ad74 2px, #c9ad74 4px)',
 };
 
 /** Ordered option lists (object key order is stable but explicit is clearer). */
@@ -161,6 +186,8 @@ export const RAILING_FINISH_ORDER: RailingFinish[] = [
   'matte_black',
   'brushed_stainless',
   'polished_stainless',
+  'polished_brass',
+  'satin_brass',
 ];
 
 export const RAILING_CATALOG = {

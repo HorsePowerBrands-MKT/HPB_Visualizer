@@ -32,7 +32,12 @@ export type RailingSystem = 'base_shoe' | 'spigot';
 export type RailingHandrail = 'top_mount' | 'side_mount' | 'no_handrail';
 
 /** Metal finish for base shoe, spigots, handrail, clamps and gate hardware. */
-export type RailingFinish = 'matte_black' | 'brushed_stainless' | 'polished_stainless';
+export type RailingFinish =
+  | 'matte_black'
+  | 'brushed_stainless'
+  | 'polished_stainless'
+  | 'polished_brass'
+  | 'satin_brass';
 
 /**
  * What the uploaded photo already shows at the railing location. Detected

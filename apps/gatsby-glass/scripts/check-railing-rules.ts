@@ -13,7 +13,9 @@ import {
   validateRailingSelections,
   RailingRuleViolationError,
   UNSUPPORTED_RAILING_TYPES,
+  buildRailingSystemPrompt,
 } from '../lib/railing';
+import { railingVisualizationTemplate } from '../prompts/railing-templates';
 import type { RailingForm, RailingPayload } from '../lib/railing';
 
 let failures = 0;
@@ -58,6 +60,9 @@ const COVERAGE = 'the handrail runs along EVERY glass run in the render';
 check('top-mount: rail on every run', bs.includes(COVERAGE));
 check('side-mount: rail on every run', sm.includes(COVERAGE));
 check('no handrail: no coverage rule', !nh.includes(COVERAGE));
+check('side-mount: round grab rail on standoff brackets (Gatsby photo)', sm.includes('round tube grab rail') && sm.includes('compact standoff brackets'));
+check('side-mount: no "standoff pins" / "no large brackets" contradiction', !sm.includes('standoff pins') && !sm.includes('no large brackets'));
+
 check('self-check: handrail on every run', bs.includes('on EVERY glass run (no run missing its rail)'));
 
 // --- Deck: every open edge guarded -----------------------------------------
@@ -103,6 +108,26 @@ check('inspiration + handrail override: explicit handrail wins', inspHandrailOve
 const inspOverride = prompt({ ...base, mode: 'inspiration', railing_system: null, handrail: null, finish: 'brushed_stainless' });
 check('inspiration + finish override: explicit finish wins', inspOverride.includes('brushed (satin) stainless steel') && !inspOverride.includes('Read the hardware color in input_2'));
 
+// --- Brass finishes ---------------------------------------------------------
+const pb = prompt({ ...base, finish: 'polished_brass' });
+check('finish: polished brass descriptor rendered', pb.includes('polished (mirror) brass'));
+const sb = prompt({ ...base, finish: 'satin_brass' });
+check('finish: satin brass descriptor rendered', sb.includes('satin (brushed) brass'));
+check('inspiration: shiny gold maps to polished brass', insp.includes('→ POLISHED BRASS'));
+check('inspiration: brushed gold / champagne maps to satin brass', insp.includes('champagne') && insp.includes('→ SATIN BRASS'));
+check('inspiration: brass no longer listed as unapproved', !/brass[^\n]*NOT approved/.test(insp));
+
+// --- Background railings (HP-2803) -------------------------------------------
+const TARGET_ONLY = 'TARGET RAILING ONLY: change exactly ONE railing line';
+check('background: target-only rule (configure)', bs.includes(TARGET_ONLY) && bs.includes('Never recolor a non-target railing'));
+check('background: target-only rule (inspiration)', insp.includes(TARGET_ONLY));
+check('background: inspiration style limited to target railing', insp.includes('apply ONLY to the new target railing'));
+check('background: self-check item present', bs.includes('5b. Is every railing, fence or banister OTHER than the target railing identical to input_1'));
+check('background: existing-railing replacement leaves other railings', bs.includes('Any OTHER existing railing in view'));
+const sys = buildRailingSystemPrompt();
+check('background: system prompt preservation rule', sys.includes('Only the target railing changes.'));
+check('template: visualization version 1.2.0', railingVisualizationTemplate.version === '1.2.0');
+
 // --- Validation blocks unsupported selections ------------------------------
 const bad = {
   product: 'railing', mode: 'configure', application: 'exterior_deck', railing_system: 'cable_rail',
@@ -110,6 +135,7 @@ const bad = {
 } as unknown as RailingPayload;
 check('validation: unsupported system rejected', validateRailingSelections(bad).some((i) => i.field === 'railing_system'));
 check('validation: configure requires all selections', validateRailingSelections({ ...bad, railing_system: null, handrail: null, finish: null } as RailingPayload).length === 3);
+check('validation: brass finishes accepted', (['polished_brass', 'satin_brass'] as const).every((f) => validateRailingSelections({ ...bad, railing_system: 'base_shoe', finish: f } as RailingPayload).length === 0));
 check('validation: inspiration allows nulls', validateRailingSelections({ ...bad, mode: 'inspiration', railing_system: null, handrail: null, finish: null } as RailingPayload).length === 0);
 let threw = false;
 try {

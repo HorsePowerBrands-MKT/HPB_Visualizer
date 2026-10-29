@@ -96,7 +96,9 @@ const FeatureDetailsModal: React.FC<{
   onClose: () => void;
   title: string;
   items: FeatureDetailItem[];
-}> = ({ isOpen, onClose, title, items }) => {
+  /** Show each image as a small square thumbnail beside the text instead of a full-width banner. */
+  thumbnails?: boolean;
+}> = ({ isOpen, onClose, title, items, thumbnails = false }) => {
   if (!isOpen) return null;
 
   return (
@@ -119,7 +121,21 @@ const FeatureDetailsModal: React.FC<{
         </div>
 
         <div className="p-5 space-y-6">
-          {items.map((item) => (
+          {items.map((item) => thumbnails && item.image ? (
+            <div key={item.key} className="flex items-start gap-4 p-4 border border-brand-gold/30">
+              <img
+                src={item.image}
+                alt={`${item.name} example`}
+                className="w-24 h-24 sm:w-28 sm:h-28 object-cover border border-brand-gold/30 flex-shrink-0"
+              />
+              <div className="space-y-2">
+                <h4 className="text-lg font-semibold text-brand-gold">{item.name}</h4>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  {item.details || item.description}
+                </p>
+              </div>
+            </div>
+          ) : (
             <div key={item.key} className="border border-brand-gold/30 overflow-hidden">
               {item.swatch ? (
                 <div className="flex items-center gap-4 p-4 border-b border-brand-gold/30">
@@ -172,8 +188,10 @@ const SelectionCard: React.FC<{
   options: RichSelectOption[];
   onChange: (value: string) => void;
   onDetailsClick?: () => void;
+  /** Visible text next to the info icon; icon-only when omitted. */
+  detailsLabel?: string;
   highlightValue?: string;
-}> = ({ label, value, options, onChange, onDetailsClick, highlightValue }) => {
+}> = ({ label, value, options, onChange, onDetailsClick, detailsLabel, highlightValue }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center gap-2">
@@ -181,10 +199,11 @@ const SelectionCard: React.FC<{
         {onDetailsClick && (
           <button
             onClick={onDetailsClick}
-            className="text-brand-gold hover:animate-spin-bounce"
+            className={detailsLabel ? 'flex items-center gap-1 text-sm text-brand-gold/80 hover:text-brand-gold underline underline-offset-2' : 'text-brand-gold hover:animate-spin-bounce'}
             title={`View ${label.toLowerCase()} details`}
           >
             <Info className="w-4 h-4" strokeWidth={1.5} />
+            {detailsLabel && <span>{detailsLabel}</span>}
           </button>
         )}
       </div>

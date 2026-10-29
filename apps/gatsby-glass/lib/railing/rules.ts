@@ -33,6 +33,8 @@ export const APPROVED_FINISHES: readonly RailingFinish[] = [
   'matte_black',
   'brushed_stainless',
   'polished_stainless',
+  'polished_brass',
+  'satin_brass',
 ];
 
 /**
@@ -157,12 +159,12 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
   },
   side_mount: {
     must: [
-      '- The rail is on the FACE of the glass on small brackets, slightly below the top edge; the glass edge stays visible above it.',
+      '- The rail is on the FACE of the glass on compact standoff brackets, slightly below the top edge; the glass edge stays visible above it.',
       ...HANDRAIL_COVERAGE_RULES,
     ],
     forbidden: ['- Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.'],
     proportions: [
-      '- PROPORTIONS: a slim bar about 1.5 inches thick held about 2 inches off the glass by small round standoff pins spaced every few feet, mounted about 3 to 4 inches below the top edge of the glass. Not a thick tube, not a wide flat board, no large brackets.',
+      '- PROPORTIONS: a round tube grab rail about 1.5 inches in diameter held about 2 inches off the glass by compact standoff brackets — a small round disc fixed to the glass with a short elbow arm up to the underside of the rail — spaced every few feet, mounted about 3 to 4 inches below the top edge of the glass. Not a thick pipe, not a wide flat board, not an oversized or ornate bracket.',
     ],
   },
   no_handrail: {
@@ -176,7 +178,7 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
 
 /** B08: the selected finish is applied to every piece of visible hardware. */
 export const FINISH_RULES: readonly string[] = [
-  '- Apply the selected finish consistently to ALL visible railing hardware: base shoe or spigots, handrail or cap rail, standoff pins, clamps, connectors, gate hinges and latch. ONE finish only — never mixed metals.',
+  '- Apply the selected finish consistently to ALL visible railing hardware: base shoe or spigots, handrail or cap rail, standoff brackets, clamps, connectors, gate hinges and latch. ONE finish only — never mixed metals.',
   '- An explicit finish selection overrides any finish shown in an inspiration image.',
 ];
 
@@ -208,7 +210,7 @@ export const POOL_SETBACK_RULES: readonly string[] = [
  */
 export const INSPIRATION_HANDRAIL_MAPPING: readonly string[] = [
   '- Read the handrail in input_2 and map it to exactly ONE approved treatment:',
-  '  • a separate graspable bar on the face of the glass — on brackets, standoffs or posts, at any height → SIDE-MOUNTED rail on small standoff pins, with the glass edge exposed above it',
+  '  • a separate graspable bar on the face of the glass — on brackets, standoffs or posts, at any height → SIDE-MOUNTED round grab rail on compact standoff brackets, with the glass edge exposed above it',
   '  • a channel, cap or profile sitting on the top edge of the glass → TOP-MOUNTED cap rail',
   '  • a bare polished glass edge with no rail of any kind → NO handrail',
   '- If input_2 shows any separate graspable handrail, render SIDE-MOUNTED. Do NOT substitute a top-mounted cap rail for a true handrail, and do NOT add a cap rail on top of a side-mounted rail.',
@@ -223,22 +225,42 @@ export const INSPIRATION_HANDRAIL_MAPPING: readonly string[] = [
  */
 export const INSPIRATION_FINISH_MAPPING: readonly string[] = [
   '- Read the hardware color in input_2 and map it to exactly ONE approved finish:',
-  '  • silver, grey, nickel, chrome, satin, brushed, or any light metal that is not mirror-bright → BRUSHED (satin) STAINLESS STEEL',
+  '  • silver, grey, nickel, chrome, satin, brushed, or any light silver metal that is not mirror-bright → BRUSHED (satin) STAINLESS STEEL',
   '  • bright mirror-polished silver → POLISHED (mirror) STAINLESS STEEL',
+  '  • bright, shiny, mirror-like gold or brass → POLISHED BRASS',
+  '  • brushed or matte gold, champagne, warm brass, copper, rose gold, or light bronze → SATIN BRASS',
   '  • black, charcoal, gunmetal, dark bronze, or any dark metal → MATTE BLACK',
-  '  • brass, gold, copper, bronze, wood, or painted colors are NOT approved: use brushed stainless for warm or light tones and matte black for dark tones',
+  '  • wood or painted colors are NOT approved: use the approved metal finish closest in tone (satin brass for warm tones, brushed stainless for light neutral tones, matte black for dark tones)',
   '- Do NOT default to matte black. Black is correct only when the hardware in input_2 is clearly dark.',
 ];
 
 /** B09: replacement respects the existing geometry. */
 export const EXISTING_RAILING_REPLACEMENT_RULES: readonly string[] = [
-  '- An existing railing / guard is visible. REMOVE only the existing railing system and replace it along the SAME railing location, stair slope, landing geometry, balcony edge or deck perimeter. Preserve the supporting architecture. Do not extend the new railing onto adjacent walls or surfaces.',
+  '- An existing railing / guard is visible. REMOVE only the existing railing system at the target railing location and replace it along the SAME railing location, stair slope, landing geometry, balcony edge or deck perimeter. Preserve the supporting architecture. Do not extend the new railing onto adjacent walls or surfaces.',
+  '- Any OTHER existing railing in view (a different level, another stair, a neighboring deck, the background) is not part of this replacement and stays exactly as it is.',
+];
+
+/**
+ * B02 / B25: only the target railing changes. (HP-2803: a black railing in
+ * the background was recolored to the selected finish.) Prompt-only — the
+ * image model receives the whole photo with no mask.
+ */
+export const BACKGROUND_RAILING_PRESERVATION_RULES: readonly string[] = [
+  '- TARGET RAILING ONLY: change exactly ONE railing line — the target railing location described above. Every other railing, guard, banister, fence, gate or piece of metalwork visible in input_1 is NOT the target.',
+  '- Non-target railings include railings on other floors or levels, other stairs, neighboring decks or buildings, railings seen through windows or doors, in reflections, and anything in the background. Keep each one exactly as in input_1: same material, color, finish, style, position and condition.',
+  '- Never recolor a non-target railing to the selected finish, never convert it to glass, never remove, extend or restyle it.',
+];
+
+/** Match Inspiration: the inspiration style applies to the target railing only. */
+export const INSPIRATION_TARGET_ONLY_RULES: readonly string[] = [
+  '- The style, hardware and finish from input_2 apply ONLY to the new target railing. Do not apply them to any other railing, fence or metalwork in input_1.',
 ];
 
 /** B20–B22 plus the unsupported-type mapping for the Match Inspiration path. */
 export const INSPIRATION_RULES: readonly string[] = [
   '- input_2 controls STYLE only: railing system appearance, glass configuration, handrail treatment, hardware style, and gate treatment where applicable.',
   '- input_1 controls SPACE and GEOMETRY. Do NOT copy the railing path, dimensions, background, landscaping or architecture from input_2. Determine railing placement from input_1 and the placement rules above.',
+  ...INSPIRATION_TARGET_ONLY_RULES,
   '- Precedence: explicit consumer selection > inspiration image > backend defaults. Any selection listed in the RAILING_SPECIFICATION overrides what input_2 shows.',
   '- Map whatever input_2 shows onto exactly ONE approved Gatsby Glass system (continuous BASE SHOE or individual SPIGOTS) and ONE approved handrail treatment (top-mounted cap rail, side-mounted rail, or none). Never copy an unsupported railing type from input_2:',
   ...UNSUPPORTED_RAILING_TYPES.map(
