@@ -101,6 +101,7 @@ export const RailingSystemStep: React.FC<RailingSystemStepProps> = ({
     name: railingSystems[key].name,
     description: railingSystems[key].description,
     details: railingSystems[key].details,
+    image: railingSystems[key].image,
   }));
 
   const handrailDetailItems: FeatureDetailItem[] = RAILING_HANDRAIL_ORDER.map((key) => ({
@@ -108,6 +109,7 @@ export const RailingSystemStep: React.FC<RailingSystemStepProps> = ({
     name: railingHandrailOptions[key].name,
     description: railingHandrailOptions[key].description,
     details: railingHandrailOptions[key].details,
+    image: railingHandrailOptions[key].image,
   }));
 
   const finishDetailItems: FeatureDetailItem[] = RAILING_FINISH_ORDER.map((key) => ({
@@ -132,6 +134,7 @@ export const RailingSystemStep: React.FC<RailingSystemStepProps> = ({
           options={railingSystemOptions}
           onChange={(v) => onRailingSystemChange(v as RailingSystem)}
           onDetailsClick={() => setSystemDetailsOpen(true)}
+          detailsLabel="See examples"
         />
         <SelectionCard
           label="Handrail"
@@ -139,6 +142,7 @@ export const RailingSystemStep: React.FC<RailingSystemStepProps> = ({
           options={railingHandrailSelectOptions}
           onChange={(v) => onHandrailChange(v as RailingHandrail)}
           onDetailsClick={() => setHandrailDetailsOpen(true)}
+          detailsLabel="See examples"
         />
         <SelectionCard
           label="Finish"
@@ -154,12 +158,14 @@ export const RailingSystemStep: React.FC<RailingSystemStepProps> = ({
         onClose={() => setSystemDetailsOpen(false)}
         title="Railing System Guide"
         items={systemDetailItems}
+        thumbnails
       />
       <FeatureDetailsModal
         isOpen={handrailDetailsOpen}
         onClose={() => setHandrailDetailsOpen(false)}
         title="Handrail Guide"
         items={handrailDetailItems}
+        thumbnails
       />
       <FeatureDetailsModal
         isOpen={finishDetailsOpen}
