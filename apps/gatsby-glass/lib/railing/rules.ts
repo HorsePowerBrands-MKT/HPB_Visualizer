@@ -101,7 +101,8 @@ export const SYSTEM_RULES: Record<RailingSystem, SystemRuleSet> = {
       '  • HEIGHT: about 2 to 2.5 inches above the finished floor — the height of a baseboard or a hand held sideways. Never more than 3 inches. Against a 42-inch glass panel the shoe is under one-fifteenth of the total height. If the shoe looks taller than a hand is wide, it is WRONG — make it thinner.',
       '  • WIDTH: about 2.5 inches, barely wider than the glass. From above it is a narrow strip; from the side it is a thin dark band. It is NOT a curb, a step, a ledge, a planter, a bench or a box — nothing you could stand on or set a cup on.',
       '  • FORM: one straight, crisp rectangular extrusion with flat faces, continuous and uniform along the whole run, in the selected finish; flat top face with the glass entering a narrow slot in the center; no visible bolts, no segment gaps, no end caps sticking up, no trim or cladding bulk.',
-      '  • PLACEMENT: sits directly ON the finished floor / deck surface at the edge, tight to the edge. On a stair it runs as a continuous raked channel parallel to the stair pitch along the nosing line. Do not sink it into the floor and do not raise it on a curb.',
+      '  • PLACEMENT: sits directly ON the finished floor / deck surface at the edge, tight to the edge. Do not sink it into the floor and do not raise it on a curb.',
+      '  • STAIRS: the stair glass uses the SAME base shoe as the level runs — never drop the shoe on the stairs. On a stair the shoe is one straight raked channel parallel to the stair pitch, seated on a continuous flat surface that runs with the slope (the stair stringer or a raked curb along the side of the stair). It never steps up tread by tread and never sits on the tread noses.',
       '  • The glass dominates the view; the shoe is a thin line of hardware at the bottom.',
     ],
     poolGate: [
@@ -119,6 +120,8 @@ export const SYSTEM_RULES: Record<RailingSystem, SystemRuleSet> = {
       '- MOUNTING PROPORTIONS (critical — the most common error is spigots that are far too tall or too bulky):',
       '  • Each spigot is a small clamp about 5 inches tall and about 2 inches wide — no taller than a coffee mug, a fraction of the 42-inch glass height. If a spigot looks like a post or a block, it is WRONG — make it smaller.',
       '  • Two per panel, set in about 8 to 10 inches from each panel edge, evenly repeated along the run; the glass bottom edge floats about 3 to 4 inches above the floor with clear open space beneath between spigots.',
+      '  • COUNT: panels are WIDE (about 4 to 5 feet on level runs), so spigots are well spaced — never more than two per panel and never a dense row; neighboring spigots are at least about 1.5 feet apart. Number of spigots = 2 × number of panels.',
+      '  • STAIRS: every stair panel gets its own two spigots, stepping down with the stairs, all the way to the BOTTOM step. No stair panel is left unsupported, and the lowest spigot sits at the bottom of the stair run — not part-way up.',
       '  • Each spigot is a simple rounded or square clamp in the selected finish, bolted flat to the floor / deck surface, gripping only the bottom edge of the glass. No base plates larger than a hand, no vertical posts, no continuous channel.',
       '  • The glass dominates the view; the spigots are small, repeated details at the floor line.',
     ],
@@ -162,7 +165,10 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
       '- The rail is on the FACE of the glass on compact standoff brackets, slightly below the top edge; the glass edge stays visible above it.',
       ...HANDRAIL_COVERAGE_RULES,
     ],
-    forbidden: ['- Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.'],
+    forbidden: [
+      '- Do NOT add a cap rail on top of the glass, and do NOT merge the rail into the glass edge.',
+      '- EXACTLY ONE rail per glass run: the side-mounted grab rail. If the top edge of the glass is capped or covered by anything, the render FAILS.',
+    ],
     proportions: [
       '- PROPORTIONS: a round tube grab rail about 1.5 inches in diameter held about 2 inches off the glass by compact standoff brackets — a small round disc fixed to the glass with a short elbow arm up to the underside of the rail — spaced every few feet, mounted about 3 to 4 inches below the top edge of the glass. Not a thick pipe, not a wide flat board, not an oversized or ornate bracket.',
     ],
@@ -175,6 +181,35 @@ export const HANDRAIL_RULES: Record<RailingHandrail, HandrailRuleSet> = {
     proportions: [],
   },
 };
+
+/**
+ * B10 / B11 / B13: the railing traces the real edge. (QA 2026-10-29: renders
+ * skipped a short dog-leg, left sides unguarded, and stopped short of the
+ * house.) Not used for pool enclosures, which have their own setback logic.
+ */
+export const EDGE_FOLLOWING_RULES: readonly string[] = [
+  '- EDGE GEOMETRY: follow the edge in input_1 exactly, including EVERY short jog, dog-leg, notch, offset, return and corner — even a segment only one or two feet long gets its own panel. Never cut a straight line across a jog or skip a short segment.',
+  '- FULL LENGTH: run the railing along the whole open edge, from tight against the house wall, column or post at one end to the very end of the edge. No gap between the glass and the house or wall.',
+  '- ALL SIDES: guard every open side of the deck, balcony, landing or stair that is visible in input_1, not only the side nearest the camera.',
+];
+
+/**
+ * Access openings stay open. (QA 2026-10-29: a deck render was closed in with
+ * glass across the top of the steps; another covered the stairs in glass.)
+ */
+export const ACCESS_OPENING_RULES: readonly string[] = [
+  '- ACCESS OPENINGS STAY OPEN: never place glass across the top of a stair, a stair opening, a doorway, a gate or any walkway people use to get on or off the deck, balcony or landing. Keep every opening exactly as wide as it is in input_1.',
+  '- Glass runs ALONG the open sides of a stair, never across the stairs and never over the treads. A person must still be able to walk from the deck or landing onto the stairs.',
+];
+
+/**
+ * Stairs and the structure under the railing are never rebuilt. (QA
+ * 2026-10-29: "it remodeled my deck, moved my stairs".)
+ */
+export const STAIR_PRESERVATION_RULES: readonly string[] = [
+  '- STAIRS: if a stair is visible, keep it exactly where it is — same position, width, direction, number of steps, treads and stringers. Do not move, rebuild, widen, re-angle or remove stairs, and do not reshape the deck footprint or decking to fit the railing.',
+  '- Guard each open side of the stair with glass raked to the stair pitch, from the top landing all the way down to the bottom step, using the same system, handrail and finish as the level runs.',
+];
 
 /** B08: the selected finish is applied to every piece of visible hardware. */
 export const FINISH_RULES: readonly string[] = [

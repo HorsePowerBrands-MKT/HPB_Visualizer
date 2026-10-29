@@ -30,6 +30,9 @@ import {
   POOL_GATE_GENERIC_SUPPORT,
   EXISTING_RAILING_REPLACEMENT_RULES,
   BACKGROUND_RAILING_PRESERVATION_RULES,
+  EDGE_FOLLOWING_RULES,
+  ACCESS_OPENING_RULES,
+  STAIR_PRESERVATION_RULES,
   INSPIRATION_RULES,
   UNSUPPORTED_TYPE_RULES,
 } from '../lib/railing/rules';
@@ -50,7 +53,7 @@ const META = {
 
 export const railingVisualizationTemplate: PromptTemplate = {
   id: RAILING_VISUALIZATION_TEMPLATE_ID,
-  version: '1.2.0',
+  version: '1.3.0',
   name: 'Glass Railing Visualization Prompt',
   type: 'visualization',
   description:
@@ -226,6 +229,12 @@ export const railingVisualizationTemplate: PromptTemplate = {
             '- Do not omit the stair railing. Do not create railing over intact drywall or full-height walls.',
             '- Glass along a stair run is raked to match the stair pitch; glass along a landing or balcony edge is level.',
           ],
+        },
+        {
+          id: 'edges_openings_stairs',
+          type: 'instructions',
+          condition: { variable: 'application', operator: 'not_equals', value: 'pool_balustrade' },
+          content: [...EDGE_FOLLOWING_RULES, ...ACCESS_OPENING_RULES, ...STAIR_PRESERVATION_RULES],
         },
         {
           id: 'B13_exterior_deck',
@@ -482,6 +491,8 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '4. For pools: is there an obvious operable gate with no fixed support beneath it, is the water unobstructed, and is there a clear walkway of at least 4 feet between the glass and the coping on every side? If any run hugs the water, redo.',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
         '5b. Is every railing, fence or banister OTHER than the target railing identical to input_1 — same color, finish, material and style? If any was recolored, converted to glass or removed, redo.',
+        '5c. Are the deck, stairs and every doorway or stair opening exactly where they were in input_1, with no glass across an opening or over the stairs? Does the railing follow every short jog in the edge and reach all the way to the house or wall? If not, redo.',
+        '5d. Stairs: does the stair glass continue to the bottom step with the same mounting as the level runs (a raked base shoe, or two spigots on every stair panel)? If a stair panel is unsupported or the shoe stops at the stairs, redo.',
         '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
         '7. Does the render contain any NOT APPROVED element (posts, clamps on posts, cable, pickets, bars, wood, framed glass)? If yes, redo.',
       ],
