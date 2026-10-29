@@ -15,7 +15,7 @@ Run the acceptance checks: `pnpm --filter gatsby-glass check:railing-rules`.
 |---|---|
 | Railing system | Base Shoe, Spigot |
 | Handrail | Top-Mounted cap rail, Side-Mounted rail, No Handrail |
-| Finish | Matte Black, Brushed Stainless, Polished Stainless |
+| Finish | Matte Black, Brushed Stainless, Polished Stainless, Polished Brass, Satin Brass |
 
 Every system supports every handrail (`SYSTEM_HANDRAIL_COMPATIBILITY`). Change
 the matrix there if a combination is ever withdrawn.
@@ -36,16 +36,36 @@ coffee mug.
 
 - **Top-Mounted** — a thin square cap channel (~1 in) seated on the glass edge.
   No second rail on the face; the edge is never exposed above the cap.
-- **Side-Mounted** — a slim bar (~1.5 in) on small standoff pins ~2 in off the
-  glass face, 3–4 in below the edge. No cap rail on top.
+- **Side-Mounted** — a round tube grab rail (~1.5 in diameter) on compact
+  disc-and-elbow standoff brackets ~2 in off the glass face, 3–4 in below the
+  edge, matching Gatsby's hardware photo. No cap rail on top.
+
+Example photos for each system and handrail (supplied by Gatsby Glass) live in
+`apps/gatsby-glass/public/railing-hardware/` and are shown in the wizard's
+Railing System and Handrail guides. They are UI-only; they are not sent to the
+image model.
 - **No Handrail** — clean polished glass edge; no rail, cap or channel of any
   kind except gate hardware.
+- **Coverage** (`HANDRAIL_COVERAGE_RULES`) — a top- or side-mounted rail runs
+  along every glass run in the render: every side of a deck or balcony,
+  every return, the stair flight and the landing. A run missing its rail is
+  a failed render. The exterior deck placement rule repeats this for the
+  front run, both side returns and any stair edge.
 
 ## Finish
 
 The selected finish is applied to every visible piece of hardware: shoe or
 spigots, rail, standoffs, clamps, connectors, gate hinges and latch. One finish
 only. An explicit selection overrides any finish in an inspiration photo.
+
+## Pool setback (pool application, no existing fence)
+
+`POOL_SETBACK_RULES`: at least 4 ft (about 1.2 m) of clear deck between the
+glass and the coping on every side, never on the coping, the first row of
+deck beside it, or over the water. Where the hardscape is narrower than
+4 ft, the glass follows the outer boundary of the hardscape instead. With an
+existing fence the enclosure stays on the fence line and no setback rule is
+rendered.
 
 ## Pool gate (pool application only)
 
@@ -62,6 +82,25 @@ and the new glass follows the same railing location, stair slope, landing
 geometry, balcony edge or deck perimeter. Supporting architecture is preserved
 and the railing never extends onto adjacent walls.
 
+## Background railings (target railing only)
+
+`BACKGROUND_RAILING_PRESERVATION_RULES` (HP-2803): only one railing line —
+the target location — changes. Every other railing, guard, banister, fence or
+metalwork in the photo (other levels, other stairs, neighboring decks,
+through windows, reflections, the background) keeps its exact material,
+color, finish, style and position. It is never recolored to the selected
+finish, converted to glass, removed or extended. The rule is rendered in the
+user prompt's preservation section, the system prompt (B.3) and self-check
+item 5b. On Match Inspiration, `INSPIRATION_TARGET_ONLY_RULES` limits the
+inspiration style and finish to the target railing, and the existing-railing
+replacement rule only removes the railing at the target location.
+
+**Limitations.** This is enforced by prompt only. Gemini receives the whole
+photo as an edit with no mask or region control, so drift is still possible
+on busy scenes with several similar railings (e.g. two stacked balconies).
+If it shows up in QA, the next step is a validator-detected target
+description or a mask-based edit, not more prompt text.
+
 ## Unsupported railing types (never rendered)
 
 Cable rail / wire rope; picket, baluster or spindle rail; framed-post systems
@@ -73,6 +112,22 @@ On the Match Inspiration path an inspiration photo of any of these is mapped to
 an approved system (`UNSUPPORTED_RAILING_TYPES[].mapsTo`): cable → spigot,
 everything else → base shoe. The consumer's explicit selections always win
 over the inspiration photo.
+
+## Match Inspiration fallbacks (no explicit selection)
+
+When the consumer leaves handrail or finish as "Match photo", the prompt
+renders an explicit mapping instead of a bare "match input_2":
+
+- **Handrail** (`INSPIRATION_HANDRAIL_MAPPING`) — any separate graspable bar
+  on the glass face → Side-Mounted; a channel on the top edge → Top-Mounted;
+  a bare edge → No Handrail. A cap rail is never substituted for a true
+  handrail (B06), and the coverage rule applies.
+- **Finish** (`INSPIRATION_FINISH_MAPPING`) — silver / grey / nickel / chrome /
+  satin → Brushed Stainless; mirror-bright silver → Polished Stainless;
+  shiny gold / brass → Polished Brass; brushed gold / champagne / copper /
+  light bronze → Satin Brass; black / charcoal / gunmetal / dark bronze →
+  Matte Black. Wood and painted colors map to the nearest approved metal
+  finish. The model is told not to default to black.
 
 ## Where the rules are enforced
 

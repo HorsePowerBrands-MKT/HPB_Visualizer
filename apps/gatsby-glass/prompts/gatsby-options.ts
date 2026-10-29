@@ -130,6 +130,35 @@ export const hardwareFinishDescriptions = {
 - Warm, traditional look
 - Often shows intentional "wear" highlights`,
   },
+
+  dark_brushed_bronze: {
+    name: "Dark Brushed Bronze",
+    description: `DARK BRUSHED BRONZE hardware finish.
+- Warm medium-dark brown bronze with a soft rose-bronze cast
+- Fine, even brushed texture with a low satin sheen
+- Uniform color — NO antiqued patina, NO copper "wear" highlights (unlike oil rubbed bronze)
+- Noticeably lighter and warmer than oil rubbed bronze, darker than satin brass
+- Modern, warm, refined look`,
+  },
+
+  satin_brass: {
+    name: "Satin Brass",
+    description: `SATIN BRASS hardware finish.
+- Soft champagne-gold brass color
+- Fine brushed texture with a gentle, diffused sheen
+- NOT mirror-bright — softer and less reflective than polished brass
+- Warm, understated, contemporary luxury look`,
+  },
+
+  gunmetal: {
+    name: "Gunmetal",
+    description: `GUNMETAL hardware finish.
+- Dark charcoal grey metal with a faint warm undertone
+- Matte to low-satin surface, subtle metallic depth
+- Clearly GREY, not black — lighter than matte black, with soft highlights on edges
+- No shine, no mirror reflection
+- Modern, industrial-refined look`,
+  },
 };
 
 export const handleStyleDescriptions = {

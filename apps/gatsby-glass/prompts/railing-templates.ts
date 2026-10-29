@@ -21,10 +21,15 @@ import type { PromptTemplate } from '@repo/prompt-templates';
 import {
   SYSTEM_RULES,
   HANDRAIL_RULES,
+  HANDRAIL_COVERAGE_RULES,
   FINISH_RULES,
   POOL_GATE_RULES,
+  POOL_SETBACK_RULES,
+  INSPIRATION_HANDRAIL_MAPPING,
+  INSPIRATION_FINISH_MAPPING,
   POOL_GATE_GENERIC_SUPPORT,
   EXISTING_RAILING_REPLACEMENT_RULES,
+  BACKGROUND_RAILING_PRESERVATION_RULES,
   INSPIRATION_RULES,
   UNSUPPORTED_TYPE_RULES,
 } from '../lib/railing/rules';
@@ -35,7 +40,7 @@ export const RAILING_VALIDATION_TEMPLATE_ID = 'railing-validation-v1';
 
 const META = {
   createdAt: '2026-10-12T00:00:00.000Z',
-  updatedAt: '2026-10-12T00:00:00.000Z',
+  updatedAt: '2026-10-29T00:00:00.000Z',
   author: 'Gatsby Glass Team',
 };
 
@@ -45,7 +50,7 @@ const META = {
 
 export const railingVisualizationTemplate: PromptTemplate = {
   id: RAILING_VISUALIZATION_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.2.0',
   name: 'Glass Railing Visualization Prompt',
   type: 'visualization',
   description:
@@ -116,6 +121,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '- Preserve the staircase, flooring, walls, windows, doors, ceiling, deck or balcony structure, pool, coping, hardscape, furniture, landscaping, pets, people-free scene, lighting, planters, signage and ALL surrounding elements exactly as shown.',
         '- The only exception is when the selected application specifically requires replacement of an existing guard wall (see placement rules).',
         '- Do not move, remove, add, recolor or redesign unrelated objects or surfaces. Do not alter camera viewpoint, crop, architecture, landscaping, furniture, pool shape, hardscape, pets or lighting to accommodate the railing.',
+        ...BACKGROUND_RAILING_PRESERVATION_RULES,
         '- Output pixel dimensions and aspect ratio must match input_1 exactly.',
         '',
       ],
@@ -227,6 +233,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           condition: { variable: 'application', operator: 'equals', value: 'exterior_deck' },
           content: [
             '- Use the existing deck / patio perimeter and existing railing line as the guide. Replace only the railing. If no railing is present, follow the clearly defined open deck / patio edge rather than inventing a new perimeter.',
+            '- Apply the glass AND the selected handrail to EVERY open edge of the deck visible in the photo: the front run, BOTH side returns, and any stair edge. Do not leave a visible open edge unguarded, and do not drop the handrail on a side run.',
             '- Preserve decking, stairs, furniture, house, siding, landscaping, pets, lighting, planters and surrounding structures exactly as shown.',
           ],
         },
@@ -243,6 +250,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
           content: [
             '- No existing pool barrier. Create a code-conscious glass pool enclosure on the surrounding usable deck / patio area. Do NOT trace or snake around the exact shape of the pool. Favor clean, straighter runs and intentional corners, positioned back from the pool edge to preserve practical circulation space. Do not place the barrier directly on the pool coping unless the site geometry clearly requires it.',
             '- Use the property hardscape and circulation pattern to infer a practical enclosure zone. Keep the pool, pool steps and water completely unobstructed. The perimeter must read as a fence around the pool AREA, not a railing attached to the pool itself. Do not place glass through water, furniture or planting.',
+            ...POOL_SETBACK_RULES,
           ],
         },
         {
@@ -363,7 +371,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the handrail treatment shown in input_2, mapped to exactly one approved treatment: a TOP-MOUNTED cap rail seated on the glass edge, a SIDE-MOUNTED rail on the glass face on small brackets, or NO handrail (clean exposed glass edge). Use one treatment consistently along the whole run.',
+            ...INSPIRATION_HANDRAIL_MAPPING,
           ],
         },
         { id: 'handrail_end', type: 'custom', content: [''] },
@@ -395,7 +403,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
             ],
           },
           content: [
-            '- Match the hardware finish shown in input_2 (matte black, brushed stainless, or polished stainless).',
+            ...INSPIRATION_FINISH_MAPPING,
             ...FINISH_RULES,
           ],
         },
@@ -456,7 +464,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
         '- Base shoe: a thin dark band at the floor line, about 2 to 2.5 inches tall and 2.5 inches wide, sitting on the floor; under one-fifteenth of the glass height; no visible fasteners.',
         '- Spigots: small clamps about 5 inches tall, two per panel at the very base, glass floating 3 to 4 inches above the floor.',
         '- Cap rail: a thin square channel about 1 inch tall hugging the glass edge; never a round tube.',
-        '- Side rail: a slim 1.5-inch bar on small standoff pins about 2 inches off the glass, 3 to 4 inches below the glass edge.',
+        '- Side rail: a round 1.5-inch tube grab rail on compact disc-and-elbow standoff brackets about 2 inches off the glass, 3 to 4 inches below the glass edge.',
         '- Scale check: hardware is a small fraction of the glass height. Glass ~42 in; shoe ~2 in; spigot ~5 in; cap ~1 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
         ...UNSUPPORTED_TYPE_RULES,
@@ -470,9 +478,10 @@ export const railingVisualizationTemplate: PromptTemplate = {
         'SELF-CHECK BEFORE OUTPUT:',
         '1. Is the output the same space as input_1 with the same viewpoint, crop and surroundings?',
         '2. Is the new glass railing clearly visible along the correct railing line / edge, and nowhere else?',
-        '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment and ONE finish on all hardware?',
-        '4. For pools: is there an obvious operable gate with no fixed support beneath it, and is the water unobstructed?',
+        '3. Is exactly ONE system used (continuous base shoe OR individual spigots), with the correct handrail treatment on EVERY glass run (no run missing its rail) and ONE finish on all hardware?',
+        '4. For pools: is there an obvious operable gate with no fixed support beneath it, is the water unobstructed, and is there a clear walkway of at least 4 feet between the glass and the coping on every side? If any run hugs the water, redo.',
         '5. Did anything unrelated change (furniture, landscaping, pets, lighting, walls)? If yes, redo.',
+        '5b. Is every railing, fence or banister OTHER than the target railing identical to input_1 — same color, finish, material and style? If any was recolored, converted to glass or removed, redo.',
         '6. SCALE: is the floor mounting tiny next to the glass — base shoe about 2 inches tall (a thin band, not a curb) or spigots about 5 inches tall (small clamps, not posts)? If the mounting is taller than a hand is wide, redo with thinner hardware.',
         '7. Does the render contain any NOT APPROVED element (posts, clamps on posts, cable, pickets, bars, wood, framed glass)? If yes, redo.',
       ],
@@ -509,7 +518,7 @@ export const railingVisualizationTemplate: PromptTemplate = {
 
 export const railingSystemTemplate: PromptTemplate = {
   id: RAILING_SYSTEM_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'System Prompt for Gemini (glass railing)',
   type: 'system',
   description: 'System-level instructions for frameless glass railing renders.',
@@ -537,6 +546,7 @@ export const railingSystemTemplate: PromptTemplate = {
         'B. PRESERVATION — nothing unrelated changes',
         '   1. Preserve every element that is not the railing exactly as shown: structure, trim, floors, walls, ceilings, windows, doors, furniture, planters, pets, hardscape, pool shape and water, signage and lighting.',
         '   2. Do not move, mirror, duplicate, recolor or remove any unrelated object. Do not widen, reshape or relocate an edge, stair or deck to fit the railing.',
+        '   3. Only the target railing changes. Every other railing, fence, banister or metalwork in input_1 (other levels, neighbors, background, reflections) keeps its exact color, finish, material and style.',
         '',
         'C. REMOVAL — only the existing guard',
         '   1. Remove ONLY an existing railing, guard, fence or guard-height half wall at the railing location when the specification says so. Never remove full-height walls or unrelated structure.',
@@ -557,7 +567,7 @@ export const railingSystemTemplate: PromptTemplate = {
     },
   ],
   variables: [],
-  metadata: { ...META, tags: ['railing', 'system', 'gemini'], notes: 'v1.0.0 — Initial railing system prompt.' },
+  metadata: { ...META, tags: ['railing', 'system', 'gemini'], notes: 'v1.1.0 — Target-railing-only preservation (HP-2803).' },
 };
 
 // ---------------------------------------------------------------------------
