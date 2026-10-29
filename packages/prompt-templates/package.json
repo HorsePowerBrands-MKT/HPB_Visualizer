@@ -8,7 +8,7 @@
     "build": "tsc",
     "clean": "rm -rf dist node_modules",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@repo/types": "workspace:*"
