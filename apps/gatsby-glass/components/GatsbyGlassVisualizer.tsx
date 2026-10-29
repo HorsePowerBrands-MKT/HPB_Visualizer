@@ -729,7 +729,7 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
                 }
           }
           mode={contactModalMode}
-          userFingerprint={userFingerprint}
+          userFingerprint={userFingerprint ?? undefined}
         />
       )}
 
