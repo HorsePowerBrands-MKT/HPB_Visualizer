@@ -4,6 +4,7 @@ import '../../../lib/registerTemplates';
 import {
   generateVisualization,
   GeminiRateLimitError,
+  GeminiUnavailableError,
 } from '@repo/api-handlers/gemini';
 import {
   getMonthlyUsageCount,
@@ -234,6 +235,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `Invalid request: ${error.issues[0]?.message || 'Validation failed'}` },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof GeminiUnavailableError) {
+      console.error('[GENERATE] Gemini refused the request for billing reasons (credits / 402).');
+      return NextResponse.json(
+        {
+          error: 'Our design preview service is temporarily unavailable. Please try again later.',
+          serviceUnavailable: true,
+        },
+        { status: 503 }
       );
     }
 

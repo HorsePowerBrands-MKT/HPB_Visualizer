@@ -121,16 +121,56 @@ export class GeminiRateLimitError extends Error {
 }
 
 /**
+ * Error thrown when Gemini refuses the request for billing reasons (HTTP 402,
+ * e.g. "Your prepayment credits are depleted"). Retrying will not help; the
+ * account needs credits. Surfaced separately so routes can tell the user the
+ * service is temporarily unavailable instead of blaming their photo or
+ * connection.
+ */
+export class GeminiUnavailableError extends Error {
+  readonly isUnavailable = true;
+  constructor(message = 'The Gemini account cannot serve requests (billing / credits).') {
+    super(message);
+    this.name = 'GeminiUnavailableError';
+  }
+}
+
+/**
+ * Detects a Gemini billing refusal (402 / depleted prepayment credits). The
+ * SDK reports these as RESOURCE_EXHAUSTED too, so this must be checked
+ * before `isRateLimitError`.
+ */
+function isBillingError(err: unknown): boolean {
+  if (!err) return false;
+  const anyErr = err as { status?: number; code?: number; message?: string };
+  if (anyErr.status === 402 || anyErr.code === 402) return true;
+  const msg = String(anyErr.message ?? err);
+  return /\b402\b|prepayment credits|billing/i.test(msg);
+}
+
+/**
  * Detects whether a thrown error from the Gemini SDK represents a 429 /
  * RESOURCE_EXHAUSTED response. The SDK surfaces these in a few different
  * shapes depending on transport, so we normalize across all of them.
+ * Billing refusals are excluded: they also say RESOURCE_EXHAUSTED but a
+ * retry cannot succeed.
  */
 function isRateLimitError(err: unknown): boolean {
-  if (!err) return false;
+  if (!err || isBillingError(err)) return false;
   const anyErr = err as { status?: number; code?: number; message?: string };
   if (anyErr.status === 429 || anyErr.code === 429) return true;
   const msg = String(anyErr.message ?? err);
   return /\b429\b|RESOURCE_EXHAUSTED|quota|rate\s*limit/i.test(msg);
+}
+
+/**
+ * Maps a raw Gemini SDK error to `GeminiUnavailableError` (billing) or
+ * `GeminiRateLimitError` (429), or returns it unchanged.
+ */
+export function toGeminiServiceError(err: unknown): unknown {
+  if (isBillingError(err)) return new GeminiUnavailableError();
+  if (isRateLimitError(err)) return new GeminiRateLimitError();
+  return err;
 }
 
 /**
@@ -307,10 +347,10 @@ export async function generateVisualization(
           console.error('[GEMINI generateVisualization] Retry also rate-limited, surfacing GeminiRateLimitError');
           throw new GeminiRateLimitError();
         }
-        throw retryErr;
+        throw toGeminiServiceError(retryErr);
       }
     } else {
-      throw err;
+      throw toGeminiServiceError(err);
     }
   }
 
@@ -431,7 +471,7 @@ export async function validateImage(
     };
   } catch (error) {
     console.error('[GEMINI validateImage] Error during validation:', error);
-    throw error;
+    throw toGeminiServiceError(error);
   }
 }
 
@@ -494,6 +534,8 @@ export async function validateRailingImage(
         required: ['isValid', 'contentFlag', 'setting', 'existingCondition', 'detectedApplication'],
       },
     },
+  }).catch((err: unknown) => {
+    throw toGeminiServiceError(err);
   });
 
   const text = response.text;

@@ -178,14 +178,23 @@ export async function validateUploadedPhoto(
 
     if (!response.ok) {
       let message = `Couldn't verify your photo (error ${response.status}). Please try again.`;
+      let serviceUnavailable = false;
       try {
-        const errJson = (await response.json()) as { reason?: string; error?: string };
+        const errJson = (await response.json()) as {
+          reason?: string;
+          error?: string;
+          serviceUnavailable?: boolean;
+        };
         if (typeof errJson.reason === 'string') message = errJson.reason;
         else if (typeof errJson.error === 'string') message = errJson.error;
+        serviceUnavailable = errJson.serviceUnavailable === true;
       } catch {
         /* non-JSON error body */
       }
-      if (response.status === 413) {
+      if (serviceUnavailable) {
+        // The AI service is down or busy — the server message already says
+        // so; connection advice would send the customer the wrong way.
+      } else if (response.status === 413) {
         message =
           'This photo is too large to upload. Use a smaller export from your gallery or take a new picture at lower quality.';
       } else if (response.status >= 500) {
