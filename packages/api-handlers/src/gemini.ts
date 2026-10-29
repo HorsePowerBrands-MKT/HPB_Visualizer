@@ -388,7 +388,7 @@ export async function validateImage(
             reason: { type: Type.STRING, description: "Short user-friendly error message if invalid." },
             contentFlag: { type: Type.STRING, enum: ["safe", "pii", "inappropriate"] },
             shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] },
-            detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "none"] }
+            detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "dark_brushed_bronze", "satin_brass", "gunmetal", "none"] }
           },
           required: ["isValid", "contentFlag", "shape", "detectedHardware"]
         },

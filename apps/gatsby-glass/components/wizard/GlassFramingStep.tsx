@@ -46,7 +46,10 @@ const HARDWARE_SWATCHES: Record<string, string> = {
   brushed_nickel: 'repeating-linear-gradient(45deg, #d0d0d0, #d0d0d0 2px, #c0c0c0 2px, #c0c0c0 4px)',
   matte_black: '#171717',
   polished_brass: 'linear-gradient(135deg, #fef9c3 0%, #facc15 50%, #ca8a04 100%)',
-  oil_rubbed_bronze: '#3f2e26'
+  oil_rubbed_bronze: '#3f2e26',
+  dark_brushed_bronze: 'repeating-linear-gradient(45deg, #7a6650, #7a6650 2px, #6b5843 2px, #6b5843 4px)',
+  satin_brass: 'repeating-linear-gradient(45deg, #d8bf88, #d8bf88 2px, #c9ad74 2px, #c9ad74 4px)',
+  gunmetal: '#504d49'
 };
 
 const HARDWARE_DETAILS: Record<string, string> = {
@@ -54,7 +57,10 @@ const HARDWARE_DETAILS: Record<string, string> = {
   brushed_nickel: 'A soft, satin-like finish with subtle directional brush marks that give it a warm, understated elegance. Highly resistant to fingerprints and water spots, making it a practical and stylish choice.',
   matte_black: 'A bold, contemporary flat black finish that makes a strong design statement. Creates striking contrast against glass and lighter tile, and hides fingerprints and water marks exceptionally well.',
   polished_brass: 'A luxurious, warm gold-toned finish with a rich reflective shine. Perfect for traditional, transitional, and glam-inspired bathrooms. Adds an opulent touch that elevates the entire space.',
-  oil_rubbed_bronze: 'A deep, rich bronze finish with warm copper undertones and an antiqued patina. Evokes old-world charm and works beautifully in rustic, traditional, and farmhouse-style bathrooms.'
+  oil_rubbed_bronze: 'A deep, rich bronze finish with warm copper undertones and an antiqued patina. Evokes old-world charm and works beautifully in rustic, traditional, and farmhouse-style bathrooms.',
+  dark_brushed_bronze: 'A warm, medium-dark bronze with a fine brushed texture and soft satin sheen. Richer and more modern than oil rubbed bronze, it brings warmth to contemporary and transitional bathrooms without feeling rustic.',
+  satin_brass: 'A soft, brushed champagne-gold finish with a gentle sheen. Delivers the warmth of brass in a quieter, more modern way than polished brass, and pairs beautifully with white, marble, and warm-toned tile.',
+  gunmetal: 'A deep charcoal grey metal finish with a subtle matte sheen. Softer than matte black while still reading as dark and modern, it complements concrete, stone, and grey or white tile.'
 };
 
 const HANDLE_DETAILS: Record<string, { image: string; details: string }> = {
