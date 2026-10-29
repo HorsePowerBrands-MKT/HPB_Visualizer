@@ -13,6 +13,8 @@ Guidance for AI agents (Cursor, Copilot, Maestro) working in this **pnpm monorep
 
 **Canonical architecture:** [ARCHITECTURE.md](ARCHITECTURE.md). **Coding norms:** [docs/CONVENTIONS.md](docs/CONVENTIONS.md). **Domain patterns:** [docs/PATTERNS.md](docs/PATTERNS.md).
 
+**Railing module:** product rules live in `apps/gatsby-glass/lib/railing/rules.ts` (single source of truth for the prompt template) and are documented in [docs/railing-guardrails.md](docs/railing-guardrails.md); Gatsby's source sheets are in `docs/railing-product-detials/`. After changing railing rules or prompts, run `pnpm --filter gatsby-glass check:railing-rules`.
+
 ## Package boundaries
 
 - Put **brand-agnostic** logic in `packages/` (Gemini client, template engine, generic types, image utils).
@@ -56,6 +58,7 @@ pnpm lint             # ESLint (app)
 pnpm typecheck        # tsc --noEmit (packages + app)
 pnpm test             # unit tests (packages with test scripts)
 pnpm run check:docs   # doc drift guard (also runs in CI)
+pnpm --filter gatsby-glass check:railing-rules   # railing prompt rule assertions
 ```
 
 Pre-commit (Husky): lint-staged + typecheck + tests when TS/JS files are staged.
