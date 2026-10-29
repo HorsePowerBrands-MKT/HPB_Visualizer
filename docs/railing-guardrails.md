@@ -86,7 +86,12 @@ glass and the coping on every side, never on the coping, the first row of
 deck beside it, or over the water. Where the hardscape is narrower than
 4 ft, the glass follows the outer boundary of the hardscape instead. With an
 existing fence the enclosure stays on the fence line and no setback rule is
-rendered.
+rendered. The generic "add along the open edge" rule is not rendered for
+pools, since it contradicts the setback.
+
+`POOL_HEIGHT_RULES`: pool fence panels are about 48 in (4 ft), the usual
+minimum pool-barrier height, instead of the ~42 in used for deck and stair
+guards.
 
 ## Pool gate (pool application only)
 
@@ -105,8 +110,10 @@ and the railing never extends onto adjacent walls.
 
 ## Background railings (target railing only)
 
-`BACKGROUND_RAILING_PRESERVATION_RULES` (HP-2803): only one railing line —
-the target location — changes. Every other railing, guard, banister, fence or
+`BACKGROUND_RAILING_PRESERVATION_RULES` (HP-2803): only the target railing
+changes — the one connected railing at the selected application, including
+all of its runs, returns, landings and stair sides (every side of a pool
+enclosure). It is never limited to a single straight line. Every other railing, guard, banister, fence or
 metalwork in the photo (other levels, other stairs, neighboring decks,
 through windows, reflections, the background) keeps its exact material,
 color, finish, style and position. It is never recolored to the selected

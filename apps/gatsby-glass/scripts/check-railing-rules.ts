@@ -118,14 +118,15 @@ check('inspiration: brushed gold / champagne maps to satin brass', insp.includes
 check('inspiration: brass no longer listed as unapproved', !/brass[^\n]*NOT approved/.test(insp));
 
 // --- Background railings (HP-2803) -------------------------------------------
-const TARGET_ONLY = 'TARGET RAILING ONLY: change exactly ONE railing line';
+const TARGET_ONLY = 'TARGET RAILING ONLY: the target railing is the ONE connected railing at the selected application';
 check('background: target-only rule (configure)', bs.includes(TARGET_ONLY) && bs.includes('Never recolor a non-target railing'));
 check('background: target-only rule (inspiration)', insp.includes(TARGET_ONLY));
 check('background: inspiration style limited to target railing', insp.includes('apply ONLY to the new target railing'));
 check('background: self-check item present', bs.includes('5b. Is every railing, fence or banister OTHER than the target railing identical to input_1'));
 check('background: existing-railing replacement leaves other railings', bs.includes('Any OTHER existing railing in view'));
 const sys = buildRailingSystemPrompt();
-check('background: system prompt preservation rule', sys.includes('Only the target railing changes.'));
+check('background: system prompt preservation rule', sys.includes('Only the target railing changes') && sys.includes('Every SEPARATE railing'));
+check('background: target railing covers all its runs (no "one line" contradiction)', bs.includes('Install glass on ALL of the target railing') && !bs.includes('change exactly ONE railing line'));
 check('template: visualization version 1.3.0', railingVisualizationTemplate.version === '1.3.0');
 
 // --- QA round 2026-10-29: edges, openings, stairs, spigot count --------------
@@ -147,6 +148,17 @@ check('spigot: every stair panel supported to the bottom step', sp.includes('eve
 check('side-mount: exactly one rail, capped top edge fails', sm.includes('EXACTLY ONE rail per glass run'));
 check('self-check: openings / jogs / house item', bs.includes('5c. Are the deck, stairs and every doorway'));
 check('self-check: stair mounting item', bs.includes('5d. Stairs:'));
+
+// --- Prompt consistency pass ---------------------------------------------------
+check('base shoe: finish-neutral wording (no "dark band" / "aluminum")', !/dark band|aluminum/.test(bs) && !/dark band|aluminum/.test(sp));
+check('pool: open-edge rule not rendered (conflicts with setback)', !pool.includes('ADD the selected glass railing only along the existing open edge'));
+check('deck: open-edge rule still rendered', prompt({ ...base, existing_condition: 'open_edge' }).includes('ADD the selected glass railing only along the existing open edge'));
+check('pool: ~48 in barrier height', pool.includes('about 48 inches (4 ft / 1.2 m)'));
+const poolFence = prompt({ ...base, application: 'pool_balustrade', existing_condition: 'existing_fence' });
+check('pool with existing fence: ~48 in barrier height', poolFence.includes('about 48 inches (4 ft / 1.2 m)'));
+check('deck: no pool height rule', !bs.includes('about 48 inches (4 ft / 1.2 m)'));
+check('edges: glass ends against the wall, never onto it', bs.includes('never continues onto it'));
+check('preservation: no odd "people-free scene" phrase', !bs.includes('people-free') && bs.includes('Do not add people'));
 
 // --- Validation blocks unsupported selections ------------------------------
 const bad = {
