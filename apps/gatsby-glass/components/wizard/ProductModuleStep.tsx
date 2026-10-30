@@ -17,18 +17,23 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
   const modules: {
     value: VisualizerProductModule;
     label: string;
+    description: string;
     cornerClass: string;
     cornerStyle: React.CSSProperties;
   }[] = [
     {
       value: 'shower',
       label: 'Shower Enclosure',
+      description:
+        'Customize your enclosure type, glass, hardware, and finishes for your bathroom',
       cornerClass: 'top-[-1px] left-[-1px]',
       cornerStyle: { transform: 'scaleX(-1)' },
     },
     {
       value: 'railing',
       label: 'Glass Railing',
+      description:
+        'Design glass railing for a staircase, balcony, deck, or pool area',
       cornerClass: 'bottom-[-1px] right-[-1px]',
       cornerStyle: { transform: 'scaleY(-1)' },
     },
@@ -42,14 +47,14 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
       </div>
 
       <div className="grid grid-cols-1 gap-4 mt-8 max-w-2xl mx-auto">
-        {modules.map(({ value: moduleValue, label, cornerClass, cornerStyle }) => {
+        {modules.map(({ value: moduleValue, label, description, cornerClass, cornerStyle }) => {
           const isSelected = value === moduleValue;
           return (
             <button
               key={moduleValue}
               type="button"
               onClick={() => onSelect(moduleValue)}
-              className={`group relative flex items-center justify-center p-6 md:p-8 border border-brand-gold transition-all duration-300 overflow-hidden ${
+              className={`group relative flex w-full p-6 md:p-7 border border-brand-gold text-left transition-all duration-300 overflow-hidden ${
                 isSelected
                   ? 'bg-brand-brown-hover shadow-[0_0_30px_rgba(228,191,110,0.3)]'
                   : 'bg-brand-brown hover:bg-brand-brown-hover'
@@ -61,13 +66,22 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
                 className={`absolute ${cornerClass} w-20 h-20 pointer-events-none`}
                 style={cornerStyle}
               />
-              <span
-                className={`text-xl md:text-2xl font-bold ${
-                  isSelected ? 'text-brand-gold' : 'text-white group-hover:text-brand-gold'
-                }`}
-              >
-                {label}
-              </span>
+              <div className="relative z-[1] min-w-0">
+                <h3
+                  className={`text-xl md:text-2xl font-bold mb-2 ${
+                    isSelected ? 'text-brand-gold' : 'text-white group-hover:text-brand-gold'
+                  }`}
+                >
+                  {label}
+                </h3>
+                <p
+                  className={`text-sm md:text-base leading-relaxed ${
+                    isSelected ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'
+                  }`}
+                >
+                  {description}
+                </p>
+              </div>
             </button>
           );
         })}
