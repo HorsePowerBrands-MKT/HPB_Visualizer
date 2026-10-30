@@ -33,7 +33,7 @@ export const railingSystemOptions: RichSelectOption[] = RAILING_SYSTEM_ORDER.map
   value: id,
   label: railingSystems[id].name,
   icon: (
-    <RailingOptionIcon src={RAILING_SYSTEM_OPTION_ICONS[id]} alt={railingSystems[id].name} />
+    <RailingOptionIcon src={RAILING_SYSTEM_OPTION_ICONS[id]} />
   ),
 }));
 
@@ -41,7 +41,7 @@ export const railingHandrailSelectOptions: RichSelectOption[] = RAILING_HANDRAIL
   value: id,
   label: railingHandrailOptions[id].name,
   icon: (
-    <RailingOptionIcon src={RAILING_HANDRAIL_OPTION_ICONS[id]} alt={railingHandrailOptions[id].name} />
+    <RailingOptionIcon src={RAILING_HANDRAIL_OPTION_ICONS[id]} />
   ),
 }));
 
