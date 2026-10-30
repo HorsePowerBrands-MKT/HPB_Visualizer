@@ -31,6 +31,11 @@ export {
 } from './catalog';
 
 export {
+  RAILING_SYSTEM_OPTION_ICONS,
+  RAILING_HANDRAIL_OPTION_ICONS,
+} from './optionIcons';
+
+export {
   isRailingFormComplete,
   buildRailingPayload,
   buildRailingPromptInput,

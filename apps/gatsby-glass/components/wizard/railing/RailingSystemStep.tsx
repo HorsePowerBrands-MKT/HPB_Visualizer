@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Columns3, Anchor, PanelTop, Grip, Minus } from 'lucide-react';
 import type { RailingSystem, RailingHandrail, RailingFinish } from '../../../lib/railing';
 import {
   railingSystems,
@@ -11,15 +10,12 @@ import {
   RAILING_SYSTEM_ORDER,
   RAILING_HANDRAIL_ORDER,
   RAILING_FINISH_ORDER,
+  RAILING_SYSTEM_OPTION_ICONS,
+  RAILING_HANDRAIL_OPTION_ICONS,
 } from '../../../lib/railing';
 import { SelectionCard, FeatureDetailsModal } from '../GlassFramingStep';
 import type { FeatureDetailItem, RichSelectOption } from '../GlassFramingStep';
-
-const ICON = 'text-brand-gold w-6 h-6';
-
-const IconBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="w-10 h-10 flex items-center justify-center">{children}</div>
-);
+import { RailingOptionIcon } from './RailingOptionIcon';
 
 /** Finish swatch, same treatment as the shower hardware swatch. */
 export const RailingFinishSwatch: React.FC<{ finish: RailingFinish; className?: string }> = ({
@@ -37,13 +33,7 @@ export const railingSystemOptions: RichSelectOption[] = RAILING_SYSTEM_ORDER.map
   value: id,
   label: railingSystems[id].name,
   icon: (
-    <IconBox>
-      {id === 'base_shoe' ? (
-        <Columns3 className={ICON} strokeWidth={1} />
-      ) : (
-        <Anchor className={ICON} strokeWidth={1} />
-      )}
-    </IconBox>
+    <RailingOptionIcon src={RAILING_SYSTEM_OPTION_ICONS[id]} alt={railingSystems[id].name} />
   ),
 }));
 
@@ -51,15 +41,7 @@ export const railingHandrailSelectOptions: RichSelectOption[] = RAILING_HANDRAIL
   value: id,
   label: railingHandrailOptions[id].name,
   icon: (
-    <IconBox>
-      {id === 'top_mount' ? (
-        <PanelTop className={ICON} strokeWidth={1} />
-      ) : id === 'side_mount' ? (
-        <Grip className={ICON} strokeWidth={1} />
-      ) : (
-        <Minus className={ICON} strokeWidth={1} />
-      )}
-    </IconBox>
+    <RailingOptionIcon src={RAILING_HANDRAIL_OPTION_ICONS[id]} alt={railingHandrailOptions[id].name} />
   ),
 }));
 
