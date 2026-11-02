@@ -517,7 +517,7 @@ export async function validateRailingImage(
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: getValidationModelName(),
     contents: {
       parts: [
         { inlineData: { data: imageData.data, mimeType: imageData.mimeType } },
