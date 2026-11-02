@@ -57,6 +57,17 @@ function getImageModelName(): string {
 }
 
 /**
+ * Text+vision model for upload validation (shape, hardware, content safety).
+ * gemini-2.5-flash is no longer available to new Google AI Studio keys; use
+ * gemini-3.8-flash. Override via `GEMINI_VALIDATION_MODEL` without redeploying
+ * logic changes.
+ */
+const DEFAULT_VALIDATION_MODEL = 'gemini-3.8-flash';
+function getValidationModelName(): string {
+  return process.env.GEMINI_VALIDATION_MODEL?.trim() || DEFAULT_VALIDATION_MODEL;
+}
+
+/**
  * Aspect ratios supported by gemini-3-pro-image-preview (and the 3.1 flash
  * variant). Source: the @google/genai SDK ImageConfig.aspectRatio docstring.
  * Listed as [label, value] so we can snap an input ratio to the closest one.
@@ -359,7 +370,7 @@ export async function validateImage(
 
     console.log('[GEMINI validateImage] Calling Gemini API...');
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: getValidationModelName(),
       contents: {
         parts: [
           {
