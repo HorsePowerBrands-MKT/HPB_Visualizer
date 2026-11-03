@@ -26,6 +26,7 @@ export type {
 export type {
   ContactFormData,
   Lead,
+  LeadProductConfig,
   LeadSubmissionResponse,
   VisualizationHistoryItem,
   GenerationRecord,
@@ -45,6 +46,10 @@ export type {
 // API types
 export type {
   ImageValidationResponse,
+  VisualizerProduct,
+  RailingExistingCondition,
+  RailingDetectedApplication,
+  RailingImageValidationResponse,
   ImageData,
   ReferenceImage,
   VisualizationRequest,

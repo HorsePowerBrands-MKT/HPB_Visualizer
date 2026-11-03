@@ -2,6 +2,20 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import type { LeadProductConfig, Payload } from '@repo/types';
+import {
+  formatRailingSummary,
+  railingApplications,
+  railingSystems,
+  railingHandrailOptions,
+  railingFinishes,
+} from '../lib/railing/catalog';
+import type {
+  RailingApplication,
+  RailingSystem,
+  RailingHandrail,
+  RailingFinish,
+} from '../lib/railing/types';
 
 export interface PastVisualizationItem {
   id: string;
@@ -14,6 +28,62 @@ export interface PastVisualizationItem {
   handle_style: string | null;
   shower_shape: string | null;
   created_at: string;
+  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  product?: string | null;
+  product_config?: Record<string, unknown> | null;
+}
+
+/** Railing selections from the free-form product_config JSON. */
+function railingConfigOf(item: PastVisualizationItem) {
+  const cfg = item.product_config ?? {};
+  const str = (v: unknown) => (typeof v === 'string' ? v : null);
+  return {
+    mode: str(cfg.mode) ?? item.mode,
+    application: str(cfg.application),
+    railing_system: str(cfg.railing_system),
+    handrail: str(cfg.handrail),
+    finish: str(cfg.finish),
+  };
+}
+
+/**
+ * Maps a past visualization row to the `configs` the ContactFormModal posts
+ * with a lead, for either product line.
+ */
+export function pastItemToLeadConfigs(
+  item: PastVisualizationItem
+): Partial<Payload> & {
+  product?: 'shower' | 'railing';
+  productSummary?: string;
+  productConfig?: LeadProductConfig;
+} {
+  if (item.product === 'railing') {
+    const cfg = railingConfigOf(item);
+    const stored = (item.product_config ?? {}) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' ? v : null);
+    return {
+      product: 'railing',
+      productSummary: formatRailingSummary(cfg),
+      productConfig: {
+        mode: cfg.mode === 'inspiration' ? 'inspiration' : 'configure',
+        application: cfg.application,
+        railing_system: cfg.railing_system,
+        handrail: cfg.handrail,
+        finish: cfg.finish,
+        existing_condition: str(stored.existing_condition),
+        catalog_version: str(stored.catalog_version),
+      },
+      mode: (cfg.mode === 'inspiration' ? 'inspiration' : 'configure') as Payload['mode'],
+    };
+  }
+  return {
+    mode: item.mode ?? undefined,
+    enclosure_type: item.enclosure_type ?? undefined,
+    glass_style: item.framing_style ?? undefined,
+    hardware_finish: item.hardware_finish ?? undefined,
+    handle_style: item.handle_style ?? undefined,
+    shower_shape: item.shower_shape ?? undefined,
+  } as Partial<Payload>;
 }
 
 interface PastVisualizationsProps {
@@ -23,6 +93,7 @@ interface PastVisualizationsProps {
 }
 
 function formatLabel(item: PastVisualizationItem): string {
+  if (item.product === 'railing') return formatRailingSummary(railingConfigOf(item));
   if (item.mode === 'inspiration') return 'Inspiration';
   const parts = [
     item.enclosure_type,
@@ -36,6 +107,18 @@ function formatLabel(item: PastVisualizationItem): string {
 
 function formatDetailRows(item: PastVisualizationItem): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
+  if (item.product === 'railing') {
+    const cfg = railingConfigOf(item);
+    const app = cfg.application ? railingApplications[cfg.application as RailingApplication]?.name : null;
+    const sys = cfg.railing_system ? railingSystems[cfg.railing_system as RailingSystem]?.name : null;
+    const rail = cfg.handrail ? railingHandrailOptions[cfg.handrail as RailingHandrail]?.name : null;
+    const fin = cfg.finish ? railingFinishes[cfg.finish as RailingFinish]?.name : null;
+    if (app) rows.push({ label: 'Application', value: app });
+    if (sys) rows.push({ label: 'System', value: sys });
+    if (rail) rows.push({ label: 'Handrail', value: rail });
+    if (fin) rows.push({ label: 'Finish', value: fin });
+    return rows;
+  }
   if (item.enclosure_type) rows.push({ label: 'Style', value: item.enclosure_type.replace(/_/g, ' ') });
   if (item.framing_style) rows.push({ label: 'Frame', value: item.framing_style.replace(/_/g, ' ') });
   if (item.hardware_finish) rows.push({ label: 'Finish', value: item.hardware_finish.replace(/_/g, ' ') });
@@ -227,7 +310,9 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items, o
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-sans text-white/90 capitalize font-medium">
-                    {selectedItem.mode === 'inspiration' ? 'Inspiration Design' : formatLabel(selectedItem)}
+                    {selectedItem.product !== 'railing' && selectedItem.mode === 'inspiration'
+                      ? 'Inspiration Design'
+                      : formatLabel(selectedItem)}
                   </p>
                   <p className="text-xs font-sans text-white/30 mt-1">
                     {formatDateLong(selectedItem.created_at)}

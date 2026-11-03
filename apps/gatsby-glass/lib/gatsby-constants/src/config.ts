@@ -34,7 +34,7 @@ export const getDefaultConfigForShape = (showerShape: ShowerShape): Partial<Payl
     enclosure_type: availableDoors[0], // Default to first available option
     hinged_config: showerShape === 'neo_angle' ? {
       to_ceiling: false,
-      direction: 'swing_left'
+      direction: 'left'
     } : undefined
   };
 };

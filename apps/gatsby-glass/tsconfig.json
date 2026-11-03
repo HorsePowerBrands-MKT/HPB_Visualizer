@@ -16,6 +16,7 @@
     "incremental": true,
     "composite": false,
     "declaration": false,
+    "declarationMap": false,
     "plugins": [
       {
         "name": "next"

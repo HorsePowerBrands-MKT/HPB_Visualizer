@@ -11,6 +11,9 @@
 //   - raq-configure.html     RAQ · franchise · configure mode
 //   - raq-inspiration.html   RAQ · franchise · inspiration mode
 //   - raq-no-territory.html  RAQ · outside service area (zip not in any territory)
+//   - sas-railing-configure.html    SAS · customer · glass railing · configure mode
+//   - sas-railing-inspiration.html  SAS · customer · glass railing · inspiration mode
+//   - raq-railing-configure.html    RAQ · franchise · glass railing · configure mode
 //   - customer-quote-matched.html   RAQ · customer confirmation (territory matched)
 //   - customer-quote-outside.html   RAQ · customer confirmation (outside service area)
 //
@@ -66,6 +69,28 @@ const SAMPLE_HERO_CONFIG = {
   hardware: 'Matte Black',
   handle: 'Square Pull',
 };
+
+// Glass railing product line. Labels come from lib/railing/catalog.ts and are
+// joined with " • " by formatRailingSummary.
+const RAILING_HERO_LABEL = 'Exterior Deck • Base Shoe • Top-Mounted Handrail • Matte Black';
+
+const RAILING_HERO_CONFIG = {
+  application: 'Exterior Deck',
+  railingSystem: 'Base Shoe',
+  handrail: 'Top-Mounted Handrail',
+  finish: 'Matte Black',
+};
+
+const RAILING_GALLERY = [
+  {
+    imageUrl: PLACEHOLDER('Railing 1'),
+    label: 'Exterior Deck • Spigot • No Handrail • Brushed Stainless',
+  },
+  {
+    imageUrl: PLACEHOLDER('Railing 2'),
+    label: 'Interior Staircase • Base Shoe • Side-Mounted Handrail • Polished Stainless',
+  },
+];
 
 const SAMPLE_CUSTOMER = {
   customerName: 'Jane Doe',
@@ -205,6 +230,63 @@ const variants = [
         'Sliding Door · Frameless framing · Polished Chrome hardware · Knob handle',
       galleryItems: SAMPLE_GALLERY.slice(0, 2),
       mode: 'configure',
+    }),
+  },
+  {
+    fileName: 'sas-railing-configure.html',
+    kind: 'SAS',
+    title: 'SAS · Customer · Glass Railing · Configure mode',
+    subject: 'Your Gatsby Glass Design Preview',
+    recipient: 'Customer (the email entered on the form)',
+    description:
+      'Railing module. Sent when the customer clicks "Save & Send to Me" after picking a system, handrail and finish. Configuration rows are Application / Railing System / Handrail / Finish and the footer says "glass railing design preview".',
+    html: renderSasEmailHtml({
+      toEmail: SAMPLE_CUSTOMER.customerEmail,
+      firstName: 'Jane',
+      heroImageUrl: PLACEHOLDER('Selected Railing'),
+      heroLabel: RAILING_HERO_LABEL,
+      heroConfig: RAILING_HERO_CONFIG,
+      galleryItems: RAILING_GALLERY,
+      mode: 'configure',
+      product: 'railing',
+    }),
+  },
+  {
+    fileName: 'sas-railing-inspiration.html',
+    kind: 'SAS',
+    title: 'SAS · Customer · Glass Railing · Inspiration mode',
+    subject: 'Your Gatsby Glass Design Preview',
+    recipient: 'Customer (the email entered on the form)',
+    description:
+      'Railing module, inspiration path. The design block says "tailored to your space\'s unique layout" instead of "bathroom".',
+    html: renderSasEmailHtml({
+      toEmail: SAMPLE_CUSTOMER.customerEmail,
+      firstName: 'Jane',
+      heroImageUrl: PLACEHOLDER('Inspiration Railing'),
+      heroLabel: 'Interior Balcony • Inspiration',
+      galleryItems: RAILING_GALLERY.slice(0, 1),
+      mode: 'inspiration',
+      product: 'railing',
+    }),
+  },
+  {
+    fileName: 'raq-railing-configure.html',
+    kind: 'RAQ',
+    title: 'RAQ · Franchise · Glass Railing · Configure mode',
+    subject: `New Visualizer Estimate Request — ${SAMPLE_CUSTOMER.customerName} (${SAMPLE_CUSTOMER.customerZipCode})`,
+    recipient:
+      'Franchise shared inbox — resolved via territory_zipcodes → team_locations',
+    description:
+      'Railing module. The intro reads "after designing their glass railing in the Gatsby Glass Railing Visualizer"; the configuration block carries the railing summary.',
+    html: renderRaqEmailHtml({
+      toEmail: 'franchise-sf@example.com',
+      locationName: 'Gatsby Glass — San Francisco Bay',
+      ...SAMPLE_CUSTOMER,
+      heroImageUrl: PLACEHOLDER('Selected Railing'),
+      heroLabel: RAILING_HERO_LABEL,
+      galleryItems: RAILING_GALLERY,
+      mode: 'configure',
+      product: 'railing',
     }),
   },
   {

@@ -11,7 +11,15 @@ export type ShowerShape = 'standard' | 'neo_angle' | 'tub';
 export type GlassStyle = 'clear' | 'low_iron' | 'p516';
 
 // Hardware finish options
-export type HardwareFinish = 'chrome' | 'brushed_nickel' | 'matte_black' | 'polished_brass' | 'oil_rubbed_bronze';
+export type HardwareFinish =
+  | 'chrome'
+  | 'brushed_nickel'
+  | 'matte_black'
+  | 'polished_brass'
+  | 'oil_rubbed_bronze'
+  | 'dark_brushed_bronze'
+  | 'satin_brass'
+  | 'gunmetal';
 
 // Handle style options
 export type HandleStyle = 'ladder' | 'square' | 'd_pull' | 'knob';
@@ -95,7 +103,12 @@ export interface Configs {
 export interface HistoryItem {
   id: string;
   timestamp: number;
+  /** Data URL shown on screen. */
   imageUrl: string;
+  /** Public (watermarked) Supabase Storage URL for the same image, when the
+   *  upload succeeded. Posted with leads so the server can match the hero
+   *  against the stored visualization history. */
+  storageUrl?: string | null;
   label: string;
   payload: Payload;
 }

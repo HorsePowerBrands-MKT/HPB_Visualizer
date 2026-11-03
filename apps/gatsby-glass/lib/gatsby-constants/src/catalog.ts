@@ -37,6 +37,18 @@ export const hardwareFinishes: Record<HardwareFinish, { name: string; descriptio
   oil_rubbed_bronze: {
     name: 'Oil Rubbed Bronze',
     description: 'Rich bronze with oil-rubbed patina'
+  },
+  dark_brushed_bronze: {
+    name: 'Dark Brushed Bronze',
+    description: 'Warm mid-brown bronze with a brushed texture'
+  },
+  satin_brass: {
+    name: 'Satin Brass',
+    description: 'Soft brushed champagne-gold brass'
+  },
+  gunmetal: {
+    name: 'Gunmetal',
+    description: 'Matte dark charcoal grey metal'
   }
 };
 

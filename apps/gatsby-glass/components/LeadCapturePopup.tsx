@@ -2,17 +2,36 @@
 
 import React, { useState } from 'react';
 import { X, Loader2, Check, AlertCircle } from 'lucide-react';
+import type { LeadProductConfig } from '@repo/types';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { RadioGroup, RadioGroupItem } from './ui/RadioGroup';
 import { useLegalModal } from './legal/LegalModalProvider';
+
+type PopupProduct = 'shower' | 'railing';
+
+const PRODUCT_OPTIONS: { value: PopupProduct; label: string }[] = [
+  { value: 'shower', label: 'Shower Door' },
+  { value: 'railing', label: 'Glass Railing' },
+];
 
 interface LeadCapturePopupProps {
   isOpen: boolean;
   onSubmitted: () => void;
   onDismissed: () => void;
   userFingerprint?: string;
+  /**
+   * Product module the popup fired from. Preselects the "What are you
+   * designing?" choice; the consumer can switch it. The final choice decides
+   * the lead's product, source and the CRM lead type (POP vs POP-R).
+   */
+  defaultProduct: PopupProduct;
+  /** Railing-only context forwarded when the consumer keeps "Glass Railing". */
+  productSummary?: string;
+  productConfig?: LeadProductConfig;
+  sessionId?: string;
 }
 
 function formatPhone(raw: string): string {
@@ -39,8 +58,13 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
   onSubmitted,
   onDismissed,
   userFingerprint,
+  defaultProduct,
+  productSummary,
+  productConfig,
+  sessionId,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
+  const [product, setProduct] = useState<PopupProduct>(defaultProduct);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -110,7 +134,14 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
           email: formData.email.trim(),
           phone: phoneDigits || undefined,
           zipCode: formData.zipCode.replace(/[^\d-]/g, ''),
-          source: 'Gatsby Glass Visualizer',
+          product,
+          source:
+            product === 'railing' ? 'Gatsby Glass Railing Visualizer' : 'Gatsby Glass Visualizer',
+          // Railing selections only travel when the consumer confirms the
+          // railing choice; a switch to Shower Door drops them.
+          ...(product === 'railing' && product === defaultProduct
+            ? { productSummary, productConfig, sessionId }
+            : {}),
           leadType: 'POP',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
           tcpaConsentText: tcpaRequired && tcpaConsent ? TCPA_CONSENT_TEXT : undefined,
@@ -167,7 +198,7 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-brand-gold">
-              You're on a roll!
+              You&apos;re on a roll!
             </CardTitle>
             <button
               onClick={onDismissed}
@@ -188,13 +219,13 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Thanks!</h3>
               <p className="text-gray-400">
-                You're all set — keep designing.
+                You&apos;re all set — keep designing.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-gray-400 mb-4">
-                You've been busy! Drop your details below to keep the design previews flowing. If any of these designs catch your eye, your local Gatsby Glass team would love to help bring it to life.
+                You&apos;ve been busy! Drop your details below to keep the design previews flowing. If any of these designs catch your eye, your local Gatsby Glass team would love to help bring it to life.
               </p>
 
               {errors.submit && (
@@ -203,6 +234,31 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
                   <p className="text-sm text-red-400">{errors.submit}</p>
                 </div>
               )}
+
+              {/* Product — preselected from the module the popup fired in */}
+              <div>
+                <Label className="text-white">What are you designing?</Label>
+                <RadioGroup
+                  value={product}
+                  onValueChange={(v) => setProduct(v as PopupProduct)}
+                  className="mt-2 flex flex-wrap gap-x-6 gap-y-2"
+                >
+                  {PRODUCT_OPTIONS.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className="flex items-center gap-2 text-sm text-gray-200 cursor-pointer"
+                    >
+                      <RadioGroupItem
+                        value={opt.value}
+                        id={`lead-popup-product-${opt.value}`}
+                        disabled={submitting}
+                        className="aspect-square h-4 w-4 rounded-full border border-brand-gold text-brand-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
 
               {/* Name */}
               <div>

@@ -2,6 +2,7 @@ import { GoogleGenAI, Modality, Type } from "@google/genai";
 import type { 
   ImageData, 
   ImageValidationResponse, 
+  RailingImageValidationResponse,
   VisualizationRequest, 
   VisualizationResponse 
 } from '@repo/types';
@@ -131,17 +132,86 @@ export class GeminiRateLimitError extends Error {
 }
 
 /**
+ * Error thrown when Gemini refuses the request for billing reasons (HTTP 402,
+ * e.g. "Your prepayment credits are depleted"). Retrying will not help; the
+ * account needs credits. Surfaced separately so routes can tell the user the
+ * service is temporarily unavailable instead of blaming their photo or
+ * connection.
+ */
+export class GeminiUnavailableError extends Error {
+  readonly isUnavailable = true;
+  constructor(message = 'The Gemini account cannot serve requests (billing / credits).') {
+    super(message);
+    this.name = 'GeminiUnavailableError';
+  }
+}
+
+/**
+ * Detects a Gemini billing refusal (402 / depleted prepayment credits). The
+ * SDK reports these as RESOURCE_EXHAUSTED too, so this must be checked
+ * before `isRateLimitError`.
+ */
+function isBillingError(err: unknown): boolean {
+  if (!err) return false;
+  const anyErr = err as { status?: number; code?: number; message?: string };
+  if (anyErr.status === 402 || anyErr.code === 402) return true;
+  const msg = String(anyErr.message ?? err);
+  return /\b402\b|prepayment credits|billing/i.test(msg);
+}
+
+/**
  * Detects whether a thrown error from the Gemini SDK represents a 429 /
  * RESOURCE_EXHAUSTED response. The SDK surfaces these in a few different
  * shapes depending on transport, so we normalize across all of them.
+ * Billing refusals are excluded: they also say RESOURCE_EXHAUSTED but a
+ * retry cannot succeed.
  */
 function isRateLimitError(err: unknown): boolean {
-  if (!err) return false;
+  if (!err || isBillingError(err)) return false;
   const anyErr = err as { status?: number; code?: number; message?: string };
   if (anyErr.status === 429 || anyErr.code === 429) return true;
   const msg = String(anyErr.message ?? err);
   return /\b429\b|RESOURCE_EXHAUSTED|quota|rate\s*limit/i.test(msg);
 }
+
+/**
+ * Maps a raw Gemini SDK error to `GeminiUnavailableError` (billing) or
+ * `GeminiRateLimitError` (429), or returns it unchanged.
+ */
+export function toGeminiServiceError(err: unknown): unknown {
+  if (isBillingError(err)) return new GeminiUnavailableError();
+  if (isRateLimitError(err)) return new GeminiRateLimitError();
+  return err;
+}
+
+/**
+ * Shower edit-mandate preamble placed before input_1. Non-shower products
+ * supply their own via `request.editPreamble`; when absent this exact text
+ * is used so shower output is unchanged.
+ */
+const SHOWER_EDIT_PREAMBLE = [
+  'EDIT TASK — READ THIS BEFORE LOOKING AT ANY IMAGE.',
+  '',
+  'The very next image (input_1) is a photo of a bathroom or shower area.',
+  'Your output MUST be a modified version of input_1 with a NEW glass',
+  'shower enclosure installed where the shower currently is. The output',
+  'must NOT be identical to input_1 — a render that returns the input',
+  'unchanged (no glass visible, no hardware visible, no door visible) is',
+  'a FAILED render and you must redo it.',
+  '',
+  'Any additional images that follow input_1 are reference material',
+  '(inspiration photos and/or authoritative product references). They',
+  'are NEVER the canvas to render into — input_1 is the only canvas.',
+  'Each reference image is preceded by its own text block explaining',
+  'what to copy from it and, just as importantly, what NOT to copy.',
+  '',
+  'After all images you will receive a long structured INSTALL_',
+  'SPECIFICATION JSON describing every detail of the enclosure to',
+  'install. That JSON is non-negotiable; obey every preserve_exact,',
+  'remove, forbidden_elements, spatial_map, and self_check_before_',
+  'output entry. But the master rule is this single short paragraph:',
+  'edit input_1, do not preserve it.',
+].join('\n');
 
 /**
  * Generate a photorealistic visualization of a shower glass installation.
@@ -193,31 +263,7 @@ export async function generateVisualization(
   // the task in a single short, high-priority block of text.
   const parts: any[] = [];
 
-  parts.push({
-    text: [
-      'EDIT TASK — READ THIS BEFORE LOOKING AT ANY IMAGE.',
-      '',
-      'The very next image (input_1) is a photo of a bathroom or shower area.',
-      'Your output MUST be a modified version of input_1 with a NEW glass',
-      'shower enclosure installed where the shower currently is. The output',
-      'must NOT be identical to input_1 — a render that returns the input',
-      'unchanged (no glass visible, no hardware visible, no door visible) is',
-      'a FAILED render and you must redo it.',
-      '',
-      'Any additional images that follow input_1 are reference material',
-      '(inspiration photos and/or authoritative product references). They',
-      'are NEVER the canvas to render into — input_1 is the only canvas.',
-      'Each reference image is preceded by its own text block explaining',
-      'what to copy from it and, just as importantly, what NOT to copy.',
-      '',
-      'After all images you will receive a long structured INSTALL_',
-      'SPECIFICATION JSON describing every detail of the enclosure to',
-      'install. That JSON is non-negotiable; obey every preserve_exact,',
-      'remove, forbidden_elements, spatial_map, and self_check_before_',
-      'output entry. But the master rule is this single short paragraph:',
-      'edit input_1, do not preserve it.',
-    ].join('\n'),
-  });
+  parts.push({ text: request.editPreamble ?? SHOWER_EDIT_PREAMBLE });
 
   // The target bathroom (input_1)
   parts.push({
@@ -289,7 +335,7 @@ export async function generateVisualization(
       model: modelName,
       contents: { parts },
       config: {
-        systemInstruction: getSystemPrompt(),
+        systemInstruction: request.systemPrompt ?? getSystemPrompt(),
         responseModalities: [Modality.IMAGE],
         temperature: 0.3,
         imageConfig: {
@@ -312,10 +358,10 @@ export async function generateVisualization(
           console.error('[GEMINI generateVisualization] Retry also rate-limited, surfacing GeminiRateLimitError');
           throw new GeminiRateLimitError();
         }
-        throw retryErr;
+        throw toGeminiServiceError(retryErr);
       }
     } else {
-      throw err;
+      throw toGeminiServiceError(err);
     }
   }
 
@@ -393,7 +439,7 @@ export async function validateImage(
             reason: { type: Type.STRING, description: "Short user-friendly error message if invalid." },
             contentFlag: { type: Type.STRING, enum: ["safe", "pii", "inappropriate"] },
             shape: { type: Type.STRING, enum: ["standard", "neo_angle", "tub"] },
-            detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "none"] }
+            detectedHardware: { type: Type.STRING, enum: ["chrome", "brushed_nickel", "matte_black", "polished_brass", "oil_rubbed_bronze", "dark_brushed_bronze", "satin_brass", "gunmetal", "none"] }
           },
           required: ["isValid", "contentFlag", "shape", "detectedHardware"]
         },
@@ -436,6 +482,104 @@ export async function validateImage(
     };
   } catch (error) {
     console.error('[GEMINI validateImage] Error during validation:', error);
-    throw error;
+    throw toGeminiServiceError(error);
   }
+}
+
+/**
+ * Validate a railing upload (stairs / balcony / deck / pool) and detect the
+ * setting and existing guard condition. Separate from `validateImage`
+ * because the response schema and the user-facing wording are
+ * product-specific; the shower path is untouched.
+ *
+ * `validationPrompt` is supplied by the caller (the brand app resolves it
+ * from its railing template) so this package stays template-agnostic.
+ */
+export async function validateRailingImage(
+  config: GeminiConfig,
+  imageData: ImageData,
+  validationPrompt: string
+): Promise<RailingImageValidationResponse> {
+  const { apiKey } = config;
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is required');
+  }
+  if (!imageData.data || !imageData.mimeType) {
+    throw new Error('imageData and mimeType are required');
+  }
+  if (!validationPrompt) {
+    throw new Error('validationPrompt is required');
+  }
+
+  console.log('[GEMINI validateRailingImage] Starting validation, data length:', imageData.data.length);
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const response = await ai.models.generateContent({
+    model: getValidationModelName(),
+    contents: {
+      parts: [
+        { inlineData: { data: imageData.data, mimeType: imageData.mimeType } },
+        { text: validationPrompt },
+      ],
+    },
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          isValid: { type: Type.BOOLEAN },
+          reason: { type: Type.STRING, description: 'Short user-friendly error message if invalid.' },
+          contentFlag: { type: Type.STRING, enum: ['safe', 'pii', 'inappropriate'] },
+          setting: { type: Type.STRING, enum: ['interior', 'exterior'] },
+          existingCondition: {
+            type: Type.STRING,
+            enum: ['existing_railing', 'open_edge', 'half_wall', 'existing_fence', 'none'],
+          },
+          detectedApplication: {
+            type: Type.STRING,
+            enum: ['interior_staircase', 'interior_balcony', 'exterior_deck', 'pool_balustrade', 'unknown'],
+          },
+        },
+        required: ['isValid', 'contentFlag', 'setting', 'existingCondition', 'detectedApplication'],
+      },
+    },
+  }).catch((err: unknown) => {
+    throw toGeminiServiceError(err);
+  });
+
+  const text = response.text;
+  console.log('[GEMINI validateRailingImage] Response text:', text);
+
+  if (!text) {
+    return {
+      valid: false,
+      reason: 'Could not analyze image.',
+      setting: 'exterior',
+      existingCondition: 'none',
+      detectedApplication: 'unknown',
+    };
+  }
+
+  const result = JSON.parse(text);
+  const contentFlag = result.contentFlag || 'safe';
+
+  let reason = result.reason;
+  if (contentFlag === 'pii') {
+    reason =
+      'This image appears to contain a person. For privacy, please upload a photo of just your stairs, balcony, deck, or pool area with no people visible.';
+  } else if (contentFlag === 'inappropriate') {
+    reason =
+      'This image contains content that cannot be processed. Please upload an appropriate photo of your stairs, balcony, deck, or pool area.';
+  }
+
+  return {
+    valid: result.isValid,
+    reason,
+    setting: result.setting === 'interior' ? 'interior' : 'exterior',
+    existingCondition: result.existingCondition || 'none',
+    detectedApplication: result.detectedApplication || 'unknown',
+    contentFlag,
+  };
 }

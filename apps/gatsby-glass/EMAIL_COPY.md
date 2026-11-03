@@ -25,6 +25,9 @@ what Resend will deliver. Output files land in
 | `raq-configure.html`     | RAQ · franchise · configure mode                   |
 | `raq-inspiration.html`   | RAQ · franchise · inspiration mode                 |
 | `raq-no-territory.html`  | RAQ · outside service area (zip not in any territory) |
+| `sas-railing-configure.html`   | SAS · customer · glass railing · configure mode |
+| `sas-railing-inspiration.html` | SAS · customer · glass railing · inspiration mode |
+| `raq-railing-configure.html`   | RAQ · franchise · glass railing · configure mode |
 | `customer-quote-matched.html` | Customer quote confirmation · territory matched |
 | `customer-quote-outside.html` | Customer quote confirmation · outside service area |
 
@@ -79,14 +82,17 @@ The customer's email address.
 | `hardware`              | Human-readable from catalog, e.g. "Polished Chrome", "Matte Black"            |
 | `handleStyle`           | Human-readable from catalog, e.g. "Ladder Pull", "Square Pull", "Knob"        |
 | `mode`                  | "configure" or "inspiration"                                                  |
+| `product`               | "shower" (default) or "railing" — drives the wording swaps below              |
 
+Railing leads replace the shower rows with `application`, `railingSystem`,
+`handrail` and `finish` (human-readable from `lib/railing/catalog.ts`).
 
 ---
 
 ### Subject Line
 
 ```
-Your Gatsby Glass Shower Visualization
+Your Gatsby Glass Design Preview
 ```
 
 ### Body
@@ -135,6 +141,16 @@ YOUR DESIGN
   Based on your uploaded inspiration photo, tailored to your
   bathroom's unique layout.
 ```
+
+### Notes — Glass Railing Variant
+
+When `product` is "railing" (Railing module leads):
+
+- The configuration block lists `Application`, `Railing System`, `Handrail`
+  and `Finish` instead of the shower rows.
+- The inspiration copy reads "tailored to your **space's** unique layout".
+- The footer reads "because a **glass railing design preview** was requested".
+- The subject line is unchanged.
 
 ---
 
@@ -230,6 +246,42 @@ When `mode` is "inspiration", replace the "Configuration Details" section with:
 DESIGN MODE
   Inspiration-based (customer uploaded a reference photo)
 ```
+
+### Notes — Glass Railing Variant
+
+When `product` is "railing":
+
+- The intro reads "after designing their **glass railing in the Gatsby Glass
+  Railing Visualizer**" (plain-text header: "NEW ESTIMATE REQUEST FROM THE
+  GATSBY GLASS RAILING VISUALIZER").
+- "Configuration Details" carries the railing summary, e.g.
+  "Exterior Deck • Base Shoe • Top-Mounted Handrail • Matte Black".
+- Subject line and routing are unchanged.
+
+---
+
+## Lead payload and CRM mapping by product
+
+`POST /api/submit-lead` accepts `product` (`shower` | `railing`), a
+human-readable `productSummary`, and a structured `productConfig`
+(`mode`, `application`, `railing_system`, `handrail`, `finish`,
+`existing_condition`, `catalog_version` — the same shape saved to
+`visualizations.product_config`). These are stored on `leads.product`,
+`leads.product_summary` and `leads.product_config` (migration 025). Shower
+leads keep using the dedicated door_type / finish / hardware / … columns.
+
+The 5th-generation popup (`leadType: POP`) shows a "What are you designing?"
+choice preselected from the module it fired in; the choice decides the
+product, the `source` string and the CRM lead type.
+
+Constant Contact (SharpSpring) receives the product through the existing
+**Visualizer Lead Type** picklist (`visualizer_lead_69cd376489e06`):
+
+| Internal `leadType` | Shower | Railing (`product: 'railing'`)         |
+| ------------------- | ------ | -------------------------------------- |
+| SAS                 | `SAS`  | `SAS-R` — "Save & Send - Railings"     |
+| RAQ                 | `RAQ`  | `RAQ-R` — "Request a Quote - Railings" |
+| POP                 | `POP`  | `POP-R` — "Popup - Railings"           |
 
 ---
 

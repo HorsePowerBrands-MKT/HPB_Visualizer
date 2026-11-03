@@ -846,7 +846,7 @@ export const inspirationTemplate: PromptTemplate = {
         "      \"door_type — hinged, pivot, or sliding (whichever is shown in input_2)\",",
         "      \"framing — frameless, semi-frameless, or framed (whichever is shown in input_2)\",",
         "      \"glass_style — clear, low-iron/ultra-clear, or rain/textured (whichever is shown in input_2)\",",
-        "      \"hardware_finish — chrome, brushed nickel, matte black, polished brass, or oil-rubbed bronze (whichever is shown in input_2)\",",
+        "      \"hardware_finish — chrome, brushed nickel, matte black, polished brass, oil-rubbed bronze, dark brushed bronze, satin brass, or gunmetal (whichever is shown in input_2)\",",
         "      \"handle_silhouette — ladder pull, square pull, crescent/D pull, or knob (whichever is shown in input_2)\"",
         "    ]",
         "  },",

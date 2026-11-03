@@ -30,6 +30,33 @@ interface VisualizationHistoryItem {
   framing_style?: string | null;
   hardware_finish?: string | null;
   handle_style?: string | null;
+  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  product?: string | null;
+  product_config?: Record<string, unknown> | null;
+}
+
+/** Structured railing selections stored on railing leads (migration 025). */
+interface LeadProductConfig {
+  mode?: string | null;
+  application?: string | null;
+  railing_system?: string | null;
+  handrail?: string | null;
+  finish?: string | null;
+  existing_condition?: string | null;
+  catalog_version?: string | null;
+}
+
+/** Pull the railing selection ids out of a free-form product_config JSON. */
+function railingConfigOf(cfg: Record<string, unknown> | null | undefined): LeadProductConfig {
+  const str = (v: unknown) => (typeof v === 'string' ? v : null);
+  const c = cfg ?? {};
+  return {
+    mode: str(c.mode),
+    application: str(c.application),
+    railing_system: str(c.railing_system),
+    handrail: str(c.handrail),
+    finish: str(c.finish),
+  };
 }
 
 interface AdminLeadRow {
@@ -52,6 +79,10 @@ interface AdminLeadRow {
   visualizationImageUrl: string | null;
   allVisualizationUrls: VisualizationHistoryItem[] | null;
   tcpaConsent: boolean;
+  /** 'shower' | 'railing'. Legacy rows read as 'shower'. */
+  product?: string | null;
+  productSummary?: string | null;
+  productConfig?: LeadProductConfig | null;
 }
 
 interface LeadsData {
@@ -117,9 +148,14 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
       const url = item.watermarked || item.original;
       if (url && !seen.has(url)) {
         seen.add(url);
-        const labelParts = [item.enclosure_type, item.hardware_finish].filter(
-          Boolean
-        ) as string[];
+        const labelParts = (
+          item.product === 'railing'
+            ? (() => {
+                const cfg = railingConfigOf(item.product_config);
+                return [cfg.application, cfg.railing_system, cfg.finish];
+              })()
+            : [item.enclosure_type, item.hardware_finish]
+        ).filter(Boolean) as string[];
         list.push({
           url,
           label: labelParts.length > 0 ? labelParts.map(titleCase).join(' / ') : null,
@@ -149,7 +185,14 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
           </div>
         </td>
         <td className="py-3 px-4 text-sm font-sans text-white/90">
-          {lead.name || '\u2014'}
+          <div className="flex items-center gap-2">
+            {lead.name || '\u2014'}
+            {lead.product === 'railing' && (
+              <span className="inline-block px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-sans font-semibold border border-brand-gold/40 text-brand-gold/80">
+                Railing
+              </span>
+            )}
+          </div>
         </td>
         <td className="py-3 px-4 text-xs font-sans text-white/70">
           <div className="flex flex-col gap-0.5">
@@ -188,15 +231,31 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
           <td colSpan={6} className="p-0">
             <div className="bg-white/[0.02] border-t border-white/5 px-4 py-4 pl-12">
               {/* Design details */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
-                <DetailItem label="Mode" value={lead.mode} />
-                <DetailItem label="Door Type" value={lead.doorType} />
-                <DetailItem label="Finish" value={lead.finish} />
-                <DetailItem label="Hardware" value={lead.hardware} />
-                <DetailItem label="Handle" value={lead.handleStyle} />
-                <DetailItem label="Framing" value={lead.trackPreference} />
-                <DetailItem label="Shape" value={lead.showerShape} />
-              </div>
+              {lead.product === 'railing' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                  <DetailItem label="Product" value="Glass Railing" />
+                  <DetailItem label="Mode" value={lead.productConfig?.mode ?? lead.mode ?? null} />
+                  <DetailItem label="Application" value={lead.productConfig?.application ?? null} />
+                  <DetailItem label="System" value={lead.productConfig?.railing_system ?? null} />
+                  <DetailItem label="Handrail" value={lead.productConfig?.handrail ?? null} />
+                  <DetailItem label="Finish" value={lead.productConfig?.finish ?? null} />
+                  {!lead.productConfig && lead.productSummary && (
+                    <div className="col-span-2 sm:col-span-4 lg:col-span-6">
+                      <DetailItem label="Selections" value={lead.productSummary} />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+                  <DetailItem label="Mode" value={lead.mode} />
+                  <DetailItem label="Door Type" value={lead.doorType} />
+                  <DetailItem label="Finish" value={lead.finish} />
+                  <DetailItem label="Hardware" value={lead.hardware} />
+                  <DetailItem label="Handle" value={lead.handleStyle} />
+                  <DetailItem label="Framing" value={lead.trackPreference} />
+                  <DetailItem label="Shape" value={lead.showerShape} />
+                </div>
+              )}
 
               {/* TCPA consent */}
               <div className="flex items-center gap-1.5 mb-4">
@@ -368,6 +427,8 @@ export default function LeadsPage() {
       'Framing',
       'Shape',
       'TCPA Consent',
+      'Product',
+      'Product Summary',
     ];
     const rows: string[][] = [headers];
     for (const lead of filteredLeads) {
@@ -387,6 +448,8 @@ export default function LeadsPage() {
         lead.trackPreference ?? '',
         lead.showerShape ?? '',
         lead.tcpaConsent ? 'Yes' : 'No',
+        lead.product ?? 'shower',
+        lead.productSummary ?? '',
       ]);
     }
     const csvContent = rows

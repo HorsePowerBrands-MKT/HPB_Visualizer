@@ -9,6 +9,36 @@ export interface ImageValidationResponse {
   contentFlag?: 'safe' | 'pii' | 'inappropriate';
 }
 
+/** Product line a request belongs to. Absent = 'shower' (legacy default). */
+export type VisualizerProduct = 'shower' | 'railing';
+
+/** What the railing validator saw at the railing location in the photo. */
+export type RailingExistingCondition =
+  | 'existing_railing'
+  | 'open_edge'
+  | 'half_wall'
+  | 'existing_fence'
+  | 'none';
+
+/** Which railing application the validator believes the photo shows. */
+export type RailingDetectedApplication =
+  | 'interior_staircase'
+  | 'interior_balcony'
+  | 'exterior_deck'
+  | 'pool_balustrade'
+  | 'unknown';
+
+// Railing image validation response
+export interface RailingImageValidationResponse {
+  valid: boolean;
+  reason?: string;
+  setting: 'interior' | 'exterior';
+  existingCondition: RailingExistingCondition;
+  /** Auto-detected so the consumer never has to pick where the railing goes. */
+  detectedApplication: RailingDetectedApplication;
+  contentFlag?: 'safe' | 'pii' | 'inappropriate';
+}
+
 // Image data structure
 export interface ImageData {
   data: string; // base64
@@ -35,6 +65,17 @@ export interface VisualizationRequest {
   prompt: string;
   targetWidth?: number;
   targetHeight?: number;
+  /**
+   * Overrides the registered system template for this request. Absent =
+   * the brand's active 'system' template (shower). Set by the API route
+   * for non-shower products.
+   */
+  systemPrompt?: string;
+  /**
+   * Overrides the short "EDIT TASK" preamble placed before input_1. Absent =
+   * the shower preamble. Set by the API route for non-shower products.
+   */
+  editPreamble?: string;
 }
 
 // Wrapper for an authoritative reference image plus its explanatory blurb.

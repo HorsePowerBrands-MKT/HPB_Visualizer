@@ -34,9 +34,16 @@ export interface SasEmailData {
     framing?: string | null;
     hardware?: string | null;
     handle?: string | null;
+    // Glass railing product line
+    application?: string | null;
+    railingSystem?: string | null;
+    handrail?: string | null;
+    finish?: string | null;
   };
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
+  /** Product line the design came from. Drives copy only; defaults to shower. */
+  product?: 'shower' | 'railing';
   /** Public marketing/landing site URL (used in the Estimate CTA). */
   brandUrl?: string;
 }
@@ -75,6 +82,8 @@ export interface RaqEmailData {
    *  rather than an inline image. */
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
+  /** Product line the design came from. Drives copy only; defaults to shower. */
+  product?: 'shower' | 'railing';
   /** Public marketing/landing site URL. */
   brandUrl?: string;
 }
@@ -111,13 +120,27 @@ const EMAIL_FOOTER_BORDER_IMAGE_URL =
   'https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/GG%20Email%20Border%204.png';
 
 // Base URL the email images are served from. The logo PNG lives in this app's
-// public/email-assets folder, so it resolves at the deployed site origin.
-// Override with EMAIL_ASSET_BASE_URL if the asset is hosted elsewhere (e.g. a CDN).
-const EMAIL_ASSET_BASE_URL = (
-  process.env.EMAIL_ASSET_BASE_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  DEFAULT_BRAND_URL
-).replace(/\/$/, '');
+// public/email-assets folder, so it resolves at the deployed visualizer origin
+// (NOT the marketing site, which does not host it). Override with
+// EMAIL_ASSET_BASE_URL if the asset is hosted elsewhere (e.g. a CDN).
+//
+// A localhost NEXT_PUBLIC_SITE_URL (local dev) is ignored: the recipient's
+// mail client can't reach it, so the logo would render as a broken image.
+const DEFAULT_EMAIL_ASSET_ORIGIN = 'https://visualizer.gatsbyglass.com';
+
+function isLocalOrigin(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?(\/|$)/i.test(url);
+}
+
+function resolveEmailAssetBaseUrl(): string {
+  const explicit = process.env.EMAIL_ASSET_BASE_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl && !isLocalOrigin(siteUrl)) return siteUrl.replace(/\/$/, '');
+  return DEFAULT_EMAIL_ASSET_ORIGIN;
+}
+
+const EMAIL_ASSET_BASE_URL = resolveEmailAssetBaseUrl();
 const BRAND_LOGO_URL = `${EMAIL_ASSET_BASE_URL}/email-assets/gg-logo-horizontal.png`;
 
 // Brand header: the Gatsby Glass logo (gold wordmark + white tagline) on black.
@@ -131,6 +154,8 @@ const BRAND_HEADER = `<tr>
 
 const SUBJECT_LINE = 'Your Gatsby Glass Design Preview';
 
+const isRailing = (product?: string): boolean => product === 'railing';
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -143,6 +168,9 @@ function escapeHtml(s: string): string {
 function renderHtml(data: SasEmailData): string {
   const brandUrl = data.brandUrl || DEFAULT_BRAND_URL;
   const isInspiration = data.mode === 'inspiration';
+  const railing = isRailing(data.product);
+  const spaceNoun = railing ? 'space' : 'bathroom';
+  const previewNoun = railing ? 'glass railing design preview' : 'shower design preview';
 
   // NOTE: The border lives on the wrapping <table>, not the <img>, because
   // Outlook (Word rendering engine) ignores `height:auto` and reserves the
@@ -174,6 +202,10 @@ function renderHtml(data: SasEmailData): string {
                           </tr>`;
 
   const configRows: string[] = [];
+  if (data.heroConfig?.application) configRows.push(configRow('Application', data.heroConfig.application));
+  if (data.heroConfig?.railingSystem) configRows.push(configRow('Railing System', data.heroConfig.railingSystem));
+  if (data.heroConfig?.handrail) configRows.push(configRow('Handrail', data.heroConfig.handrail));
+  if (data.heroConfig?.finish) configRows.push(configRow('Finish', data.heroConfig.finish));
   if (data.heroConfig?.enclosure) configRows.push(configRow('Enclosure', data.heroConfig.enclosure));
   if (data.heroConfig?.framing) configRows.push(configRow('Framing', data.heroConfig.framing));
   if (data.heroConfig?.hardware) configRows.push(configRow('Hardware', data.heroConfig.hardware));
@@ -190,7 +222,7 @@ function renderHtml(data: SasEmailData): string {
                           Your Design
                         </p>
                         <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;font-family:Arial,sans-serif;">
-                          Based on your uploaded inspiration photo, tailored to your bathroom's unique layout.
+                          Based on your uploaded inspiration photo, tailored to your ${spaceNoun}'s unique layout.
                         </p>
                       </td>
                     </tr>
@@ -319,7 +351,7 @@ function renderHtml(data: SasEmailData): string {
                     </tr>
                     <tr>
                         <td align="center" style="padding: 0 30px 16px 30px; color: #777777; font-size: 11px; line-height: 1.5;">
-                            <p style="margin: 0;">You are receiving this email because a shower design preview was requested for this email address. If you believe this message was sent in error, you may simply disregard it.</p>
+                            <p style="margin: 0;">You are receiving this email because a ${previewNoun} was requested for this email address. If you believe this message was sent in error, you may simply disregard it.</p>
                         </td>
                     </tr>
                     <tr>
@@ -354,8 +386,12 @@ function renderText(data: SasEmailData): string {
   lines.push('YOUR SELECTED CONFIGURATION');
   if (data.mode === 'inspiration') {
     lines.push("  Based on your uploaded inspiration photo, tailored to your");
-    lines.push("  bathroom's unique layout.");
+    lines.push(`  ${isRailing(data.product) ? 'space' : 'bathroom'}'s unique layout.`);
   } else if (data.heroConfig) {
+    if (data.heroConfig.application) lines.push(`  Application: ${data.heroConfig.application}`);
+    if (data.heroConfig.railingSystem) lines.push(`  Railing System: ${data.heroConfig.railingSystem}`);
+    if (data.heroConfig.handrail) lines.push(`  Handrail: ${data.heroConfig.handrail}`);
+    if (data.heroConfig.finish) lines.push(`  Finish: ${data.heroConfig.finish}`);
     if (data.heroConfig.enclosure) lines.push(`  Enclosure: ${data.heroConfig.enclosure}`);
     if (data.heroConfig.framing) lines.push(`  Framing: ${data.heroConfig.framing}`);
     if (data.heroConfig.hardware) lines.push(`  Hardware: ${data.heroConfig.hardware}`);
@@ -390,7 +426,9 @@ function renderText(data: SasEmailData): string {
   lines.push('Elegant. Strong. Innovative.');
   lines.push(data.brandUrl || DEFAULT_BRAND_URL);
   lines.push('');
-  lines.push('You are receiving this email because a shower design preview was');
+  lines.push(
+    `You are receiving this email because a ${isRailing(data.product) ? 'glass railing design preview' : 'shower design preview'} was`
+  );
   lines.push('requested for this email address. If you believe this message was');
   lines.push('sent in error, you may simply disregard it.');
   return lines.join('\n');
@@ -672,7 +710,7 @@ function renderRaqHtml(data: RaqEmailData): string {
                                 New Estimate Request
                             </p>
                             <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;">
-                                A potential customer has requested an estimate after designing their shower in the Gatsby Glass Visualizer. ${locationLine}
+                                A potential customer has requested an estimate after designing their ${isRailing(data.product) ? 'glass railing in the Gatsby Glass Railing Visualizer' : 'shower in the Gatsby Glass Visualizer'}. ${locationLine}
                             </p>
                         </td>
                     </tr>
@@ -729,7 +767,11 @@ function renderRaqHtml(data: RaqEmailData): string {
 
 function renderRaqText(data: RaqEmailData): string {
   const lines: string[] = [];
-  lines.push('NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER');
+  lines.push(
+    isRailing(data.product)
+      ? 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS RAILING VISUALIZER'
+      : 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER'
+  );
   lines.push('');
   if (data.outsideTerritory) {
     lines.push('OUTSIDE SERVICE AREA');

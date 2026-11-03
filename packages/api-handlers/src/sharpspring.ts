@@ -18,6 +18,8 @@ export interface SharpSpringLeadData {
   zipCode: string;
   locationName?: string;
   leadType?: 'SAS' | 'RAQ' | 'POP';
+  /** Product line the lead came from. Absent = shower. */
+  product?: 'shower' | 'railing';
 }
 
 interface SharpSpringError {
@@ -80,8 +82,13 @@ export async function pushLeadToSharpSpring(
       leadObject[CUSTOM_FIELDS.locationName] = data.locationName;
     }
 
+    // Visualizer Lead Type picklist. Shower leads use the bare values
+    // (SAS / RAQ / POP); railing leads use the "-R" variants that exist on
+    // the same field: SAS-R "Save & Send - Railings", RAQ-R "Request a
+    // Quote - Railings", POP-R "Popup - Railings".
     if (data.leadType) {
-      leadObject[CUSTOM_FIELDS.visualizerLeadType] = data.leadType;
+      leadObject[CUSTOM_FIELDS.visualizerLeadType] =
+        data.product === 'railing' ? `${data.leadType}-R` : data.leadType;
     }
 
     const requestId = `viz-${Date.now()}`;
@@ -128,7 +135,7 @@ export async function pushLeadToSharpSpring(
     }
 
     if (createResult?.success) {
-      console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'}, id: ${createResult.id})`);
+      console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'}${data.product === 'railing' ? '-R' : ''}, id: ${createResult.id})`);
       return { success: true };
     }
 

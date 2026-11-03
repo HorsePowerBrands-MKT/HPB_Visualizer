@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 // Register Gatsby Glass brand templates before any prompt is built.
 import '../../../lib/registerTemplates';
-import { validateImage } from '@repo/api-handlers/gemini';
+import {
+  validateImage,
+  validateRailingImage,
+  GeminiRateLimitError,
+  GeminiUnavailableError,
+} from '@repo/api-handlers/gemini';
+import { getRailingValidationPrompt } from '../../../lib/railing/promptBuilder';
 import { logApiCall } from '@repo/api-handlers/supabase';
 import type { ImageData } from '@repo/types';
 import { ValidationRequestSchema } from '../../../lib/validation';
@@ -45,12 +51,20 @@ export async function POST(request: NextRequest) {
     }
 
     const imageDataObj: ImageData = { data: imageData, mimeType };
-    console.log('[VALIDATE-IMAGE API] Starting Gemini validation...');
-    const result = await validateImage({ apiKey }, imageDataObj);
+    const product = validatedData.product ?? 'shower';
+    console.log(`[VALIDATE-IMAGE API] Starting Gemini validation (product=${product})...`);
+
+    // Railing uploads use their own prompt + response shape (setting and
+    // existing guard condition instead of shower shape / hardware). The
+    // shower path below is unchanged.
+    const result =
+      product === 'railing'
+        ? await validateRailingImage({ apiKey }, imageDataObj, getRailingValidationPrompt())
+        : await validateImage({ apiKey }, imageDataObj);
     console.log('[VALIDATE-IMAGE API] Validation result:', JSON.stringify(result));
 
     const sbConfig = getSupabaseConfig();
-    if (sbConfig) logApiCall(sbConfig, 'image_validation');
+    if (sbConfig) logApiCall(sbConfig, product === 'railing' ? 'railing_image_validation' : 'image_validation');
 
     if (result.contentFlag && result.contentFlag !== 'safe') {
       console.warn(`[VALIDATE-IMAGE API] Content flagged as: ${result.contentFlag}`);
@@ -70,6 +84,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // The AI service itself is down (billing) or busy (429). Say so plainly;
+    // `serviceUnavailable` tells the client not to add connection advice.
+    if (error instanceof GeminiUnavailableError || error instanceof GeminiRateLimitError) {
+      const unavailable = error instanceof GeminiUnavailableError;
+      console.error(`[VALIDATE-IMAGE API] Gemini ${unavailable ? 'unavailable (billing)' : 'rate-limited'}:`, error.message);
+      return NextResponse.json(
+        {
+          valid: false,
+          reason: unavailable
+            ? 'Our design preview service is temporarily unavailable. Please try again later — your photo is fine.'
+            : 'Our design preview service is busy right now. Please try again in a minute.',
+          serviceUnavailable: true,
+          shape: 'standard'
+        },
+        { status: 503 }
+      );
+    }
+
     console.error('[VALIDATE-IMAGE API] Unexpected error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[VALIDATE-IMAGE API] Error details:', errorMessage);
