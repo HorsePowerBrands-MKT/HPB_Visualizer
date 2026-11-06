@@ -25,6 +25,12 @@ interface PhotoUploadStepProps extends SingleUploadProps {
   inspirationHint?: string;
   /** Rendered after the consent checkboxes (e.g. detected-setting banner). */
   footer?: React.ReactNode;
+  /**
+   * Rendered on top of the primary preview image (e.g. a draw-on-photo
+   * layer). Positioned absolutely inside the preview box, under the remove
+   * button.
+   */
+  previewOverlay?: React.ReactNode;
   // Second upload props — only used when type === 'both'
   inspirationFile?: File | null;
   inspirationPreviewUrl?: string | null;
@@ -39,7 +45,9 @@ interface PhotoUploadStepProps extends SingleUploadProps {
   onMarketingConsentChange?: (value: boolean) => void;
 }
 
-const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; tall?: boolean }> = ({
+const UploadBox: React.FC<
+  SingleUploadProps & { label?: string; hint?: string; tall?: boolean; overlay?: React.ReactNode }
+> = ({
   file,
   previewUrl,
   validating,
@@ -48,6 +56,7 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
   label,
   hint,
   tall = true,
+  overlay,
 }) => (
   <div className="space-y-2">
     {label && <h3 className="text-lg font-semibold text-brand-gold">{label}</h3>}
@@ -74,6 +83,7 @@ const UploadBox: React.FC<SingleUploadProps & { label?: string; hint?: string; t
       {previewUrl ? (
         <>
           <img src={previewUrl} alt="Uploaded" className="object-contain h-full w-full" />
+          {overlay}
           <button
             onClick={onRemove}
             className="absolute top-4 right-4 p-3 bg-black bg-opacity-70 text-white hover:bg-opacity-90 z-10 transition-all hover:scale-110"
@@ -173,6 +183,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
   inspirationLabel,
   inspirationHint,
   footer,
+  previewOverlay,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
 
@@ -204,6 +215,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
             label={primaryLabel ?? 'Your Bathroom'}
             hint={primaryHint ?? 'Take a clear, straight-on photo of your shower area'}
             tall={false}
+            overlay={previewOverlay}
           />
           <UploadBox
             file={inspirationFile ?? null}
@@ -268,6 +280,7 @@ export const PhotoUploadStep: React.FC<PhotoUploadStepProps> = ({
           validating={validating}
           onFileChange={onFileChange}
           onRemove={onRemove}
+          overlay={previewOverlay}
         />
 
         {hasFile && onUploadConsentChange && onMarketingConsentChange && (

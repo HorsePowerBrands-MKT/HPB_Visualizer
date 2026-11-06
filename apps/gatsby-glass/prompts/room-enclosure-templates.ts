@@ -25,6 +25,7 @@ import {
   PRESERVATION_RULES,
   BACKGROUND_GLASS_PRESERVATION_RULES,
   EXISTING_CONDITION_RULES,
+  PLACEMENT_LINE_RULES,
   APPLICATION_RULES,
   INSPIRATION_STYLE_MAPPING,
   INSPIRATION_FINISH_MAPPING,
@@ -48,7 +49,7 @@ const META = {
 
 export const roomEnclosureVisualizationTemplate: PromptTemplate = {
   id: ROOM_ENCLOSURE_VISUALIZATION_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'Glass Room Enclosure Visualization Prompt',
   type: 'visualization',
   description:
@@ -98,6 +99,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
         '  task: install_full_height_glass_room_enclosure_in_input_1',
         '  room_type: {{application_name}} — {{application_descriptor}}',
         '  existing_condition_in_photo: {{existing_condition}}',
+        '  placement: {{placement_name}}',
         '  enclosure_style: {{style_name}}',
         '  finish: {{finish_name}}',
         '  door: one swinging glass door (hinged or pivot) at the natural entry, same style and finish',
@@ -149,6 +151,12 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
           content: [...EXISTING_CONDITION_RULES.existing_glass],
         },
         {
+          id: 'open_floor',
+          type: 'instructions',
+          condition: { variable: 'existing_condition', operator: 'equals', value: 'open_floor' },
+          content: [...EXISTING_CONDITION_RULES.open_floor],
+        },
+        {
           id: 'condition_unknown',
           type: 'instructions',
           condition: { variable: 'existing_condition', operator: 'equals', value: 'none' },
@@ -192,6 +200,17 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
         },
         { id: 'application_placement_end', type: 'custom', content: [''] },
       ],
+    },
+
+    // -----------------------------------------------------------------
+    // Customer placement line (only when one was drawn). The marked-up
+    // reference copy is attached by the API route; see rules.ts.
+    // -----------------------------------------------------------------
+    {
+      id: 'placement_line',
+      type: 'instructions',
+      condition: { variable: 'placement', operator: 'equals', value: 'drawn' },
+      content: ['CUSTOMER PLACEMENT LINE (authoritative for location):', ...PLACEMENT_LINE_RULES, ''],
     },
 
     // -----------------------------------------------------------------
@@ -346,12 +365,15 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
         '5c. Under-stair: does the top edge of the glass follow the underside of the stair, with the stair itself untouched and no glass on the treads? If not, redo.',
         '6. SCALE: is the hardware slim next to the glass — a channel about 1 inch tall, or frame profiles about 1 to 1.5 inches wide? If the hardware is thicker than two fingers, redo with slimmer hardware.',
         '7. Does the render contain any NOT APPROVED element (divided-lite grid, heavy storefront, wood frame, barn-door track, tinted or frosted glass, half-height glass)? If yes, redo.',
+        '8. If a customer placement line was provided: does the bottom edge of the glass follow that line end to end, and is the magenta line itself completely absent from the output? If not, redo.',
       ],
     },
   ],
   variables: [
     { name: 'mode', type: 'string', required: true, description: 'configure | inspiration' },
     { name: 'existing_condition', type: 'string', required: true, default: 'none', description: 'From image validation' },
+    { name: 'placement', type: 'string', required: true, default: 'inferred', description: 'drawn | inferred' },
+    { name: 'placement_name', type: 'string', required: false, default: 'inferred from the opening in input_1' },
     { name: 'application', type: 'string', required: true },
     { name: 'application_name', type: 'string', required: true },
     { name: 'application_descriptor', type: 'string', required: true },
@@ -366,7 +388,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
     ...META,
     tags: ['room-enclosure', 'visualization', 'photorealistic'],
     notes:
-      'v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
+      'v1.1.0 — Customer placement line (magenta reference copy) + open-floor condition. v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
   },
 };
 
@@ -459,6 +481,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         '- The open space beneath a staircase (a nook, cavity or closet under the stairs)',
         '- A home office, study, den, library or reading nook, open to or separated from an adjoining room',
         '- Any interior room, alcove, lounge, gym, pantry, closet, display space or doorway where a glass wall and door could be installed',
+        '- A wine rack, desk, bar or display area sitting in open floor space with no walls around it (the customer will draw where the glass goes)',
         '- An existing glass partition, glass door or interior door that could be replaced with glass',
         '- A product, showroom, or catalog photo of a glass wine room, glass partition or glass enclosure (used as an inspiration photo)',
         '',
@@ -479,7 +502,9 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         "- 'open_opening': the space is open to the camera / the adjoining room with no wall, door or glass closing it (an open alcove, an open under-stair cavity, a doorless opening, an open side of a room)",
         "- 'existing_partition': a solid wall, door, screen, curtain or partition currently closes the space",
         "- 'existing_glass': a glass wall, glass door or glass enclosure already closes the space",
+        "- 'open_floor': the area to enclose (wine racks, a desk, a bar, a corner) sits in open floor space with NO walls, header, doorway, alcove or stair that would frame a glass wall — a new wall would have to stand in the open",
         "- 'none': cannot tell",
+        "Prefer 'open_opening' whenever the space has at least two sides and a top edge (an alcove, a nook, an under-stair cavity, a doorway); use 'open_floor' only when nothing frames it.",
         'detectedApplication — which room type the photo best fits:',
         "- 'wine_room': wine racks, bottles, a wine cellar or wine display are the main subject",
         "- 'under_stair': the space beneath a staircase is the main subject",

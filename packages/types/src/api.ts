@@ -44,6 +44,7 @@ export type RoomEnclosureExistingCondition =
   | 'open_opening'
   | 'existing_partition'
   | 'existing_glass'
+  | 'open_floor'
   | 'none';
 
 /** Which room type the room enclosure validator believes the photo shows. */

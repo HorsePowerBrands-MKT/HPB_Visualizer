@@ -634,7 +634,7 @@ export async function validateRoomEnclosureImage(
           contentFlag: { type: Type.STRING, enum: ['safe', 'pii', 'inappropriate'] },
           existingCondition: {
             type: Type.STRING,
-            enum: ['open_opening', 'existing_partition', 'existing_glass', 'none'],
+            enum: ['open_opening', 'existing_partition', 'existing_glass', 'open_floor', 'none'],
           },
           detectedApplication: {
             type: Type.STRING,

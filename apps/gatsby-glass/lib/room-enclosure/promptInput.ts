@@ -15,16 +15,25 @@ import {
   roomEnclosureFinishes,
   ROOM_ENCLOSURE_CATALOG_VERSION,
 } from './catalog';
-import { assertRoomEnclosureSelectionsRenderable } from './rules';
+import { assertRoomEnclosureSelectionsRenderable, requiresPlacementLine } from './rules';
+
+/**
+ * True once the photo side of the form is settled: the room type is known
+ * and, when the photo has nothing to anchor the glass to, the consumer has
+ * drawn a placement line.
+ */
+export const isRoomEnclosurePlacementReady = (form: RoomEnclosureForm): boolean =>
+  form.application !== null &&
+  (!requiresPlacementLine(form.existing_condition) || form.placement_line !== null);
 
 /**
  * True once every consumer selection the current mode needs has been made.
- * Design Your Own needs the room type, style and finish; Match Inspiration
- * only needs the room type (the inspiration photo supplies style and finish
- * unless the consumer explicitly overrides them).
+ * Design Your Own needs the room type, placement, style and finish; Match
+ * Inspiration only needs the room type and placement (the inspiration photo
+ * supplies style and finish unless the consumer explicitly overrides them).
  */
 export const isRoomEnclosureFormComplete = (form: RoomEnclosureForm): boolean => {
-  if (form.application === null) return false;
+  if (!isRoomEnclosurePlacementReady(form)) return false;
   if (form.mode === 'inspiration') return true;
   return form.style !== null && form.finish !== null;
 };
@@ -42,6 +51,7 @@ export const buildRoomEnclosurePayload = (
     style: form.style,
     finish: form.finish,
     existing_condition: form.existing_condition ?? 'none',
+    placement: form.placement_line ? 'drawn' : 'inferred',
     session_id: sessionId,
     catalog_version: ROOM_ENCLOSURE_CATALOG_VERSION,
   };
@@ -73,6 +83,7 @@ export const buildRoomEnclosurePromptInput = (
     session_id: payload.session_id,
     mode: payload.mode,
     existing_condition: payload.existing_condition,
+    placement: payload.placement,
     application: {
       id: payload.application,
       name: application.name,
