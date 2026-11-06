@@ -185,37 +185,38 @@ export const EXISTING_CONDITION_RULES: Record<RoomEnclosureExistingCondition, re
     '- An existing glass enclosure or glass door is present at the location. Replace it with the selected style and finish along the SAME line and opening. Preserve everything around it.',
   ],
   open_floor: [
-    '- The area is OPEN FLOOR: no wall, header, doorway or alcove frames the space to enclose. Build the enclosure as a NEW full-height glass wall standing on the floor along the customer placement line (below), rising to the ceiling, held at the floor and ceiling by the selected system. Where an end of the line meets or nearly meets a wall, column or the stair, the glass closes that gap; where an end stops in open floor, finish the run with a short glass return panel toward the nearest wall so the enclosed space has a clear inside and outside.',
+    '- The area is OPEN FLOOR: no wall, header, doorway or alcove frames the space to enclose. CREATE the room: build NEW full-height glass walls standing on the floor along EVERY segment of the customer placement path (below), rising to the ceiling and held at the floor and ceiling by the selected system. Two or three glass walls plus the existing walls typically form the new room. Where an end of the path meets or nearly meets a wall, column or the stair, the glass closes that gap.',
   ],
   none: [
-    '- The existing condition could not be determined. If a customer placement line is provided below, it decides the location. Otherwise identify the single most logical opening into the space being enclosed (the open side facing the camera, or the doorway into it) and treat it as an open opening: add the enclosure across that opening without altering the architecture.',
+    '- The existing condition could not be determined. If a customer placement path is provided below, it decides the location and how many walls there are. Otherwise identify the single most logical opening into the space being enclosed (the open side facing the camera, or the doorway into it) and treat it as an open opening: add the enclosure across that opening without altering the architecture.',
   ],
 };
 
 /**
  * Existing conditions with nothing in the photo to anchor the glass to. The
- * wizard requires a drawn placement line for these; for every other
- * condition the line is optional and overrides the inferred opening.
+ * wizard requires a drawn placement path for these; for every other
+ * condition the path is optional and overrides the inferred opening.
  */
-export const requiresPlacementLine = (condition: RoomEnclosureExistingCondition | null): boolean =>
+export const requiresPlacementPath = (condition: RoomEnclosureExistingCondition | null): boolean =>
   condition === null || condition === 'open_floor' || condition === 'none';
 
 /**
- * Rendered when the consumer drew a floor line on their photo. The line is
+ * Rendered when the consumer drew a floor path on their photo. The path is
  * burned in bright magenta onto a reference copy of input_1 (see
  * `lib/room-enclosure/placementImage.ts`) that travels after the photos.
  */
-export const PLACEMENT_LINE_RULES: readonly string[] = [
-  "- A reference copy of input_1 follows with a BRIGHT MAGENTA LINE drawn on the floor. That line is the customer's instruction for WHERE the glass wall stands: the bottom edge of the glass runs exactly along the line, from one end to the other, at the same position and in the same perspective in input_1, and the panels rise vertically from it to the ceiling (or the stair underside).",
-  '- The line overrides any opening you would otherwise infer: do not move the glass to a nearby doorway, alcove edge or wall if the line is elsewhere.',
-  '- Where an end of the line is within about a foot of a wall, column or the stair, close that gap with glass. Where an end stops in open floor, that is where the wall ends: finish it with a short glass return toward the nearest wall and a clean polished edge, never a half-height or stub panel.',
-  '- Put the door on the line at the natural approach to the space.',
-  '- The magenta line is an instruction only. It must NOT appear in the output in any form, and nothing else is copied from the reference copy (no color, crop, lighting or framing changes). input_1 remains the only canvas.',
+export const PLACEMENT_PATH_RULES: readonly string[] = [
+  "- A reference copy of input_1 follows with a BRIGHT MAGENTA PATH drawn on the floor: one or more connected straight segments with a dot at every corner. The path is the customer's instruction for WHERE the glass walls stand. Each segment is ONE straight full-height glass wall: its bottom edge runs exactly along that segment, at the same position and in the same perspective as in input_1, and the panels rise vertically from it to the ceiling (or the stair underside).",
+  '- Where two segments meet, the glass walls meet at a corner: a polished glass-to-glass corner joint for frameless, a slim corner post for framed. The floor area between the path and the existing walls becomes the new enclosed room; everything outside it stays open.',
+  '- The path overrides any opening you would otherwise infer: do not move the glass to a nearby doorway, alcove edge or wall if the path is elsewhere, and do not add walls the path does not show or drop walls it does.',
+  '- Where an end of the path is within about a foot of a wall, column or the stair, close that gap with glass. Where an end stops in open floor, that is where the glass ends: a clean polished edge (frameless) or a slim end jamb (framed), never a half-height or stub panel.',
+  '- Put the door on one of the segments at the natural approach to the new room.',
+  '- The magenta path is an instruction only. It must NOT appear in the output in any form, and nothing else is copied from the reference copy (no color, crop, lighting or framing changes). input_1 remains the only canvas.',
 ];
 
 /** Description sent with the marked-up reference copy (see `ReferenceImage.description`). */
 export const PLACEMENT_REFERENCE_DESCRIPTION =
-  'REFERENCE — CUSTOMER PLACEMENT LINE. The next image is a copy of input_1 with a bright magenta line drawn on the floor by the customer. It shows WHERE the new glass wall stands: the bottom edge of the glass follows that line exactly, end to end, and the glass rises from it to the ceiling. Use this image for placement only. Do NOT reproduce the magenta line or any mark from it in the output, and do not copy anything else from it; input_1 is the only canvas to edit.';
+  'REFERENCE — CUSTOMER PLACEMENT PATH. The next image is a copy of input_1 with a bright magenta path drawn on the floor by the customer: one or more connected straight segments with a dot at each corner. It shows WHERE the new glass walls stand: each segment is one full-height glass wall whose bottom edge follows that segment exactly, and walls meet at a glass corner where segments meet. Use this image for placement only. Do NOT reproduce the magenta path or any mark from it in the output, and do not copy anything else from it; input_1 is the only canvas to edit.';
 
 /** Application placement rules. */
 export const APPLICATION_RULES: Record<RoomEnclosureApplication, readonly string[]> = {

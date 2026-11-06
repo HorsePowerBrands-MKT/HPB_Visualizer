@@ -15,16 +15,20 @@ import {
   roomEnclosureFinishes,
   ROOM_ENCLOSURE_CATALOG_VERSION,
 } from './catalog';
-import { assertRoomEnclosureSelectionsRenderable, requiresPlacementLine } from './rules';
+import { assertRoomEnclosureSelectionsRenderable, requiresPlacementPath } from './rules';
+import { isPlacementPathComplete } from './placementImage';
 
 /**
  * True once the photo side of the form is settled: the room type is known
  * and, when the photo has nothing to anchor the glass to, the consumer has
- * drawn a placement line.
+ * drawn a complete placement path. A half-drawn path (one corner tapped)
+ * never counts, whether or not the path is required.
  */
-export const isRoomEnclosurePlacementReady = (form: RoomEnclosureForm): boolean =>
-  form.application !== null &&
-  (!requiresPlacementLine(form.existing_condition) || form.placement_line !== null);
+export const isRoomEnclosurePlacementReady = (form: RoomEnclosureForm): boolean => {
+  if (form.application === null) return false;
+  if (form.placement_path !== null) return isPlacementPathComplete(form.placement_path);
+  return !requiresPlacementPath(form.existing_condition);
+};
 
 /**
  * True once every consumer selection the current mode needs has been made.
@@ -51,7 +55,7 @@ export const buildRoomEnclosurePayload = (
     style: form.style,
     finish: form.finish,
     existing_condition: form.existing_condition ?? 'none',
-    placement: form.placement_line ? 'drawn' : 'inferred',
+    placement: isPlacementPathComplete(form.placement_path) ? 'drawn' : 'inferred',
     session_id: sessionId,
     catalog_version: ROOM_ENCLOSURE_CATALOG_VERSION,
   };

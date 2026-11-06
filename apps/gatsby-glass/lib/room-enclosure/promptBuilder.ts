@@ -34,7 +34,7 @@ export function roomEnclosurePromptVariables(input: RoomEnclosurePromptInput): R
     placement: input.placement,
     placement_name:
       input.placement === 'drawn'
-        ? 'customer-drawn floor line (see the placement reference image)'
+        ? 'customer-drawn floor path, one glass wall per segment (see the placement reference image)'
         : 'inferred from the opening in input_1',
     application: input.application.id,
     application_name: input.application.name,
