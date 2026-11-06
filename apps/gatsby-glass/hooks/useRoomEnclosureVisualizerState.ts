@@ -60,7 +60,7 @@ const createInitialForm = (): RoomEnclosureForm => ({
   finish: null,
   existing_condition: null,
   application_detected: false,
-  placement_line: null,
+  placement_path: null,
 });
 
 export interface RoomEnclosureVisualizerState {
@@ -177,7 +177,7 @@ export function useRoomEnclosureVisualizerState(): RoomEnclosureVisualizerState 
         return true;
       case 2: {
         // Photo validated + consent + room type resolved (auto-detected on
-        // upload) + a placement line when the photo has nothing to anchor
+        // upload) + a placement path when the photo has nothing to anchor
         // to. In inspiration mode this is also the generate step.
         const hasSpacePhoto =
           imageFile !== null &&

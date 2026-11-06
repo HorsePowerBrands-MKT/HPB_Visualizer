@@ -25,7 +25,7 @@ import {
   PRESERVATION_RULES,
   BACKGROUND_GLASS_PRESERVATION_RULES,
   EXISTING_CONDITION_RULES,
-  PLACEMENT_LINE_RULES,
+  PLACEMENT_PATH_RULES,
   APPLICATION_RULES,
   INSPIRATION_STYLE_MAPPING,
   INSPIRATION_FINISH_MAPPING,
@@ -203,14 +203,14 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
     },
 
     // -----------------------------------------------------------------
-    // Customer placement line (only when one was drawn). The marked-up
+    // Customer placement path (only when one was drawn). The marked-up
     // reference copy is attached by the API route; see rules.ts.
     // -----------------------------------------------------------------
     {
-      id: 'placement_line',
+      id: 'placement_path',
       type: 'instructions',
       condition: { variable: 'placement', operator: 'equals', value: 'drawn' },
-      content: ['CUSTOMER PLACEMENT LINE (authoritative for location):', ...PLACEMENT_LINE_RULES, ''],
+      content: ['CUSTOMER PLACEMENT PATH (authoritative for location):', ...PLACEMENT_PATH_RULES, ''],
     },
 
     // -----------------------------------------------------------------
@@ -365,7 +365,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
         '5c. Under-stair: does the top edge of the glass follow the underside of the stair, with the stair itself untouched and no glass on the treads? If not, redo.',
         '6. SCALE: is the hardware slim next to the glass — a channel about 1 inch tall, or frame profiles about 1 to 1.5 inches wide? If the hardware is thicker than two fingers, redo with slimmer hardware.',
         '7. Does the render contain any NOT APPROVED element (divided-lite grid, heavy storefront, wood frame, barn-door track, tinted or frosted glass, half-height glass)? If yes, redo.',
-        '8. If a customer placement line was provided: does the bottom edge of the glass follow that line end to end, and is the magenta line itself completely absent from the output? If not, redo.',
+        '8. If a customer placement path was provided: does every segment have a full-height glass wall standing exactly on it, with the walls meeting at a glass corner where segments meet, no walls added or dropped, and is the magenta path itself completely absent from the output? If not, redo.',
       ],
     },
   ],
@@ -388,7 +388,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
     ...META,
     tags: ['room-enclosure', 'visualization', 'photorealistic'],
     notes:
-      'v1.1.0 — Customer placement line (magenta reference copy) + open-floor condition. v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
+      'v1.1.0 — Customer placement path (magenta reference copy, one glass wall per segment) + open-floor condition. v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
   },
 };
 
@@ -481,6 +481,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         '- The open space beneath a staircase (a nook, cavity or closet under the stairs)',
         '- A home office, study, den, library or reading nook, open to or separated from an adjoining room',
         '- Any interior room, alcove, lounge, gym, pantry, closet, display space or doorway where a glass wall and door could be installed',
+        '- Any ordinary interior room (living room, great room, basement, dining area, bedroom) where part of the space could be partitioned off with new glass walls to create a wine room, office or display room — there does NOT need to be an existing opening, nook, door or glass to replace',
         '- A wine rack, desk, bar or display area sitting in open floor space with no walls around it (the customer will draw where the glass goes)',
         '- An existing glass partition, glass door or interior door that could be replaced with glass',
         '- A product, showroom, or catalog photo of a glass wine room, glass partition or glass enclosure (used as an inspiration photo)',
@@ -488,6 +489,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         'REJECT (isValid: false) ONLY if the image is clearly:',
         '- A bathroom, shower, or tub',
         '- Purely an outdoor scene with no interior space (a deck, pool, yard or exterior facade)',
+        'Never reject an interior photo for lacking a staircase, balcony, edge, nook or opening: a plain room is a valid place to create a glass room.',
         '- A document, screenshot, drawing, or text',
         '- Completely unrelated to a home or building interior',
       ],

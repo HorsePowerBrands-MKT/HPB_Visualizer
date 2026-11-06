@@ -1,14 +1,14 @@
 /**
- * Renders the consumer's placement line onto a copy of their photo.
+ * Renders the consumer's placement path onto a copy of their photo.
  *
  * The copy travels to the image model as a reference image (after input_1
  * and any inspiration photo) with `PLACEMENT_REFERENCE_DESCRIPTION`, so the
- * model sees exactly where the glass wall stands without the mark ever
+ * model sees exactly where each glass wall stands without the mark ever
  * touching the canvas it edits. Browser-only (uses a canvas element).
  */
 
 import type { ImageData } from '@repo/types';
-import type { RoomEnclosurePlacementLine } from './types';
+import type { RoomEnclosurePlacementPath, RoomEnclosurePlacementPoint } from './types';
 
 /** Longest side of the reference copy; it only needs to be legible, not full resolution. */
 export const PLACEMENT_REFERENCE_MAX_DIMENSION = 1280;
@@ -17,55 +17,66 @@ export const PLACEMENT_REFERENCE_MAX_DIMENSION = 1280;
 export const PLACEMENT_LINE_COLOR = '#ff00ff';
 export const PLACEMENT_LINE_OUTLINE = '#ffffff';
 
+/** Segments shorter than this (fraction of the image) are accidental taps, not walls. */
+export const MIN_SEGMENT_LENGTH = 0.03;
+
 /** Clamp a normalized coordinate into the image. */
 export const clampUnit = (n: number): number => Math.min(1, Math.max(0, n));
 
-/** Length of a normalized line, as a fraction of the image diagonal-ish (0..~1.4). */
-export const placementLineLength = (line: RoomEnclosurePlacementLine): number =>
-  Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
+export const pointDistance = (a: RoomEnclosurePlacementPoint, b: RoomEnclosurePlacementPoint): number =>
+  Math.hypot(b.x - a.x, b.y - a.y);
+
+/** Number of glass walls the path describes (one per segment). */
+export const placementWallCount = (path: RoomEnclosurePlacementPath | null): number =>
+  path ? Math.max(0, path.points.length - 1) : 0;
+
+/** A usable path has at least one segment of real length. */
+export const isPlacementPathComplete = (path: RoomEnclosurePlacementPath | null): boolean =>
+  !!path &&
+  path.points.length >= 2 &&
+  path.points.slice(1).every((p, i) => pointDistance(path.points[i], p) >= MIN_SEGMENT_LENGTH);
 
 /**
- * Draws the line (with endpoint dots) onto a 2D context of `width` x
- * `height` pixels. Shared by the on-screen overlay export and the reference
- * copy so both look identical.
+ * Draws the path (segments plus a dot at every corner) onto a 2D context of
+ * `width` x `height` pixels. Shared by the reference copy and anything that
+ * wants the on-screen look to match.
  */
-export function drawPlacementLine(
+export function drawPlacementPath(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  line: RoomEnclosurePlacementLine
+  path: RoomEnclosurePlacementPath
 ): void {
-  const x1 = clampUnit(line.x1) * width;
-  const y1 = clampUnit(line.y1) * height;
-  const x2 = clampUnit(line.x2) * width;
-  const y2 = clampUnit(line.y2) * height;
+  const pts = path.points.map((p) => ({ x: clampUnit(p.x) * width, y: clampUnit(p.y) * height }));
+  if (pts.length === 0) return;
   const thickness = Math.max(6, Math.round(Math.min(width, height) * 0.012));
 
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // White outline keeps the line visible on both dark and light floors.
-  ctx.strokeStyle = PLACEMENT_LINE_OUTLINE;
-  ctx.lineWidth = thickness + 4;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-
-  ctx.strokeStyle = PLACEMENT_LINE_COLOR;
-  ctx.lineWidth = thickness;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-
-  for (const [x, y] of [
-    [x1, y1],
-    [x2, y2],
-  ] as const) {
+  const trace = () => {
     ctx.beginPath();
-    ctx.arc(x, y, thickness * 1.2, 0, Math.PI * 2);
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (const p of pts.slice(1)) ctx.lineTo(p.x, p.y);
+  };
+
+  if (pts.length >= 2) {
+    // White outline keeps the path visible on both dark and light floors.
+    trace();
+    ctx.strokeStyle = PLACEMENT_LINE_OUTLINE;
+    ctx.lineWidth = thickness + 4;
+    ctx.stroke();
+
+    trace();
+    ctx.strokeStyle = PLACEMENT_LINE_COLOR;
+    ctx.lineWidth = thickness;
+    ctx.stroke();
+  }
+
+  for (const p of pts) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, thickness * 1.2, 0, Math.PI * 2);
     ctx.fillStyle = PLACEMENT_LINE_COLOR;
     ctx.fill();
     ctx.lineWidth = 3;
@@ -97,7 +108,7 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
  */
 export async function renderPlacementReferenceImage(
   file: File,
-  line: RoomEnclosurePlacementLine,
+  path: RoomEnclosurePlacementPath,
   maxDimension: number = PLACEMENT_REFERENCE_MAX_DIMENSION
 ): Promise<ImageData> {
   const img = await loadImageElement(file);
@@ -112,7 +123,7 @@ export async function renderPlacementReferenceImage(
   if (!ctx) throw new Error('Canvas is not available for the placement reference');
 
   ctx.drawImage(img, 0, 0, width, height);
-  drawPlacementLine(ctx, width, height, line);
+  drawPlacementPath(ctx, width, height, path);
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
   return { data: dataUrl.split(',')[1] ?? '', mimeType: 'image/jpeg', width, height };

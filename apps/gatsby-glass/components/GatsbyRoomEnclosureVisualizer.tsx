@@ -20,8 +20,10 @@ import {
   ROOM_ENCLOSURE_CATALOG_VERSION,
   buildRoomEnclosurePrompt,
   formatRoomEnclosureSummary,
-  requiresPlacementLine,
+  requiresPlacementPath,
   renderPlacementReferenceImage,
+  isPlacementPathComplete,
+  placementWallCount,
 } from '../lib/room-enclosure';
 import {
   useRoomEnclosureVisualizerState,
@@ -86,7 +88,7 @@ const FROM_PHOTO = '__from_photo__';
 const SPACE_PHOTO_HINT =
   'Take a clear photo of the wine room, under-stair space, office, or room you want to enclose';
 
-const PLACEMENT_HINT = 'Drag along the floor where the glass wall should stand';
+const PLACEMENT_HINT = 'Tap the corners where the glass walls go (or drag for a single wall)';
 
 /**
  * Room Enclosure Module wizard. Collects a design mode, the space photo
@@ -211,8 +213,8 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
       setResultUrl(null);
       setResultStorageUrl(null);
       setShowResult(false);
-      // A placement line belongs to one photo; a new photo starts clean.
-      updateFormField('placement_line', null);
+      // A placement path belongs to one photo; a new photo starts clean.
+      updateFormField('placement_path', null);
       // Hidden image interpretation that feeds the backend placement rules.
       // Never shown to the consumer; the Room Type selection still wins.
       updateFormField(
@@ -243,7 +245,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     setError(null);
     setUploadConsent(false);
     setMarketingConsent(false);
-    updateFormField('placement_line', null);
+    updateFormField('placement_path', null);
   };
 
   // --- Generate -----------------------------------------------------------
@@ -272,12 +274,13 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
       const nextGenIndex = generationIndex + 1;
       const currentPayload = payload;
 
-      // The drawn floor line travels as a marked-up copy of the photo, so
-      // the model sees where the glass wall stands without the mark ever
+      // The drawn floor path travels as a marked-up copy of the photo, so
+      // the model sees where each glass wall stands without the mark ever
       // touching the canvas it edits.
-      const placementImage = form.placement_line
-        ? await renderPlacementReferenceImage(imageFile, form.placement_line)
-        : undefined;
+      const placementImage =
+        form.placement_path && isPlacementPathComplete(form.placement_path)
+          ? await renderPlacementReferenceImage(imageFile, form.placement_path)
+          : undefined;
 
       await runGenerationPipeline({
         product: 'room_enclosure',
@@ -358,7 +361,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     imageFile,
     inspirationFile,
     form.mode,
-    form.placement_line,
+    form.placement_path,
     payload,
     promptInput,
     generationIndex,
@@ -451,24 +454,28 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     </div>
   );
 
-  // Draw-on-photo layer: one drag marks the floor line the glass wall stands on.
+  // Draw-on-photo layer: tapped corners mark the floor path the glass walls stand on.
   const placementOverlay = previewUrl ? (
     <PlacementLineOverlay
       previewUrl={previewUrl}
-      line={form.placement_line}
-      onChange={(line) => updateFormField('placement_line', line)}
+      path={form.placement_path}
+      onChange={(path) => updateFormField('placement_path', path)}
       hint={PLACEMENT_HINT}
     />
   ) : null;
 
   // Shown under the uploaded photo: what we detected, whether a placement
-  // line is needed, and a way to change the room type.
-  const needsPlacementLine = requiresPlacementLine(form.existing_condition);
-  const placementText = form.placement_line
-    ? 'The glass wall will stand along the line you drew. Drag again to move it.'
-    : needsPlacementLine
-      ? "We couldn't find a natural opening to fill, so drag a line on your photo along the floor where the glass wall should stand."
-      : 'Want the glass somewhere specific? Drag a line on your photo along the floor where it should stand.';
+  // path is needed, and a way to change the room type.
+  const needsPlacementPath = requiresPlacementPath(form.existing_condition);
+  const pathComplete = isPlacementPathComplete(form.placement_path);
+  const wallCount = placementWallCount(form.placement_path);
+  const placementText = pathComplete
+    ? `The glass will stand along the ${wallCount === 1 ? 'wall' : `${wallCount} walls`} you drew. Tap to add another corner, or clear it to start over.`
+    : form.placement_path
+      ? 'Tap the next corner on your photo to finish the first glass wall.'
+      : needsPlacementPath
+        ? "We couldn't find a natural opening to fill, so tap the corners on your photo where the glass walls should stand (two taps for one wall, three for an L-shaped room)."
+        : 'Want the glass somewhere specific? Tap the corners on your photo where the glass walls should stand.';
   const applicationBanner =
     previewUrl && form.application ? (
       <div className="mt-4 p-4 bg-brand-gold/10 border border-brand-gold/30 space-y-3 animate-in fade-in">
