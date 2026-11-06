@@ -21,6 +21,65 @@ import type {
   RailingHandrail,
   RailingFinish,
 } from '../../../lib/railing/types';
+import {
+  formatRoomEnclosureSummary,
+  roomEnclosureApplications,
+  roomEnclosureStyles,
+  roomEnclosureFinishes,
+} from '../../../lib/room-enclosure/catalog';
+import type {
+  RoomEnclosureApplication,
+  RoomEnclosureStyle,
+  RoomEnclosureFinish,
+} from '../../../lib/room-enclosure/types';
+
+/** Non-shower product lines whose selections live in product_config. */
+type ConfigProduct = 'railing' | 'room_enclosure';
+
+const isConfigProduct = (product: string | null | undefined): product is ConfigProduct =>
+  product === 'railing' || product === 'room_enclosure';
+
+/** Shape shared by `roomEnclosureConfigOf` (history rows) and the posted `productConfig`. */
+type RoomEnclosureSelectionIds = {
+  mode?: string | null;
+  application?: string | null;
+  style?: string | null;
+  finish?: string | null;
+};
+
+/** Narrow the free-form product_config JSON to the room enclosure selection keys. */
+function roomEnclosureConfigOf(viz: VisualizationHistoryItem): RoomEnclosureSelectionIds {
+  const cfg = (viz.product_config ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === 'string' ? v : null);
+  return {
+    mode: str(cfg.mode) ?? viz.mode ?? null,
+    application: str(cfg.application),
+    style: str(cfg.style),
+    finish: str(cfg.finish),
+  };
+}
+
+/**
+ * Map room enclosure selection ids to the labeled Room Type / Enclosure
+ * Style / Finish rows the emails render.
+ */
+function roomEnclosureHeroConfig(cfg: RoomEnclosureSelectionIds): {
+  roomType?: string | null;
+  enclosureStyle?: string | null;
+  finish?: string | null;
+} {
+  return {
+    roomType: cfg.application
+      ? roomEnclosureApplications[cfg.application as RoomEnclosureApplication]?.name ?? null
+      : null,
+    enclosureStyle: cfg.style
+      ? roomEnclosureStyles[cfg.style as RoomEnclosureStyle]?.name ?? null
+      : null,
+    finish: cfg.finish
+      ? roomEnclosureFinishes[cfg.finish as RoomEnclosureFinish]?.name ?? null
+      : null,
+  };
+}
 
 /** Narrow the free-form product_config JSON to the railing selection keys. */
 function railingConfigOf(viz: VisualizationHistoryItem): {
@@ -84,6 +143,9 @@ function buildImageLabel(viz: VisualizationHistoryItem): string {
   if (viz.product === 'railing') {
     return formatRailingSummary(railingConfigOf(viz));
   }
+  if (viz.product === 'room_enclosure') {
+    return formatRoomEnclosureSummary(roomEnclosureConfigOf(viz));
+  }
 
   if (viz.mode === 'inspiration') {
     const stamp = viz.created_at
@@ -145,9 +207,14 @@ function buildImageConfig(viz: VisualizationHistoryItem): {
   railingSystem?: string | null;
   handrail?: string | null;
   finish?: string | null;
+  roomType?: string | null;
+  enclosureStyle?: string | null;
 } | null {
   if (viz.product === 'railing') {
     return railingHeroConfig(railingConfigOf(viz));
+  }
+  if (viz.product === 'room_enclosure') {
+    return roomEnclosureHeroConfig(roomEnclosureConfigOf(viz));
   }
   if (viz.mode === 'inspiration') return null;
   return {
@@ -252,17 +319,37 @@ export async function POST(request: NextRequest) {
       productConfig: validatedData.productConfig as LeadProductConfig | undefined,
     };
 
-    // Railing context posted with the form. Used for the email fallbacks when
-    // the hero image can't be matched against the stored history, and for the
-    // email copy. `postedRailingLabel` prefers the structured selections over
-    // the free-text summary so both paths render identical text.
-    const isRailingLead = validatedData.product === 'railing';
-    const postedRailingConfig = isRailingLead ? validatedData.productConfig ?? null : null;
-    const postedRailingLabel = isRailingLead
-      ? postedRailingConfig
-        ? formatRailingSummary(postedRailingConfig)
-        : validatedData.productSummary ?? 'Glass Railing'
+    // Non-shower product context posted with the form (railing or room
+    // enclosure). Used for the email fallbacks when the hero image can't be
+    // matched against the stored history, and for the email copy.
+    // `postedProductLabel` prefers the structured selections over the
+    // free-text summary so both paths render identical text.
+    const postedProduct: ConfigProduct | null = isConfigProduct(validatedData.product)
+      ? validatedData.product
       : null;
+    const postedProductConfig = postedProduct ? validatedData.productConfig ?? null : null;
+    const postedProductLabel =
+      postedProduct === 'railing'
+        ? postedProductConfig
+          ? formatRailingSummary(postedProductConfig)
+          : validatedData.productSummary ?? 'Glass Railing'
+        : postedProduct === 'room_enclosure'
+          ? postedProductConfig
+            ? formatRoomEnclosureSummary(postedProductConfig)
+            : validatedData.productSummary ?? 'Glass Room Enclosure'
+          : null;
+    const postedHeroConfig =
+      postedProduct && postedProductConfig
+        ? postedProduct === 'railing'
+          ? railingHeroConfig(postedProductConfig)
+          : roomEnclosureHeroConfig(postedProductConfig)
+        : null;
+    /** Product for email copy: the posted product, else the hero row's product. */
+    const emailProductFor = (hero: VisualizationHistoryItem | null): 'shower' | ConfigProduct => {
+      if (postedProduct) return postedProduct;
+      const heroProduct = hero?.product;
+      return isConfigProduct(heroProduct) ? heroProduct : 'shower';
+    };
 
     const supabaseConfig = { url: supabaseUrl, serviceKey: supabaseKey };
 
@@ -354,8 +441,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
-              : postedRailingLabel
-              ? postedRailingLabel
+              : postedProductLabel
+              ? postedProductLabel
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,
@@ -383,10 +470,8 @@ export async function POST(request: NextRequest) {
 
             const heroConfig = hero
               ? buildImageConfig(hero)
-              : isRailingLead
-              ? postedRailingConfig
-                ? railingHeroConfig(postedRailingConfig)
-                : null
+              : postedProduct
+              ? postedHeroConfig
               : buildImageConfig({
                   watermarked: heroImageUrl,
                   original: null,
@@ -412,7 +497,7 @@ export async function POST(request: NextRequest) {
                 heroConfig: heroConfig ?? undefined,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
-                product: isRailingLead || hero?.product === 'railing' ? 'railing' : 'shower',
+                product: emailProductFor(hero),
               }
             );
 
@@ -539,8 +624,8 @@ export async function POST(request: NextRequest) {
           } else {
             const heroLabel = hero
               ? buildImageLabel(hero)
-              : postedRailingLabel
-              ? postedRailingLabel
+              : postedProductLabel
+              ? postedProductLabel
               : buildImageLabel({
                   watermarked: heroImageUrl,
                   original: null,
@@ -600,7 +685,7 @@ export async function POST(request: NextRequest) {
                 heroLabel,
                 galleryItems,
                 mode: validatedData.mode === 'inspiration' ? 'inspiration' : 'configure',
-                product: isRailingLead || hero?.product === 'railing' ? 'railing' : 'shower',
+                product: emailProductFor(hero),
               }
             );
 

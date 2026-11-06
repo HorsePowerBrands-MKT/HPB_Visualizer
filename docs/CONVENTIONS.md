@@ -31,7 +31,8 @@ TypeScript and Next.js conventions for the monorepo. Architecture placement rule
 | Packages | `@repo/<kebab-name>` in `packages/` |
 | Brand types | `apps/gatsby-glass/lib/gatsby-types.ts` (canonical for shower products) |
 | Constants | `lib/gatsby-constants/` |
-| Hooks | `useVisualizerState`, `useRailingVisualizerState`, etc. |
+| Hooks | `useVisualizerState`, `useRailingVisualizerState`, `useRoomEnclosureVisualizerState`, etc. |
+| Product modules | `lib/<module>/` (`railing`, `room-enclosure`) with `types.ts`, `catalog.ts`, `rules.ts`, `promptInput.ts`, `promptBuilder.ts`, `index.ts` |
 | API routes | kebab-case folders under `app/api/` |
 
 ## Git and PRs

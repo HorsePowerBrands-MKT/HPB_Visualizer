@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import type { VisualizerProductModule } from '../../lib/productModules';
 
-export type VisualizerProductModule = 'shower' | 'railing';
+export type { VisualizerProductModule };
 
 interface ProductModuleStepProps {
   value: VisualizerProductModule | null;
@@ -14,28 +15,33 @@ interface ProductModuleStepProps {
  * Selecting a module hands off to that module's own wizard.
  */
 export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onSelect }) => {
+  // Art deco corners frame the list as a whole: top-left on the first card,
+  // bottom-right on the last card, none in between.
   const modules: {
     value: VisualizerProductModule;
     label: string;
     description: string;
-    cornerClass: string;
-    cornerStyle: React.CSSProperties;
+    corner?: { className: string; style: React.CSSProperties };
   }[] = [
     {
       value: 'shower',
       label: 'Shower Enclosure',
       description:
         'Customize your enclosure type, glass, hardware, and finishes for your bathroom',
-      cornerClass: 'top-[-1px] left-[-1px]',
-      cornerStyle: { transform: 'scaleX(-1)' },
+      corner: { className: 'top-[-1px] left-[-1px]', style: { transform: 'scaleX(-1)' } },
     },
     {
       value: 'railing',
       label: 'Glass Railing',
       description:
         'Design glass railing for a staircase, balcony, deck, or pool area',
-      cornerClass: 'bottom-[-1px] right-[-1px]',
-      cornerStyle: { transform: 'scaleY(-1)' },
+    },
+    {
+      value: 'room_enclosure',
+      label: 'Room Enclosure',
+      description:
+        'Enclose a wine room, under-stair space, or home office with framed or frameless glass',
+      corner: { className: 'bottom-[-1px] right-[-1px]', style: { transform: 'scaleY(-1)' } },
     },
   ];
 
@@ -47,7 +53,7 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
       </div>
 
       <div className="grid grid-cols-1 gap-4 mt-8 max-w-2xl mx-auto">
-        {modules.map(({ value: moduleValue, label, description, cornerClass, cornerStyle }) => {
+        {modules.map(({ value: moduleValue, label, description, corner }) => {
           const isSelected = value === moduleValue;
           return (
             <button
@@ -60,12 +66,14 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
                   : 'bg-brand-brown hover:bg-brand-brown-hover'
               }`}
             >
-              <img
-                src="/GG-Deco-Corner.svg"
-                alt=""
-                className={`absolute ${cornerClass} w-20 h-20 pointer-events-none`}
-                style={cornerStyle}
-              />
+              {corner && (
+                <img
+                  src="/GG-Deco-Corner.svg"
+                  alt=""
+                  className={`absolute ${corner.className} w-20 h-20 pointer-events-none`}
+                  style={corner.style}
+                />
+              )}
               <div className="relative z-[1] min-w-0">
                 <h3
                   className={`text-xl md:text-2xl font-bold mb-2 ${

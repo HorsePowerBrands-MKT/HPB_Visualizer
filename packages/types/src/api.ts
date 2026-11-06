@@ -10,7 +10,7 @@ export interface ImageValidationResponse {
 }
 
 /** Product line a request belongs to. Absent = 'shower' (legacy default). */
-export type VisualizerProduct = 'shower' | 'railing';
+export type VisualizerProduct = 'shower' | 'railing' | 'room_enclosure';
 
 /** What the railing validator saw at the railing location in the photo. */
 export type RailingExistingCondition =
@@ -36,6 +36,31 @@ export interface RailingImageValidationResponse {
   existingCondition: RailingExistingCondition;
   /** Auto-detected so the consumer never has to pick where the railing goes. */
   detectedApplication: RailingDetectedApplication;
+  contentFlag?: 'safe' | 'pii' | 'inappropriate';
+}
+
+/** What the room enclosure validator saw at the enclosure location in the photo. */
+export type RoomEnclosureExistingCondition =
+  | 'open_opening'
+  | 'existing_partition'
+  | 'existing_glass'
+  | 'none';
+
+/** Which room type the room enclosure validator believes the photo shows. */
+export type RoomEnclosureDetectedApplication =
+  | 'wine_room'
+  | 'under_stair'
+  | 'home_office'
+  | 'other_room'
+  | 'unknown';
+
+// Room enclosure image validation response
+export interface RoomEnclosureImageValidationResponse {
+  valid: boolean;
+  reason?: string;
+  existingCondition: RoomEnclosureExistingCondition;
+  /** Auto-detected so the consumer never has to pick what the room is for. */
+  detectedApplication: RoomEnclosureDetectedApplication;
   contentFlag?: 'safe' | 'pii' | 'inappropriate';
 }
 

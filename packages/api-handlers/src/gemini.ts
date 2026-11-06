@@ -1,10 +1,11 @@
 import { GoogleGenAI, Modality, Type } from "@google/genai";
-import type { 
-  ImageData, 
-  ImageValidationResponse, 
+import type {
+  ImageData,
+  ImageValidationResponse,
   RailingImageValidationResponse,
-  VisualizationRequest, 
-  VisualizationResponse 
+  RoomEnclosureImageValidationResponse,
+  VisualizationRequest,
+  VisualizationResponse
 } from '@repo/types';
 import {
   getSystemPromptFromTemplate,
@@ -578,6 +579,102 @@ export async function validateRailingImage(
     valid: result.isValid,
     reason,
     setting: result.setting === 'interior' ? 'interior' : 'exterior',
+    existingCondition: result.existingCondition || 'none',
+    detectedApplication: result.detectedApplication || 'unknown',
+    contentFlag,
+  };
+}
+
+/**
+ * Validate a room enclosure upload (wine room / under-stair / office / other
+ * interior room) and detect the room type and what currently closes off the
+ * space. Separate from `validateImage` and `validateRailingImage` because the
+ * response schema and the user-facing wording are product-specific; the
+ * other paths are untouched.
+ *
+ * `validationPrompt` is supplied by the caller (the brand app resolves it
+ * from its room enclosure template) so this package stays template-agnostic.
+ */
+export async function validateRoomEnclosureImage(
+  config: GeminiConfig,
+  imageData: ImageData,
+  validationPrompt: string
+): Promise<RoomEnclosureImageValidationResponse> {
+  const { apiKey } = config;
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is required');
+  }
+  if (!imageData.data || !imageData.mimeType) {
+    throw new Error('imageData and mimeType are required');
+  }
+  if (!validationPrompt) {
+    throw new Error('validationPrompt is required');
+  }
+
+  console.log('[GEMINI validateRoomEnclosureImage] Starting validation, data length:', imageData.data.length);
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const response = await ai.models.generateContent({
+    model: getValidationModelName(),
+    contents: {
+      parts: [
+        { inlineData: { data: imageData.data, mimeType: imageData.mimeType } },
+        { text: validationPrompt },
+      ],
+    },
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          isValid: { type: Type.BOOLEAN },
+          reason: { type: Type.STRING, description: 'Short user-friendly error message if invalid.' },
+          contentFlag: { type: Type.STRING, enum: ['safe', 'pii', 'inappropriate'] },
+          existingCondition: {
+            type: Type.STRING,
+            enum: ['open_opening', 'existing_partition', 'existing_glass', 'none'],
+          },
+          detectedApplication: {
+            type: Type.STRING,
+            enum: ['wine_room', 'under_stair', 'home_office', 'other_room', 'unknown'],
+          },
+        },
+        required: ['isValid', 'contentFlag', 'existingCondition', 'detectedApplication'],
+      },
+    },
+  }).catch((err: unknown) => {
+    throw toGeminiServiceError(err);
+  });
+
+  const text = response.text;
+  console.log('[GEMINI validateRoomEnclosureImage] Response text:', text);
+
+  if (!text) {
+    return {
+      valid: false,
+      reason: 'Could not analyze image.',
+      existingCondition: 'none',
+      detectedApplication: 'unknown',
+    };
+  }
+
+  const result = JSON.parse(text);
+  const contentFlag = result.contentFlag || 'safe';
+
+  let reason = result.reason;
+  if (contentFlag === 'pii') {
+    reason =
+      'This image appears to contain a person. For privacy, please upload a photo of just the room or space you want to enclose with no people visible.';
+  } else if (contentFlag === 'inappropriate') {
+    reason =
+      'This image contains content that cannot be processed. Please upload an appropriate photo of the room or space you want to enclose.';
+  }
+
+  return {
+    valid: result.isValid,
+    reason,
     existingCondition: result.existingCondition || 'none',
     detectedApplication: result.detectedApplication || 'unknown',
     contentFlag,

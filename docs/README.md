@@ -8,5 +8,6 @@
 | [PATTERNS.md](PATTERNS.md) | Wizard, prompts, leads, territory |
 | [railing-guardrails.md](railing-guardrails.md) | Railing module rules: approved systems, handrails, finishes, pool, background preservation |
 | [railing-product-detials/](railing-product-detials/) | Gatsby's railing source sheets (Backend Coding B01–B30, Prompt Rules, Master Testing Plan) |
+| [room-enclosure-guardrails.md](room-enclosure-guardrails.md) | Room Enclosure module rules: framed / frameless, shared finishes, door, room-type placement, preservation |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Human contributor setup |
 | [../packages/prompt-templates/README.md](../packages/prompt-templates/README.md) | Template engine |

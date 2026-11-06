@@ -14,6 +14,7 @@ import type {
   RailingHandrail,
   RailingFinish,
 } from './types';
+import { metalFinishes, metalFinishSwatches, METAL_FINISH_ORDER } from '../metal-finishes';
 
 export interface RailingCatalogEntry {
   name: string;
@@ -123,55 +124,14 @@ export const railingHandrailOptions: Record<RailingHandrail, RailingCatalogEntry
   },
 };
 
-export const railingFinishes: Record<RailingFinish, RailingCatalogEntry> = {
-  matte_black: {
-    name: 'Matte Black',
-    description: 'Modern flat black',
-    details:
-      'A bold, contemporary flat black finish that frames the glass with crisp contrast and hides fingerprints well.',
-    promptDescriptor: 'matte black',
-  },
-  brushed_stainless: {
-    name: 'Brushed Stainless',
-    description: 'Soft satin stainless steel',
-    details:
-      'A soft satin stainless steel finish with subtle brush marks. Understated, durable, and at home indoors or out.',
-    promptDescriptor: 'brushed (satin) stainless steel',
-  },
-  polished_stainless: {
-    name: 'Polished Stainless',
-    description: 'Bright mirror stainless steel',
-    details:
-      'A bright, mirror-like stainless steel finish that catches the light and reads as crisp and high-end.',
-    promptDescriptor: 'polished (mirror) stainless steel',
-  },
-  polished_brass: {
-    name: 'Polished Brass',
-    description: 'Bright, shiny warm gold',
-    details:
-      'A luxurious, high-shine brass finish with a warm gold tone that adds a touch of glamour and pairs beautifully with warm woods and stone.',
-    promptDescriptor: 'polished (mirror) brass: bright, shiny, reflective warm gold',
-  },
-  satin_brass: {
-    name: 'Satin Brass',
-    description: 'Soft brushed champagne gold',
-    details:
-      'A soft, brushed brass finish with a warm champagne-gold tone and a gentle sheen. Elegant and understated, without the mirror shine of polished brass.',
-    promptDescriptor:
-      'satin (brushed) brass: soft warm champagne-gold with fine brush lines and a low sheen, not mirror-bright',
-  },
-};
+/**
+ * Finishes are shared with the Room Enclosure module so both product lines
+ * offer the same hardware colors (see `lib/metal-finishes.ts`).
+ */
+export const railingFinishes: Record<RailingFinish, RailingCatalogEntry> = metalFinishes;
 
 /** CSS backgrounds for finish swatches (same style as the shower hardware swatches). */
-export const railingFinishSwatches: Record<RailingFinish, string> = {
-  matte_black: '#171717',
-  brushed_stainless:
-    'repeating-linear-gradient(45deg, #d0d0d0, #d0d0d0 2px, #c0c0c0 2px, #c0c0c0 4px)',
-  polished_stainless: 'linear-gradient(135deg, #e0e0e0 0%, #ffffff 50%, #a0a0a0 100%)',
-  polished_brass: 'linear-gradient(135deg, #fef9c3 0%, #facc15 50%, #ca8a04 100%)',
-  satin_brass:
-    'repeating-linear-gradient(45deg, #d8bf88, #d8bf88 2px, #c9ad74 2px, #c9ad74 4px)',
-};
+export const railingFinishSwatches: Record<RailingFinish, string> = metalFinishSwatches;
 
 /** Ordered option lists (object key order is stable but explicit is clearer). */
 export const RAILING_APPLICATION_ORDER: RailingApplication[] = [
@@ -182,13 +142,7 @@ export const RAILING_APPLICATION_ORDER: RailingApplication[] = [
 ];
 export const RAILING_SYSTEM_ORDER: RailingSystem[] = ['base_shoe', 'spigot'];
 export const RAILING_HANDRAIL_ORDER: RailingHandrail[] = ['top_mount', 'side_mount', 'no_handrail'];
-export const RAILING_FINISH_ORDER: RailingFinish[] = [
-  'matte_black',
-  'brushed_stainless',
-  'polished_stainless',
-  'polished_brass',
-  'satin_brass',
-];
+export const RAILING_FINISH_ORDER: RailingFinish[] = [...METAL_FINISH_ORDER];
 
 export const RAILING_CATALOG = {
   applications: railingApplications,

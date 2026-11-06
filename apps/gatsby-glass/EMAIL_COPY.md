@@ -28,6 +28,8 @@ what Resend will deliver. Output files land in
 | `sas-railing-configure.html`   | SAS · customer · glass railing · configure mode |
 | `sas-railing-inspiration.html` | SAS · customer · glass railing · inspiration mode |
 | `raq-railing-configure.html`   | RAQ · franchise · glass railing · configure mode |
+| `sas-enclosure-configure.html` | SAS · customer · room enclosure · configure mode |
+| `raq-enclosure-configure.html` | RAQ · franchise · room enclosure · configure mode |
 | `customer-quote-matched.html` | Customer quote confirmation · territory matched |
 | `customer-quote-outside.html` | Customer quote confirmation · outside service area |
 
@@ -82,10 +84,12 @@ The customer's email address.
 | `hardware`              | Human-readable from catalog, e.g. "Polished Chrome", "Matte Black"            |
 | `handleStyle`           | Human-readable from catalog, e.g. "Ladder Pull", "Square Pull", "Knob"        |
 | `mode`                  | "configure" or "inspiration"                                                  |
-| `product`               | "shower" (default) or "railing" — drives the wording swaps below              |
+| `product`               | "shower" (default), "railing" or "room_enclosure" — drives the wording swaps below |
 
 Railing leads replace the shower rows with `application`, `railingSystem`,
 `handrail` and `finish` (human-readable from `lib/railing/catalog.ts`).
+Room enclosure leads use `roomType`, `enclosureStyle` and `finish`
+(from `lib/room-enclosure/catalog.ts`).
 
 ---
 
@@ -150,6 +154,16 @@ When `product` is "railing" (Railing module leads):
   and `Finish` instead of the shower rows.
 - The inspiration copy reads "tailored to your **space's** unique layout".
 - The footer reads "because a **glass railing design preview** was requested".
+- The subject line is unchanged.
+
+### Notes — Room Enclosure Variant
+
+When `product` is "room_enclosure" (Room Enclosure module leads):
+
+- The configuration block lists `Room Type`, `Enclosure Style` and `Finish`.
+- The inspiration copy reads "tailored to your **space's** unique layout".
+- The footer reads "because a **glass room enclosure design preview** was
+  requested".
 - The subject line is unchanged.
 
 ---
@@ -258,17 +272,30 @@ When `product` is "railing":
   "Exterior Deck • Base Shoe • Top-Mounted Handrail • Matte Black".
 - Subject line and routing are unchanged.
 
+### Notes — Room Enclosure Variant
+
+When `product` is "room_enclosure":
+
+- The intro reads "after designing their **glass room enclosure in the
+  Gatsby Glass Enclosure Visualizer**" (plain-text header: "NEW ESTIMATE
+  REQUEST FROM THE GATSBY GLASS ENCLOSURE VISUALIZER").
+- "Configuration Details" carries the enclosure summary, e.g.
+  "Wine Room • Frameless • Matte Black".
+- Subject line and routing are unchanged.
+
 ---
 
 ## Lead payload and CRM mapping by product
 
-`POST /api/submit-lead` accepts `product` (`shower` | `railing`), a
-human-readable `productSummary`, and a structured `productConfig`
-(`mode`, `application`, `railing_system`, `handrail`, `finish`,
-`existing_condition`, `catalog_version` — the same shape saved to
-`visualizations.product_config`). These are stored on `leads.product`,
-`leads.product_summary` and `leads.product_config` (migration 025). Shower
-leads keep using the dedicated door_type / finish / hardware / … columns.
+`POST /api/submit-lead` accepts `product` (`shower` | `railing` |
+`room_enclosure`), a human-readable `productSummary`, and a structured
+`productConfig` (`mode`, `application`, `railing_system`, `handrail`,
+`style`, `finish`, `existing_condition`, `catalog_version` — the same shape
+saved to `visualizations.product_config`; railing rows use `railing_system`
+/ `handrail`, room enclosure rows use `style`). These are stored on
+`leads.product`, `leads.product_summary` and `leads.product_config`
+(migration 025). Shower leads keep using the dedicated door_type / finish /
+hardware / … columns.
 
 The 5th-generation popup (`leadType: POP`) shows a "What are you designing?"
 choice preselected from the module it fired in; the choice decides the
@@ -277,11 +304,17 @@ product, the `source` string and the CRM lead type.
 Constant Contact (SharpSpring) receives the product through the existing
 **Visualizer Lead Type** picklist (`visualizer_lead_69cd376489e06`):
 
-| Internal `leadType` | Shower | Railing (`product: 'railing'`)         |
-| ------------------- | ------ | -------------------------------------- |
-| SAS                 | `SAS`  | `SAS-R` — "Save & Send - Railings"     |
-| RAQ                 | `RAQ`  | `RAQ-R` — "Request a Quote - Railings" |
-| POP                 | `POP`  | `POP-R` — "Popup - Railings"           |
+| Internal `leadType` | Shower | Railing (`product: 'railing'`)         | Room enclosure (`product: 'room_enclosure'`) |
+| ------------------- | ------ | -------------------------------------- | -------------------------------------------- |
+| SAS                 | `SAS`  | `SAS-R` — "Save & Send - Railings"     | `SAS` + `SHARPSPRING_ROOM_ENCLOSURE_LEAD_SUFFIX` |
+| RAQ                 | `RAQ`  | `RAQ-R` — "Request a Quote - Railings" | `RAQ` + suffix                               |
+| POP                 | `POP`  | `POP-R` — "Popup - Railings"           | `POP` + suffix                               |
+
+Room enclosure leads use the bare shower values until matching picklist
+values exist on the Visualizer Lead Type field (a value the picklist does not
+have would reject the lead). Once they are created, set
+`SHARPSPRING_ROOM_ENCLOSURE_LEAD_SUFFIX` (for example `-E` for `SAS-E` /
+`RAQ-E` / `POP-E`) in the Vercel environment; no code change is needed.
 
 ---
 

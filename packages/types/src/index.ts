@@ -26,6 +26,7 @@ export type {
 export type {
   ContactFormData,
   Lead,
+  LeadProduct,
   LeadProductConfig,
   LeadSubmissionResponse,
   VisualizationHistoryItem,
@@ -50,6 +51,9 @@ export type {
   RailingExistingCondition,
   RailingDetectedApplication,
   RailingImageValidationResponse,
+  RoomEnclosureExistingCondition,
+  RoomEnclosureDetectedApplication,
+  RoomEnclosureImageValidationResponse,
   ImageData,
   ReferenceImage,
   VisualizationRequest,

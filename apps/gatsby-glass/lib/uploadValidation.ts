@@ -66,6 +66,15 @@ export interface RailingValidationResult {
   contentFlag?: string;
 }
 
+/** Server response for a room enclosure upload (`/api/validate-image`, product 'room_enclosure'). */
+export interface RoomEnclosureValidationResult {
+  valid?: boolean;
+  reason?: string;
+  existingCondition?: string;
+  detectedApplication?: string;
+  contentFlag?: string;
+}
+
 export type UploadValidationOutcome<R> =
   | { ok: true; file: File; result: R }
   | { ok: false; message: string };
@@ -84,6 +93,8 @@ const INVALID_FALLBACK: Record<VisualizerProduct, string> = {
   shower: 'The uploaded image does not appear to be a bathroom or shower. Please upload a valid photo.',
   railing:
     'The uploaded image does not appear to show a staircase, balcony, deck, patio, or pool area. Please upload a photo of the space where the railing will go.',
+  room_enclosure:
+    'The uploaded image does not appear to show an interior room, wine area, under-stair space, or office. Please upload a photo of the space you want to enclose with glass.',
 };
 
 export async function validateUploadedPhoto(
@@ -96,8 +107,14 @@ export async function validateUploadedPhoto(
 ): Promise<UploadValidationOutcome<RailingValidationResult>>;
 export async function validateUploadedPhoto(
   file: File,
+  options: ValidateOptions & { product: 'room_enclosure' }
+): Promise<UploadValidationOutcome<RoomEnclosureValidationResult>>;
+export async function validateUploadedPhoto(
+  file: File,
   options: ValidateOptions
-): Promise<UploadValidationOutcome<ShowerValidationResult | RailingValidationResult>> {
+): Promise<
+  UploadValidationOutcome<ShowerValidationResult | RailingValidationResult | RoomEnclosureValidationResult>
+> {
   const { product, onBusy } = options;
   console.log('[FILE UPLOAD] File selected:', file.name, file.size, file.type, 'product:', product);
 
@@ -170,7 +187,7 @@ export async function validateUploadedPhoto(
     const response = await fetch('/api/validate-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // The shower request body is unchanged; railing adds the product tag.
+      // The shower request body is unchanged; other products add the product tag.
       body: JSON.stringify(product === 'shower' ? imageData : { ...imageData, product }),
     });
 
@@ -203,7 +220,7 @@ export async function validateUploadedPhoto(
       return { ok: false, message };
     }
 
-    let result: ShowerValidationResult | RailingValidationResult;
+    let result: ShowerValidationResult | RailingValidationResult | RoomEnclosureValidationResult;
     try {
       result = await response.json();
     } catch {

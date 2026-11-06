@@ -23,7 +23,7 @@ export const ImageDataSchema = z.object({
 
 // Image validation request
 // `product` selects the validation prompt + response shape. Absent = shower.
-export const VisualizerProductSchema = z.enum(['shower', 'railing']);
+export const VisualizerProductSchema = z.enum(['shower', 'railing', 'room_enclosure']);
 
 export const ValidationRequestSchema = z.object({
   imageData: z.string().min(100, 'Image data required'),
@@ -88,18 +88,21 @@ export const LeadSubmissionSchema = z.object({
   mode: z.string().optional(),
   showerShape: z.string().optional(),
   // Non-shower products: which product and a human-readable selection
-  // summary (e.g. "Exterior Deck · Base Shoe · Handrail · Matte Black").
+  // summary (e.g. "Exterior Deck · Base Shoe · Handrail · Matte Black" or
+  // "Wine Room • Frameless • Matte Black").
   product: VisualizerProductSchema.optional(),
   productSummary: z.string().max(200).optional(),
   // Structured selections for non-shower products. Mirrors the shape the
   // client saves to visualizations.product_config; `.strict()` keeps
   // arbitrary JSON out of the lead row, so keep both sides in lockstep.
+  // Railing rows use railing_system / handrail; room enclosure rows use style.
   productConfig: z
     .object({
       mode: z.enum(['configure', 'inspiration']).nullable().optional(),
       application: z.string().max(50).nullable().optional(),
       railing_system: z.string().max(50).nullable().optional(),
       handrail: z.string().max(50).nullable().optional(),
+      style: z.string().max(50).nullable().optional(),
       finish: z.string().max(50).nullable().optional(),
       existing_condition: z.string().max(50).nullable().optional(),
       catalog_version: z.string().max(50).nullable().optional(),

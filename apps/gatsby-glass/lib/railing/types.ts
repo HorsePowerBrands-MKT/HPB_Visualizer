@@ -8,6 +8,8 @@
  * payload; those belong to the hidden backend prompt logic.
  */
 
+import type { MetalFinish } from '../metal-finishes';
+
 /** Which design path the consumer chose (mirrors the shower flow). */
 export type RailingMode = 'configure' | 'inspiration';
 
@@ -31,13 +33,11 @@ export type RailingSystem = 'base_shoe' | 'spigot';
  */
 export type RailingHandrail = 'top_mount' | 'side_mount' | 'no_handrail';
 
-/** Metal finish for base shoe, spigots, handrail, clamps and gate hardware. */
-export type RailingFinish =
-  | 'matte_black'
-  | 'brushed_stainless'
-  | 'polished_stainless'
-  | 'polished_brass'
-  | 'satin_brass';
+/**
+ * Metal finish for base shoe, spigots, handrail, clamps and gate hardware.
+ * Shared with the Room Enclosure module (see `lib/metal-finishes.ts`).
+ */
+export type RailingFinish = MetalFinish;
 
 /**
  * What the uploaded photo already shows at the railing location. Detected

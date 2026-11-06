@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
-import type { LeadProductConfig, Payload } from '@repo/types';
+import type { LeadProduct, LeadProductConfig, Payload } from '@repo/types';
 import {
   formatRailingSummary,
   railingApplications,
@@ -16,6 +16,17 @@ import type {
   RailingHandrail,
   RailingFinish,
 } from '../lib/railing/types';
+import {
+  formatRoomEnclosureSummary,
+  roomEnclosureApplications,
+  roomEnclosureStyles,
+  roomEnclosureFinishes,
+} from '../lib/room-enclosure/catalog';
+import type {
+  RoomEnclosureApplication,
+  RoomEnclosureStyle,
+  RoomEnclosureFinish,
+} from '../lib/room-enclosure/types';
 
 export interface PastVisualizationItem {
   id: string;
@@ -28,15 +39,16 @@ export interface PastVisualizationItem {
   handle_style: string | null;
   shower_shape: string | null;
   created_at: string;
-  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  /** 'shower' | 'railing' | 'room_enclosure'. Absent/null = shower (legacy rows). */
   product?: string | null;
   product_config?: Record<string, unknown> | null;
 }
 
+const str = (v: unknown) => (typeof v === 'string' ? v : null);
+
 /** Railing selections from the free-form product_config JSON. */
 function railingConfigOf(item: PastVisualizationItem) {
   const cfg = item.product_config ?? {};
-  const str = (v: unknown) => (typeof v === 'string' ? v : null);
   return {
     mode: str(cfg.mode) ?? item.mode,
     application: str(cfg.application),
@@ -46,21 +58,31 @@ function railingConfigOf(item: PastVisualizationItem) {
   };
 }
 
+/** Room enclosure selections from the free-form product_config JSON. */
+function roomEnclosureConfigOf(item: PastVisualizationItem) {
+  const cfg = item.product_config ?? {};
+  return {
+    mode: str(cfg.mode) ?? item.mode,
+    application: str(cfg.application),
+    style: str(cfg.style),
+    finish: str(cfg.finish),
+  };
+}
+
 /**
  * Maps a past visualization row to the `configs` the ContactFormModal posts
- * with a lead, for either product line.
+ * with a lead, for any product line.
  */
 export function pastItemToLeadConfigs(
   item: PastVisualizationItem
 ): Partial<Payload> & {
-  product?: 'shower' | 'railing';
+  product?: LeadProduct;
   productSummary?: string;
   productConfig?: LeadProductConfig;
 } {
   if (item.product === 'railing') {
     const cfg = railingConfigOf(item);
     const stored = (item.product_config ?? {}) as Record<string, unknown>;
-    const str = (v: unknown) => (typeof v === 'string' ? v : null);
     return {
       product: 'railing',
       productSummary: formatRailingSummary(cfg),
@@ -69,6 +91,23 @@ export function pastItemToLeadConfigs(
         application: cfg.application,
         railing_system: cfg.railing_system,
         handrail: cfg.handrail,
+        finish: cfg.finish,
+        existing_condition: str(stored.existing_condition),
+        catalog_version: str(stored.catalog_version),
+      },
+      mode: (cfg.mode === 'inspiration' ? 'inspiration' : 'configure') as Payload['mode'],
+    };
+  }
+  if (item.product === 'room_enclosure') {
+    const cfg = roomEnclosureConfigOf(item);
+    const stored = (item.product_config ?? {}) as Record<string, unknown>;
+    return {
+      product: 'room_enclosure',
+      productSummary: formatRoomEnclosureSummary(cfg),
+      productConfig: {
+        mode: cfg.mode === 'inspiration' ? 'inspiration' : 'configure',
+        application: cfg.application,
+        style: cfg.style,
         finish: cfg.finish,
         existing_condition: str(stored.existing_condition),
         catalog_version: str(stored.catalog_version),
@@ -94,6 +133,7 @@ interface PastVisualizationsProps {
 
 function formatLabel(item: PastVisualizationItem): string {
   if (item.product === 'railing') return formatRailingSummary(railingConfigOf(item));
+  if (item.product === 'room_enclosure') return formatRoomEnclosureSummary(roomEnclosureConfigOf(item));
   if (item.mode === 'inspiration') return 'Inspiration';
   const parts = [
     item.enclosure_type,
@@ -116,6 +156,18 @@ function formatDetailRows(item: PastVisualizationItem): { label: string; value: 
     if (app) rows.push({ label: 'Application', value: app });
     if (sys) rows.push({ label: 'System', value: sys });
     if (rail) rows.push({ label: 'Handrail', value: rail });
+    if (fin) rows.push({ label: 'Finish', value: fin });
+    return rows;
+  }
+  if (item.product === 'room_enclosure') {
+    const cfg = roomEnclosureConfigOf(item);
+    const app = cfg.application
+      ? roomEnclosureApplications[cfg.application as RoomEnclosureApplication]?.name
+      : null;
+    const style = cfg.style ? roomEnclosureStyles[cfg.style as RoomEnclosureStyle]?.name : null;
+    const fin = cfg.finish ? roomEnclosureFinishes[cfg.finish as RoomEnclosureFinish]?.name : null;
+    if (app) rows.push({ label: 'Room', value: app });
+    if (style) rows.push({ label: 'Style', value: style });
     if (fin) rows.push({ label: 'Finish', value: fin });
     return rows;
   }
@@ -310,7 +362,7 @@ export const PastVisualizations: React.FC<PastVisualizationsProps> = ({ items, o
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-base font-sans text-white/90 capitalize font-medium">
-                    {selectedItem.product !== 'railing' && selectedItem.mode === 'inspiration'
+                    {(selectedItem.product ?? 'shower') === 'shower' && selectedItem.mode === 'inspiration'
                       ? 'Inspiration Design'
                       : formatLabel(selectedItem)}
                   </p>

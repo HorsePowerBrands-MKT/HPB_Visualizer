@@ -19,7 +19,30 @@ export interface SharpSpringLeadData {
   locationName?: string;
   leadType?: 'SAS' | 'RAQ' | 'POP';
   /** Product line the lead came from. Absent = shower. */
-  product?: 'shower' | 'railing';
+  product?: 'shower' | 'railing' | 'room_enclosure';
+}
+
+/**
+ * Suffix appended to the Visualizer Lead Type picklist value per product.
+ * Shower leads use the bare values (SAS / RAQ / POP). Railing leads use the
+ * "-R" variants that exist on the same field: SAS-R "Save & Send - Railings",
+ * RAQ-R "Request a Quote - Railings", POP-R "Popup - Railings".
+ *
+ * Room enclosure leads fall back to the bare shower values until matching
+ * picklist values exist in Constant Contact: sending a value the picklist
+ * does not have would reject the lead. Once they are created, set
+ * `SHARPSPRING_ROOM_ENCLOSURE_LEAD_SUFFIX` (e.g. "-E" for SAS-E / RAQ-E /
+ * POP-E) in the environment — no code change needed.
+ */
+function leadTypeSuffix(product: SharpSpringLeadData['product']): string {
+  switch (product) {
+    case 'railing':
+      return '-R';
+    case 'room_enclosure':
+      return process.env.SHARPSPRING_ROOM_ENCLOSURE_LEAD_SUFFIX?.trim() || '';
+    default:
+      return '';
+  }
 }
 
 interface SharpSpringError {
@@ -82,13 +105,9 @@ export async function pushLeadToSharpSpring(
       leadObject[CUSTOM_FIELDS.locationName] = data.locationName;
     }
 
-    // Visualizer Lead Type picklist. Shower leads use the bare values
-    // (SAS / RAQ / POP); railing leads use the "-R" variants that exist on
-    // the same field: SAS-R "Save & Send - Railings", RAQ-R "Request a
-    // Quote - Railings", POP-R "Popup - Railings".
+    // Visualizer Lead Type picklist (see LEAD_TYPE_SUFFIX).
     if (data.leadType) {
-      leadObject[CUSTOM_FIELDS.visualizerLeadType] =
-        data.product === 'railing' ? `${data.leadType}-R` : data.leadType;
+      leadObject[CUSTOM_FIELDS.visualizerLeadType] = `${data.leadType}${leadTypeSuffix(data.product)}`;
     }
 
     const requestId = `viz-${Date.now()}`;
@@ -135,7 +154,7 @@ export async function pushLeadToSharpSpring(
     }
 
     if (createResult?.success) {
-      console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'}${data.product === 'railing' ? '-R' : ''}, id: ${createResult.id})`);
+      console.log(`[SHARPSPRING] Lead pushed for ${data.email} (${data.leadType || 'unknown type'}${leadTypeSuffix(data.product)}, id: ${createResult.id})`);
       return { success: true };
     }
 

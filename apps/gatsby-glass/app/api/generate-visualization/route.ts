@@ -24,6 +24,10 @@ import { createClient } from '../../../lib/supabase/server';
 import { applyWatermark } from '../../../lib/watermark';
 import { loadReferenceImagesFor } from '../../../lib/referenceImages';
 import { buildRailingSystemPrompt, RAILING_EDIT_PREAMBLE } from '../../../lib/railing/promptBuilder';
+import {
+  buildRoomEnclosureSystemPrompt,
+  ROOM_ENCLOSURE_EDIT_PREAMBLE,
+} from '../../../lib/room-enclosure/promptBuilder';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -135,8 +139,8 @@ export async function POST(request: NextRequest) {
     // NOT switch this back to fs.readFile against public/, because Vercel
     // does not include public/ in serverless function bundles and the
     // request would silently fall back to text-only prompting.
-    // Railing renders pass no doorType, so this returns [] for them: the
-    // railing look is carried entirely by the prompt text.
+    // Railing and room enclosure renders pass no doorType, so this returns
+    // [] for them: their look is carried entirely by the prompt text.
     const referenceImages = await loadReferenceImagesFor({
       enclosureType: validatedData.doorType,
       pivotDirection: validatedData.pivotDirection,
@@ -166,7 +170,9 @@ export async function POST(request: NextRequest) {
       targetHeight: validatedData.targetHeight,
       ...(product === 'railing'
         ? { systemPrompt: buildRailingSystemPrompt(), editPreamble: RAILING_EDIT_PREAMBLE }
-        : {}),
+        : product === 'room_enclosure'
+          ? { systemPrompt: buildRoomEnclosureSystemPrompt(), editPreamble: ROOM_ENCLOSURE_EDIT_PREAMBLE }
+          : {}),
     };
 
     const result = await generateVisualization({ apiKey }, visualizationRequest);
@@ -174,7 +180,7 @@ export async function POST(request: NextRequest) {
     if (sbConfig) {
       const genIndex = body.generationIndex || 1;
       const callType = genIndex > 1 ? 'update_generation' : 'initial_generation';
-      logApiCall(sbConfig, product === 'railing' ? `railing_${callType}` : callType);
+      logApiCall(sbConfig, product === 'shower' ? callType : `${product}_${callType}`);
     }
 
     // --- Record usage for rate limiting ---

@@ -14,6 +14,8 @@
 //   - sas-railing-configure.html    SAS · customer · glass railing · configure mode
 //   - sas-railing-inspiration.html  SAS · customer · glass railing · inspiration mode
 //   - raq-railing-configure.html    RAQ · franchise · glass railing · configure mode
+//   - sas-enclosure-configure.html  SAS · customer · room enclosure · configure mode
+//   - raq-enclosure-configure.html  RAQ · franchise · room enclosure · configure mode
 //   - customer-quote-matched.html   RAQ · customer confirmation (territory matched)
 //   - customer-quote-outside.html   RAQ · customer confirmation (outside service area)
 //
@@ -89,6 +91,28 @@ const RAILING_GALLERY = [
   {
     imageUrl: PLACEHOLDER('Railing 2'),
     label: 'Interior Staircase • Base Shoe • Side-Mounted Handrail • Polished Stainless',
+  },
+];
+
+// Glass room enclosure product line. Labels come from
+// lib/room-enclosure/catalog.ts and are joined with " • " by
+// formatRoomEnclosureSummary.
+const ENCLOSURE_HERO_LABEL = 'Wine Room • Frameless • Matte Black';
+
+const ENCLOSURE_HERO_CONFIG = {
+  roomType: 'Wine Room',
+  enclosureStyle: 'Frameless',
+  finish: 'Matte Black',
+};
+
+const ENCLOSURE_GALLERY = [
+  {
+    imageUrl: PLACEHOLDER('Enclosure 1'),
+    label: 'Wine Room • Framed • Satin Brass',
+  },
+  {
+    imageUrl: PLACEHOLDER('Enclosure 2'),
+    label: 'Under-Stair Nook • Frameless • Brushed Stainless',
   },
 ];
 
@@ -287,6 +311,45 @@ const variants = [
       galleryItems: RAILING_GALLERY,
       mode: 'configure',
       product: 'railing',
+    }),
+  },
+  {
+    fileName: 'sas-enclosure-configure.html',
+    kind: 'SAS',
+    title: 'SAS · Customer · Room Enclosure · Configure mode',
+    subject: 'Your Gatsby Glass Design Preview',
+    recipient: 'Customer (the email entered on the form)',
+    description:
+      'Room enclosure module. Sent when the customer clicks "Save & Send to Me" after picking a style and finish. Configuration rows are Room Type / Enclosure Style / Finish and the footer says "glass room enclosure design preview".',
+    html: renderSasEmailHtml({
+      toEmail: SAMPLE_CUSTOMER.customerEmail,
+      firstName: 'Jane',
+      heroImageUrl: PLACEHOLDER('Selected Enclosure'),
+      heroLabel: ENCLOSURE_HERO_LABEL,
+      heroConfig: ENCLOSURE_HERO_CONFIG,
+      galleryItems: ENCLOSURE_GALLERY,
+      mode: 'configure',
+      product: 'room_enclosure',
+    }),
+  },
+  {
+    fileName: 'raq-enclosure-configure.html',
+    kind: 'RAQ',
+    title: 'RAQ · Franchise · Room Enclosure · Configure mode',
+    subject: `New Visualizer Estimate Request — ${SAMPLE_CUSTOMER.customerName} (${SAMPLE_CUSTOMER.customerZipCode})`,
+    recipient:
+      'Franchise shared inbox — resolved via territory_zipcodes → team_locations',
+    description:
+      'Room enclosure module. The intro reads "after designing their glass room enclosure in the Gatsby Glass Enclosure Visualizer"; the configuration block carries the enclosure summary.',
+    html: renderRaqEmailHtml({
+      toEmail: 'franchise-sf@example.com',
+      locationName: 'Gatsby Glass — San Francisco Bay',
+      ...SAMPLE_CUSTOMER,
+      heroImageUrl: PLACEHOLDER('Selected Enclosure'),
+      heroLabel: ENCLOSURE_HERO_LABEL,
+      galleryItems: ENCLOSURE_GALLERY,
+      mode: 'configure',
+      product: 'room_enclosure',
     }),
   },
   {

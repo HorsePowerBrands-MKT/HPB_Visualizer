@@ -19,6 +19,9 @@ export interface SasGalleryItem {
   label: string;
 }
 
+/** Product line a design email is about. Absent = shower. */
+export type EmailProduct = 'shower' | 'railing' | 'room_enclosure';
+
 export interface SasEmailData {
   toEmail: string;
   firstName: string;
@@ -39,11 +42,14 @@ export interface SasEmailData {
     railingSystem?: string | null;
     handrail?: string | null;
     finish?: string | null;
+    // Glass room enclosure product line (shares `finish`)
+    roomType?: string | null;
+    enclosureStyle?: string | null;
   };
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
   /** Product line the design came from. Drives copy only; defaults to shower. */
-  product?: 'shower' | 'railing';
+  product?: EmailProduct;
   /** Public marketing/landing site URL (used in the Estimate CTA). */
   brandUrl?: string;
 }
@@ -83,7 +89,7 @@ export interface RaqEmailData {
   galleryItems: SasGalleryItem[];
   mode: 'configure' | 'inspiration';
   /** Product line the design came from. Drives copy only; defaults to shower. */
-  product?: 'shower' | 'railing';
+  product?: EmailProduct;
   /** Public marketing/landing site URL. */
   brandUrl?: string;
 }
@@ -154,7 +160,41 @@ const BRAND_HEADER = `<tr>
 
 const SUBJECT_LINE = 'Your Gatsby Glass Design Preview';
 
-const isRailing = (product?: string): boolean => product === 'railing';
+/** Per-product wording swaps. Everything else in the emails is shared. */
+interface ProductCopy {
+  /** "your bathroom's unique layout" vs "your space's unique layout". */
+  spaceNoun: string;
+  /** "because a shower design preview was requested". */
+  previewNoun: string;
+  /** RAQ HTML intro: "after designing their <...>". */
+  raqIntro: string;
+  /** RAQ plain-text header. */
+  raqHeader: string;
+}
+
+const PRODUCT_COPY: Record<EmailProduct, ProductCopy> = {
+  shower: {
+    spaceNoun: 'bathroom',
+    previewNoun: 'shower design preview',
+    raqIntro: 'shower in the Gatsby Glass Visualizer',
+    raqHeader: 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER',
+  },
+  railing: {
+    spaceNoun: 'space',
+    previewNoun: 'glass railing design preview',
+    raqIntro: 'glass railing in the Gatsby Glass Railing Visualizer',
+    raqHeader: 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS RAILING VISUALIZER',
+  },
+  room_enclosure: {
+    spaceNoun: 'space',
+    previewNoun: 'glass room enclosure design preview',
+    raqIntro: 'glass room enclosure in the Gatsby Glass Enclosure Visualizer',
+    raqHeader: 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS ENCLOSURE VISUALIZER',
+  },
+};
+
+const productCopy = (product?: string): ProductCopy =>
+  PRODUCT_COPY[(product as EmailProduct | undefined) ?? 'shower'] ?? PRODUCT_COPY.shower;
 
 function escapeHtml(s: string): string {
   return s
@@ -168,9 +208,7 @@ function escapeHtml(s: string): string {
 function renderHtml(data: SasEmailData): string {
   const brandUrl = data.brandUrl || DEFAULT_BRAND_URL;
   const isInspiration = data.mode === 'inspiration';
-  const railing = isRailing(data.product);
-  const spaceNoun = railing ? 'space' : 'bathroom';
-  const previewNoun = railing ? 'glass railing design preview' : 'shower design preview';
+  const { spaceNoun, previewNoun } = productCopy(data.product);
 
   // NOTE: The border lives on the wrapping <table>, not the <img>, because
   // Outlook (Word rendering engine) ignores `height:auto` and reserves the
@@ -205,6 +243,8 @@ function renderHtml(data: SasEmailData): string {
   if (data.heroConfig?.application) configRows.push(configRow('Application', data.heroConfig.application));
   if (data.heroConfig?.railingSystem) configRows.push(configRow('Railing System', data.heroConfig.railingSystem));
   if (data.heroConfig?.handrail) configRows.push(configRow('Handrail', data.heroConfig.handrail));
+  if (data.heroConfig?.roomType) configRows.push(configRow('Room Type', data.heroConfig.roomType));
+  if (data.heroConfig?.enclosureStyle) configRows.push(configRow('Enclosure Style', data.heroConfig.enclosureStyle));
   if (data.heroConfig?.finish) configRows.push(configRow('Finish', data.heroConfig.finish));
   if (data.heroConfig?.enclosure) configRows.push(configRow('Enclosure', data.heroConfig.enclosure));
   if (data.heroConfig?.framing) configRows.push(configRow('Framing', data.heroConfig.framing));
@@ -386,11 +426,13 @@ function renderText(data: SasEmailData): string {
   lines.push('YOUR SELECTED CONFIGURATION');
   if (data.mode === 'inspiration') {
     lines.push("  Based on your uploaded inspiration photo, tailored to your");
-    lines.push(`  ${isRailing(data.product) ? 'space' : 'bathroom'}'s unique layout.`);
+    lines.push(`  ${productCopy(data.product).spaceNoun}'s unique layout.`);
   } else if (data.heroConfig) {
     if (data.heroConfig.application) lines.push(`  Application: ${data.heroConfig.application}`);
     if (data.heroConfig.railingSystem) lines.push(`  Railing System: ${data.heroConfig.railingSystem}`);
     if (data.heroConfig.handrail) lines.push(`  Handrail: ${data.heroConfig.handrail}`);
+    if (data.heroConfig.roomType) lines.push(`  Room Type: ${data.heroConfig.roomType}`);
+    if (data.heroConfig.enclosureStyle) lines.push(`  Enclosure Style: ${data.heroConfig.enclosureStyle}`);
     if (data.heroConfig.finish) lines.push(`  Finish: ${data.heroConfig.finish}`);
     if (data.heroConfig.enclosure) lines.push(`  Enclosure: ${data.heroConfig.enclosure}`);
     if (data.heroConfig.framing) lines.push(`  Framing: ${data.heroConfig.framing}`);
@@ -427,7 +469,7 @@ function renderText(data: SasEmailData): string {
   lines.push(data.brandUrl || DEFAULT_BRAND_URL);
   lines.push('');
   lines.push(
-    `You are receiving this email because a ${isRailing(data.product) ? 'glass railing design preview' : 'shower design preview'} was`
+    `You are receiving this email because a ${productCopy(data.product).previewNoun} was`
   );
   lines.push('requested for this email address. If you believe this message was');
   lines.push('sent in error, you may simply disregard it.');
@@ -710,7 +752,7 @@ function renderRaqHtml(data: RaqEmailData): string {
                                 New Estimate Request
                             </p>
                             <p style="margin:0;color:#d5d5d5;font-size:13px;line-height:1.6;">
-                                A potential customer has requested an estimate after designing their ${isRailing(data.product) ? 'glass railing in the Gatsby Glass Railing Visualizer' : 'shower in the Gatsby Glass Visualizer'}. ${locationLine}
+                                A potential customer has requested an estimate after designing their ${productCopy(data.product).raqIntro}. ${locationLine}
                             </p>
                         </td>
                     </tr>
@@ -767,11 +809,7 @@ function renderRaqHtml(data: RaqEmailData): string {
 
 function renderRaqText(data: RaqEmailData): string {
   const lines: string[] = [];
-  lines.push(
-    isRailing(data.product)
-      ? 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS RAILING VISUALIZER'
-      : 'NEW ESTIMATE REQUEST FROM THE GATSBY GLASS VISUALIZER'
-  );
+  lines.push(productCopy(data.product).raqHeader);
   lines.push('');
   if (data.outsideTerritory) {
     lines.push('OUTSIDE SERVICE AREA');
