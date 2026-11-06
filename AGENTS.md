@@ -15,6 +15,10 @@ Guidance for AI agents (Cursor, Copilot, Maestro) working in this **pnpm monorep
 
 **Railing module:** product rules live in `apps/gatsby-glass/lib/railing/rules.ts` (single source of truth for the prompt template) and are documented in [docs/railing-guardrails.md](docs/railing-guardrails.md); Gatsby's source sheets are in `docs/railing-product-detials/`. After changing railing rules or prompts, run `pnpm --filter gatsby-glass check:railing-rules`.
 
+**Room Enclosure module:** product rules live in `apps/gatsby-glass/lib/room-enclosure/rules.ts` and are documented in [docs/room-enclosure-guardrails.md](docs/room-enclosure-guardrails.md). After changing enclosure rules or prompts, run `pnpm --filter gatsby-glass check:room-enclosure-rules`.
+
+**Shared hardware finishes:** the railing and room enclosure modules share one finish catalog, `apps/gatsby-glass/lib/metal-finishes.ts`. Edit finishes there, then run both rule checks.
+
 ## Package boundaries
 
 - Put **brand-agnostic** logic in `packages/` (Gemini client, template engine, generic types, image utils).
@@ -59,6 +63,7 @@ pnpm typecheck        # tsc --noEmit (packages + app)
 pnpm test             # unit tests (packages with test scripts)
 pnpm run check:docs   # doc drift guard (also runs in CI)
 pnpm --filter gatsby-glass check:railing-rules   # railing prompt rule assertions
+pnpm --filter gatsby-glass check:room-enclosure-rules   # room enclosure prompt rule assertions
 ```
 
 Pre-commit (Husky): lint-staged + typecheck + tests when TS/JS files are staged.

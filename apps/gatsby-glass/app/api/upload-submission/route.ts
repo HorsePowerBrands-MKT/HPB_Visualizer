@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
       'mode', 'enclosureType', 'framingStyle', 'hardwareFinish', 'handleStyle', 'showerShape',
       // Railing module
       'product', 'application', 'railingSystem', 'handrail', 'finish',
+      // Room enclosure module (shares product / application / finish)
+      'enclosureStyle',
     ];
     if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
       for (const key of allowedMetaKeys) {

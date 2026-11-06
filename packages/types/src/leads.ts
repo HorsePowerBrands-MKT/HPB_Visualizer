@@ -8,17 +8,23 @@ export interface ContactFormData {
   zipCode: string;
 }
 
+/** Non-shower product lines that store their selections in `product_config`. */
+export type LeadProduct = 'shower' | 'railing' | 'room_enclosure';
+
 /**
  * Product-specific selections stored on a lead for non-shower product lines.
  * Mirrors the shape of `visualizations.product_config` so the lead row and the
- * generation rows agree. All keys optional: inspiration-mode railing leads may
- * leave system/handrail/finish null.
+ * generation rows agree. All keys optional: inspiration-mode leads may leave
+ * the style/system/finish selections null. Railing rows use `railing_system`
+ * and `handrail`; room enclosure rows use `style`.
  */
 export interface LeadProductConfig {
   mode?: 'configure' | 'inspiration' | null;
   application?: string | null;
   railing_system?: string | null;
   handrail?: string | null;
+  /** Room enclosure: 'framed' | 'frameless'. */
+  style?: string | null;
   finish?: string | null;
   existing_condition?: string | null;
   catalog_version?: string | null;
@@ -51,7 +57,7 @@ export interface Lead extends ContactFormData {
   locationName?: string;
   leadType?: 'SAS' | 'RAQ' | 'POP';
   /** Product line the lead came from. Absent = shower. */
-  product?: 'shower' | 'railing';
+  product?: LeadProduct;
   /** Human-readable selections for non-shower products (used in emails). */
   productSummary?: string;
   /** Structured selections for non-shower products (stored as product_config). */
@@ -70,7 +76,7 @@ export interface VisualizationHistoryItem {
   framing_style?: TrackPreference | null;
   hardware_finish?: HardwareFinish | null;
   handle_style?: HandleStyle | null;
-  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  /** 'shower' | 'railing' | 'room_enclosure'. Absent/null = shower (legacy rows). */
   product?: string | null;
   /** Product-specific selections for non-shower rows. */
   product_config?: Record<string, unknown> | null;
@@ -123,7 +129,7 @@ export interface GenerationRecord {
   userFingerprint?: string;
   userId?: string;
   /** Product line. Absent = 'shower'. */
-  product?: 'shower' | 'railing';
+  product?: LeadProduct;
   /** Product-specific selections (stored as JSONB). */
   productConfig?: Record<string, unknown>;
 }

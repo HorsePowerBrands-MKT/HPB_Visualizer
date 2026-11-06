@@ -3,18 +3,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GatsbyGlassVisualizer } from './GatsbyGlassVisualizer';
 import { GatsbyRailingVisualizer } from './GatsbyRailingVisualizer';
-import { ProductModuleStep, type VisualizerProductModule } from './wizard/ProductModuleStep';
+import { GatsbyRoomEnclosureVisualizer } from './GatsbyRoomEnclosureVisualizer';
+import { ProductModuleStep } from './wizard/ProductModuleStep';
+import { isProductModule, type VisualizerProductModule } from '../lib/productModules';
 import { Card, CardContent } from './ui/Card';
 
 const MODULE_PARAM = 'module';
 
-const isProductModule = (value: string | null): value is VisualizerProductModule =>
-  value === 'shower' || value === 'railing';
-
 /**
- * Top-level visualizer: routes to the Shower Glass or Glass Railing module.
- * The choice is mirrored in `?module=` so links can deep-link to a module
- * and a reload keeps the user where they were.
+ * Top-level visualizer: routes to the Shower Glass, Glass Railing or Room
+ * Enclosure module. The choice is mirrored in `?module=` so links can
+ * deep-link to a module and a reload keeps the user where they were.
  */
 export const GatsbyVisualizer: React.FC = () => {
   const [productModule, setProductModule] = useState<VisualizerProductModule | null>(null);
@@ -46,6 +45,10 @@ export const GatsbyVisualizer: React.FC = () => {
 
   if (productModule === 'railing') {
     return <GatsbyRailingVisualizer onChangeProduct={changeProduct} />;
+  }
+
+  if (productModule === 'room_enclosure') {
+    return <GatsbyRoomEnclosureVisualizer onChangeProduct={changeProduct} />;
   }
 
   return (

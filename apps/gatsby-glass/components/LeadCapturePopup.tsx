@@ -9,13 +9,18 @@ import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { RadioGroup, RadioGroupItem } from './ui/RadioGroup';
 import { useLegalModal } from './legal/LegalModalProvider';
+import {
+  PRODUCT_MODULE_ORDER,
+  PRODUCT_MODULE_LABELS,
+  LEAD_SOURCE_BY_PRODUCT,
+  type VisualizerProductModule,
+} from '../lib/productModules';
 
-type PopupProduct = 'shower' | 'railing';
+type PopupProduct = VisualizerProductModule;
 
-const PRODUCT_OPTIONS: { value: PopupProduct; label: string }[] = [
-  { value: 'shower', label: 'Shower Door' },
-  { value: 'railing', label: 'Glass Railing' },
-];
+const PRODUCT_OPTIONS: { value: PopupProduct; label: string }[] = PRODUCT_MODULE_ORDER.map(
+  (value) => ({ value, label: PRODUCT_MODULE_LABELS[value] })
+);
 
 interface LeadCapturePopupProps {
   isOpen: boolean;
@@ -25,10 +30,10 @@ interface LeadCapturePopupProps {
   /**
    * Product module the popup fired from. Preselects the "What are you
    * designing?" choice; the consumer can switch it. The final choice decides
-   * the lead's product, source and the CRM lead type (POP vs POP-R).
+   * the lead's product, source and the CRM lead type (POP vs POP-R, ...).
    */
   defaultProduct: PopupProduct;
-  /** Railing-only context forwarded when the consumer keeps "Glass Railing". */
+  /** Non-shower context forwarded when the consumer keeps the module's product. */
   productSummary?: string;
   productConfig?: LeadProductConfig;
   sessionId?: string;
@@ -135,11 +140,10 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
           phone: phoneDigits || undefined,
           zipCode: formData.zipCode.replace(/[^\d-]/g, ''),
           product,
-          source:
-            product === 'railing' ? 'Gatsby Glass Railing Visualizer' : 'Gatsby Glass Visualizer',
-          // Railing selections only travel when the consumer confirms the
-          // railing choice; a switch to Shower Door drops them.
-          ...(product === 'railing' && product === defaultProduct
+          source: LEAD_SOURCE_BY_PRODUCT[product],
+          // Railing / enclosure selections only travel when the consumer
+          // keeps the product the popup fired in; switching products drops them.
+          ...(product !== 'shower' && product === defaultProduct
             ? { productSummary, productConfig, sessionId }
             : {}),
           leadType: 'POP',

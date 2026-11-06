@@ -30,24 +30,28 @@ interface VisualizationHistoryItem {
   framing_style?: string | null;
   hardware_finish?: string | null;
   handle_style?: string | null;
-  /** 'shower' | 'railing'. Absent/null = shower (legacy rows). */
+  /** 'shower' | 'railing' | 'room_enclosure'. Absent/null = shower (legacy rows). */
   product?: string | null;
   product_config?: Record<string, unknown> | null;
 }
 
-/** Structured railing selections stored on railing leads (migration 025). */
+/**
+ * Structured selections stored on non-shower leads (migration 025). Railing
+ * rows use railing_system / handrail; room enclosure rows use style.
+ */
 interface LeadProductConfig {
   mode?: string | null;
   application?: string | null;
   railing_system?: string | null;
   handrail?: string | null;
+  style?: string | null;
   finish?: string | null;
   existing_condition?: string | null;
   catalog_version?: string | null;
 }
 
-/** Pull the railing selection ids out of a free-form product_config JSON. */
-function railingConfigOf(cfg: Record<string, unknown> | null | undefined): LeadProductConfig {
+/** Pull the product selection ids out of a free-form product_config JSON. */
+function productConfigOf(cfg: Record<string, unknown> | null | undefined): LeadProductConfig {
   const str = (v: unknown) => (typeof v === 'string' ? v : null);
   const c = cfg ?? {};
   return {
@@ -55,9 +59,15 @@ function railingConfigOf(cfg: Record<string, unknown> | null | undefined): LeadP
     application: str(c.application),
     railing_system: str(c.railing_system),
     handrail: str(c.handrail),
+    style: str(c.style),
     finish: str(c.finish),
   };
 }
+
+const PRODUCT_BADGES: Record<string, string> = {
+  railing: 'Railing',
+  room_enclosure: 'Enclosure',
+};
 
 interface AdminLeadRow {
   id: string;
@@ -79,7 +89,7 @@ interface AdminLeadRow {
   visualizationImageUrl: string | null;
   allVisualizationUrls: VisualizationHistoryItem[] | null;
   tcpaConsent: boolean;
-  /** 'shower' | 'railing'. Legacy rows read as 'shower'. */
+  /** 'shower' | 'railing' | 'room_enclosure'. Legacy rows read as 'shower'. */
   product?: string | null;
   productSummary?: string | null;
   productConfig?: LeadProductConfig | null;
@@ -151,10 +161,15 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
         const labelParts = (
           item.product === 'railing'
             ? (() => {
-                const cfg = railingConfigOf(item.product_config);
+                const cfg = productConfigOf(item.product_config);
                 return [cfg.application, cfg.railing_system, cfg.finish];
               })()
-            : [item.enclosure_type, item.hardware_finish]
+            : item.product === 'room_enclosure'
+              ? (() => {
+                  const cfg = productConfigOf(item.product_config);
+                  return [cfg.application, cfg.style, cfg.finish];
+                })()
+              : [item.enclosure_type, item.hardware_finish]
         ).filter(Boolean) as string[];
         list.push({
           url,
@@ -187,9 +202,9 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
         <td className="py-3 px-4 text-sm font-sans text-white/90">
           <div className="flex items-center gap-2">
             {lead.name || '\u2014'}
-            {lead.product === 'railing' && (
+            {lead.product && PRODUCT_BADGES[lead.product] && (
               <span className="inline-block px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-sans font-semibold border border-brand-gold/40 text-brand-gold/80">
-                Railing
+                {PRODUCT_BADGES[lead.product]}
               </span>
             )}
           </div>
@@ -238,6 +253,19 @@ function LeadRow({ lead }: { lead: AdminLeadRow }) {
                   <DetailItem label="Application" value={lead.productConfig?.application ?? null} />
                   <DetailItem label="System" value={lead.productConfig?.railing_system ?? null} />
                   <DetailItem label="Handrail" value={lead.productConfig?.handrail ?? null} />
+                  <DetailItem label="Finish" value={lead.productConfig?.finish ?? null} />
+                  {!lead.productConfig && lead.productSummary && (
+                    <div className="col-span-2 sm:col-span-4 lg:col-span-6">
+                      <DetailItem label="Selections" value={lead.productSummary} />
+                    </div>
+                  )}
+                </div>
+              ) : lead.product === 'room_enclosure' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                  <DetailItem label="Product" value="Room Enclosure" />
+                  <DetailItem label="Mode" value={lead.productConfig?.mode ?? lead.mode ?? null} />
+                  <DetailItem label="Room Type" value={lead.productConfig?.application ?? null} />
+                  <DetailItem label="Style" value={lead.productConfig?.style ?? null} />
                   <DetailItem label="Finish" value={lead.productConfig?.finish ?? null} />
                   {!lead.productConfig && lead.productSummary && (
                     <div className="col-span-2 sm:col-span-4 lg:col-span-6">

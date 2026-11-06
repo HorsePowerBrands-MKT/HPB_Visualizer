@@ -4,10 +4,12 @@ import '../../../lib/registerTemplates';
 import {
   validateImage,
   validateRailingImage,
+  validateRoomEnclosureImage,
   GeminiRateLimitError,
   GeminiUnavailableError,
 } from '@repo/api-handlers/gemini';
 import { getRailingValidationPrompt } from '../../../lib/railing/promptBuilder';
+import { getRoomEnclosureValidationPrompt } from '../../../lib/room-enclosure/promptBuilder';
 import { logApiCall } from '@repo/api-handlers/supabase';
 import type { ImageData } from '@repo/types';
 import { ValidationRequestSchema } from '../../../lib/validation';
@@ -54,17 +56,19 @@ export async function POST(request: NextRequest) {
     const product = validatedData.product ?? 'shower';
     console.log(`[VALIDATE-IMAGE API] Starting Gemini validation (product=${product})...`);
 
-    // Railing uploads use their own prompt + response shape (setting and
-    // existing guard condition instead of shower shape / hardware). The
-    // shower path below is unchanged.
+    // Railing and room enclosure uploads use their own prompt + response
+    // shape (existing condition and detected application instead of shower
+    // shape / hardware). The shower path below is unchanged.
     const result =
       product === 'railing'
         ? await validateRailingImage({ apiKey }, imageDataObj, getRailingValidationPrompt())
-        : await validateImage({ apiKey }, imageDataObj);
+        : product === 'room_enclosure'
+          ? await validateRoomEnclosureImage({ apiKey }, imageDataObj, getRoomEnclosureValidationPrompt())
+          : await validateImage({ apiKey }, imageDataObj);
     console.log('[VALIDATE-IMAGE API] Validation result:', JSON.stringify(result));
 
     const sbConfig = getSupabaseConfig();
-    if (sbConfig) logApiCall(sbConfig, product === 'railing' ? 'railing_image_validation' : 'image_validation');
+    if (sbConfig) logApiCall(sbConfig, product === 'shower' ? 'image_validation' : `${product}_image_validation`);
 
     if (result.contentFlag && result.contentFlag !== 'safe') {
       console.warn(`[VALIDATE-IMAGE API] Content flagged as: ${result.contentFlag}`);

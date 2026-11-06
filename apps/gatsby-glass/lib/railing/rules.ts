@@ -22,6 +22,7 @@ import type {
   RailingPayload,
   RailingMode,
 } from './types';
+import { APPROVED_METAL_FINISHES, METAL_FINISH_INSPIRATION_MAPPING } from '../metal-finishes';
 
 // ---------------------------------------------------------------------------
 // Approved families
@@ -29,13 +30,8 @@ import type {
 
 export const APPROVED_RAILING_SYSTEMS: readonly RailingSystem[] = ['base_shoe', 'spigot'];
 export const APPROVED_HANDRAILS: readonly RailingHandrail[] = ['top_mount', 'side_mount', 'no_handrail'];
-export const APPROVED_FINISHES: readonly RailingFinish[] = [
-  'matte_black',
-  'brushed_stainless',
-  'polished_stainless',
-  'polished_brass',
-  'satin_brass',
-];
+/** Shared with the Room Enclosure module (see `lib/metal-finishes.ts`). */
+export const APPROVED_FINISHES: readonly RailingFinish[] = APPROVED_METAL_FINISHES;
 
 /**
  * Compatibility matrix: which handrail treatments each system supports.
@@ -261,18 +257,10 @@ export const INSPIRATION_HANDRAIL_MAPPING: readonly string[] = [
  * B08 / B20: Match Inspiration with no explicit finish selection. Maps the
  * hardware color in input_2 onto one approved finish; the model must not
  * fall back to black. (Feedback 2026-10-23: silver/nickel inspiration
- * hardware rendered as matte black.)
+ * hardware rendered as matte black.) Text lives in `lib/metal-finishes.ts`
+ * because the Room Enclosure module uses the identical mapping.
  */
-export const INSPIRATION_FINISH_MAPPING: readonly string[] = [
-  '- Read the hardware color in input_2 and map it to exactly ONE approved finish:',
-  '  • silver, grey, nickel, chrome, satin, brushed, or any light silver metal that is not mirror-bright → BRUSHED (satin) STAINLESS STEEL',
-  '  • bright mirror-polished silver → POLISHED (mirror) STAINLESS STEEL',
-  '  • bright, shiny, mirror-like gold or brass → POLISHED BRASS',
-  '  • brushed or matte gold, champagne, warm brass, copper, rose gold, or light bronze → SATIN BRASS',
-  '  • black, charcoal, gunmetal, dark bronze, or any dark metal → MATTE BLACK',
-  '  • wood or painted colors are NOT approved: use the approved metal finish closest in tone (satin brass for warm tones, brushed stainless for light neutral tones, matte black for dark tones)',
-  '- Do NOT default to matte black. Black is correct only when the hardware in input_2 is clearly dark.',
-];
+export const INSPIRATION_FINISH_MAPPING: readonly string[] = METAL_FINISH_INSPIRATION_MAPPING;
 
 /** B09: replacement respects the existing geometry. */
 export const EXISTING_RAILING_REPLACEMENT_RULES: readonly string[] = [

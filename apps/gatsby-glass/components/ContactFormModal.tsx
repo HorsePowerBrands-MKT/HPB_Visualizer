@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { X, Loader2, Check, AlertCircle } from 'lucide-react';
-import type { LeadProductConfig, Payload } from '@repo/types';
+import type { LeadProduct, LeadProductConfig, Payload } from '@repo/types';
+import { LEAD_SOURCE_BY_PRODUCT } from '../lib/productModules';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
@@ -21,7 +22,7 @@ interface ContactFormModalProps {
      * human-readable `productSummary` (the shower keys stay undefined).
      */
     configs: Partial<Payload> & {
-      product?: 'shower' | 'railing';
+      product?: LeadProduct;
       productSummary?: string;
       productConfig?: LeadProductConfig;
       session_id?: string;
@@ -145,10 +146,7 @@ export const ContactFormModal: React.FC<ContactFormModalProps> = ({
           product: visualizationData.configs.product,
           productSummary: visualizationData.configs.productSummary,
           productConfig: visualizationData.configs.productConfig,
-          source:
-            visualizationData.configs.product === 'railing'
-              ? 'Gatsby Glass Railing Visualizer'
-              : 'Gatsby Glass Visualizer',
+          source: LEAD_SOURCE_BY_PRODUCT[visualizationData.configs.product ?? 'shower'],
           leadType: mode === 'save' ? 'SAS' : 'RAQ',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,
           tcpaConsentText: tcpaRequired && tcpaConsent ? TCPA_CONSENT_TEXT : undefined,

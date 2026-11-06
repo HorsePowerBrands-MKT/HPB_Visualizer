@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import type { VisualizerProductModule } from '../../lib/productModules';
 
-export type VisualizerProductModule = 'shower' | 'railing';
+export type { VisualizerProductModule };
 
 interface ProductModuleStepProps {
   value: VisualizerProductModule | null;
@@ -36,6 +37,14 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
         'Design glass railing for a staircase, balcony, deck, or pool area',
       cornerClass: 'bottom-[-1px] right-[-1px]',
       cornerStyle: { transform: 'scaleY(-1)' },
+    },
+    {
+      value: 'room_enclosure',
+      label: 'Room Enclosure',
+      description:
+        'Enclose a wine room, under-stair space, or home office with framed or frameless glass',
+      cornerClass: 'top-[-1px] right-[-1px]',
+      cornerStyle: {},
     },
   ];
 

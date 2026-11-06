@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" fill="none" stroke="#e4bf6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Frameless: full-height glass sheets held only by a slim floor / ceiling channel, hairline joints, pivot door with a tall pull -->
+  <rect x="10" y="18" width="76" height="60" fill="#e4bf6e" fill-opacity="0.08" stroke="none"/>
+  <!-- slim ceiling and floor channels -->
+  <rect x="8" y="15" width="80" height="3" fill="#e4bf6e" stroke="none"/>
+  <rect x="8" y="78" width="80" height="3" fill="#e4bf6e" stroke="none"/>
+  <!-- hairline glass joints -->
+  <line x1="34" y1="18" x2="34" y2="78" stroke-width="1" stroke-opacity="0.6"/>
+  <line x1="60" y1="18" x2="60" y2="78" stroke-width="1" stroke-opacity="0.6"/>
+  <!-- glass highlights -->
+  <line x1="16" y1="26" x2="26" y2="36" stroke-opacity="0.45"/>
+  <line x1="66" y1="26" x2="80" y2="40" stroke-opacity="0.45"/>
+  <!-- pivot door (right panel): pivot pins + tall pull handle -->
+  <circle cx="62" cy="18" r="2" fill="#e4bf6e" stroke="none"/>
+  <circle cx="62" cy="78" r="2" fill="#e4bf6e" stroke="none"/>
+  <line x1="80" y1="38" x2="80" y2="60" stroke-width="3"/>
+</svg>

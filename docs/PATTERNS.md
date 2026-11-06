@@ -2,11 +2,20 @@
 
 Recurring implementation patterns in the Gatsby Glass visualizer. For directory layout and package rules, see [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-## Wizard state (shower and railing)
+## Wizard state (shower, railing, room enclosure)
 
 - **Shower:** `apps/gatsby-glass/hooks/useVisualizerState.ts` — multi-step configure/inspiration flow, product defaults, neo-angle compatibility.
 - **Railing:** `apps/gatsby-glass/hooks/useRailingVisualizerState.ts` (and `GatsbyRailingVisualizer.tsx`) — separate product line with its own steps and payload.
+- **Room enclosure:** `apps/gatsby-glass/hooks/useRoomEnclosureVisualizerState.ts` (and `GatsbyRoomEnclosureVisualizer.tsx`) — framed / frameless glass rooms; same step contract as railing, with Room Type auto-detected from the photo.
+- `GatsbyVisualizer.tsx` routes between modules via `?module=` (ids in `lib/productModules.ts`).
 - State hooks own step index, selections, and uploaded image handles; they call API routes for generation — they do not call Gemini directly from the client.
+
+## Product modules and the `product` discriminator
+
+- Non-shower products tag every request with `product` (`'railing' | 'room_enclosure'`); absent = shower so the legacy flow is unchanged.
+- `validate-image` picks the product's validation prompt + response shape; `generate-visualization` swaps in the product's system prompt and edit preamble; `save-visualization` / `submit-lead` store selections in `product_config` (JSONB) instead of new columns.
+- Per-product rules + prompt text live in `lib/<module>/rules.ts` with an acceptance script under `scripts/check-*-rules.ts`.
+- Hardware finishes for railing and room enclosure come from one catalog, `lib/metal-finishes.ts`.
 
 ## Prompt templates
 
