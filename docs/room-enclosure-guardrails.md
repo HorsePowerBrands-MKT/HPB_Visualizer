@@ -20,6 +20,7 @@ Marvel", plus cigar rooms and home offices as named uses.
 | Room type | Wine Room, Under-Stair Nook, Home Office, Other Room | Auto-detected from the photo; correctable under the upload and on the result page |
 | Enclosure style | Frameless, Framed | Step 3 (Design Your Own) or taken from the inspiration photo |
 | Finish | Matte Black, Brushed Stainless, Polished Stainless, Polished Brass, Satin Brass | Step 3 or from the inspiration photo |
+| Placement line | One drag on the photo along the floor | Required when the validator finds nothing to anchor to (`open_floor` / `none`); optional otherwise, and then it overrides the inferred opening |
 
 The finish catalog is **shared with the Glass Railing module**:
 `apps/gatsby-glass/lib/metal-finishes.ts` holds the ids, consumer copy,
@@ -72,7 +73,39 @@ Detected by the validator and hidden from the consumer:
 | `open_opening` | Add the enclosure across the opening using its own edges as the anchor |
 | `existing_partition` | Remove only that partition/door and fill the same opening |
 | `existing_glass` | Replace the existing glass along the same line |
-| `none` | Infer the single most logical opening and treat it as open |
+| `open_floor` | Nothing frames the area (racks, a desk or a corner in open floor): build a new wall along the customer placement line with a short glass return where an end stops in the open |
+| `none` | Use the placement line if present, otherwise infer the single most logical opening and treat it as open |
+
+## Placement line (where the glass goes when nothing anchors it)
+
+Showers and railings replace something already in the photo; an enclosure
+often has nothing to replace, so the consumer can show us where the wall
+goes with one drag on their photo.
+
+- **UI** — `PlacementLineOverlay` sits over the upload preview. A drag
+  along the floor stores a line in image coordinates (0..1 of the uploaded
+  photo, so display size and compression don't matter). The banner says
+  whether the line is required (`requiresPlacementLine`: `open_floor`,
+  `none`, or no validation yet) or optional. Drags shorter than 3% of the
+  image are ignored; "Clear line" removes it; a new photo resets it.
+- **Transport** — at generate time `renderPlacementReferenceImage` burns the
+  line in bright magenta (white outline, endpoint dots) onto a copy of the
+  photo downscaled to 1280px and sends it as `placementImage`. The API
+  route attaches it as a reference image after input_1 and any inspiration
+  photo with `PLACEMENT_REFERENCE_DESCRIPTION` ("placement only, never
+  reproduce the line"). The line itself is never stored on leads or
+  visualizations.
+- **Prompt** — `PLACEMENT_LINE_RULES` render only when a line was drawn:
+  the bottom edge of the glass follows the line end to end, the line
+  overrides any inferred opening, ends within a foot of a wall close the
+  gap, ends in open floor get a short glass return, the door sits on the
+  line, and the magenta line must not appear in the output (self-check
+  item 8).
+
+**Limitation.** This is still a whole-photo edit with no mask, so the model
+can drift off the line on busy scenes. Reference-image placement is the
+strongest signal available on the current Gemini path; if QA shows drift,
+the next step is region-controlled editing.
 
 ## Finish
 
@@ -131,7 +164,7 @@ consumer's explicit selections always win over the inspiration photo.
    `assertRoomEnclosureSelectionsRenderable` and throws
    `RoomEnclosureRuleViolationError`.
 4. **Prompt text** — the hard-lock sections, the NOT APPROVED list and the
-   self-check (items 3, 4, 6, 7) tell the model what a failed render is.
+   self-check (items 3, 4, 6, 7, 8) tell the model what a failed render is.
 
 ## Data and integrations
 

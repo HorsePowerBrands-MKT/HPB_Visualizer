@@ -4,6 +4,8 @@ export type {
   RoomEnclosureStyle,
   RoomEnclosureFinish,
   RoomEnclosureExistingCondition,
+  RoomEnclosurePlacementLine,
+  RoomEnclosurePlacement,
   RoomEnclosureForm,
   RoomEnclosurePayload,
   RoomEnclosurePromptSelection,
@@ -28,10 +30,20 @@ export {
 export { ROOM_ENCLOSURE_STYLE_OPTION_ICONS } from './optionIcons';
 
 export {
+  isRoomEnclosurePlacementReady,
   isRoomEnclosureFormComplete,
   buildRoomEnclosurePayload,
   buildRoomEnclosurePromptInput,
 } from './promptInput';
+
+export {
+  renderPlacementReferenceImage,
+  drawPlacementLine,
+  placementLineLength,
+  clampUnit,
+  PLACEMENT_LINE_COLOR,
+  PLACEMENT_LINE_OUTLINE,
+} from './placementImage';
 
 export {
   buildRoomEnclosurePrompt,
@@ -46,6 +58,9 @@ export {
   APPROVED_ROOM_ENCLOSURE_APPLICATIONS,
   APPROVED_ROOM_ENCLOSURE_FINISHES,
   UNSUPPORTED_ENCLOSURE_TYPES,
+  PLACEMENT_LINE_RULES,
+  PLACEMENT_REFERENCE_DESCRIPTION,
+  requiresPlacementLine,
   validateRoomEnclosureSelections,
   assertRoomEnclosureSelectionsRenderable,
   RoomEnclosureRuleViolationError,

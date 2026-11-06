@@ -55,6 +55,10 @@ export const VisualizationRequestSchema = z.object({
   prompt: z.string().min(10, 'Prompt too short').max(32_000, 'Prompt too long'),
   // Selects the server-side system prompt + edit preamble. Absent = shower.
   product: VisualizerProductSchema.optional(),
+  // Room enclosure only: a copy of bathroomImage with the consumer's
+  // placement line drawn on it, attached as a reference image so the model
+  // sees where the glass wall stands (never the canvas it edits).
+  placementImage: ImageDataSchema.optional(),
   doorType: z.enum(['hinged', 'pivot', 'sliding']).optional(),
   pivotDirection: z.enum(['left', 'right', 'double']).optional(),
   glassStyle: z.enum(['clear', 'low_iron', 'p516']).optional(),

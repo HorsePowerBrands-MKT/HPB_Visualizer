@@ -31,6 +31,11 @@ export function roomEnclosurePromptVariables(input: RoomEnclosurePromptInput): R
   return {
     mode: input.mode,
     existing_condition: input.existing_condition,
+    placement: input.placement,
+    placement_name:
+      input.placement === 'drawn'
+        ? 'customer-drawn floor line (see the placement reference image)'
+        : 'inferred from the opening in input_1',
     application: input.application.id,
     application_name: input.application.name,
     application_descriptor: input.application.prompt_descriptor,
@@ -52,6 +57,7 @@ function payloadFromInput(input: RoomEnclosurePromptInput): RoomEnclosurePayload
     style: input.style?.id ?? null,
     finish: input.finish?.id ?? null,
     existing_condition: input.existing_condition,
+    placement: input.placement,
     session_id: input.session_id,
     catalog_version: input.catalog_version,
   };

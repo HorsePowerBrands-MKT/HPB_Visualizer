@@ -28,6 +28,7 @@ import {
   buildRoomEnclosurePayload,
   buildRoomEnclosurePromptInput,
   formatRoomEnclosureSummary,
+  isRoomEnclosurePlacementReady,
 } from '../lib/room-enclosure';
 
 export const ROOM_ENCLOSURE_STEP_LABELS: Record<RoomEnclosureMode, readonly string[]> = {
@@ -59,6 +60,7 @@ const createInitialForm = (): RoomEnclosureForm => ({
   finish: null,
   existing_condition: null,
   application_detected: false,
+  placement_line: null,
 });
 
 export interface RoomEnclosureVisualizerState {
@@ -175,9 +177,13 @@ export function useRoomEnclosureVisualizerState(): RoomEnclosureVisualizerState 
         return true;
       case 2: {
         // Photo validated + consent + room type resolved (auto-detected on
-        // upload). In inspiration mode this is also the generate step.
+        // upload) + a placement line when the photo has nothing to anchor
+        // to. In inspiration mode this is also the generate step.
         const hasSpacePhoto =
-          imageFile !== null && previewUrl !== null && uploadConsent && form.application !== null;
+          imageFile !== null &&
+          previewUrl !== null &&
+          uploadConsent &&
+          isRoomEnclosurePlacementReady(form);
         if (form.mode === 'configure') return hasSpacePhoto;
         return hasSpacePhoto && inspirationFile !== null && inspirationPreviewUrl !== null;
       }

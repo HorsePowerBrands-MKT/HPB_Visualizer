@@ -17,7 +17,7 @@ import {
   CANDIDATE_LOCATION_ID,
 } from '@repo/api-handlers/supabase';
 import { uploadImage } from '@repo/api-handlers/storage';
-import type { VisualizationRequest } from '@repo/types';
+import type { ReferenceImage, VisualizationRequest } from '@repo/types';
 import { VisualizationRequestSchema } from '../../../lib/validation';
 import { ZodError } from 'zod';
 import { createClient } from '../../../lib/supabase/server';
@@ -28,6 +28,7 @@ import {
   buildRoomEnclosureSystemPrompt,
   ROOM_ENCLOSURE_EDIT_PREAMBLE,
 } from '../../../lib/room-enclosure/promptBuilder';
+import { PLACEMENT_REFERENCE_DESCRIPTION } from '../../../lib/room-enclosure/rules';
 
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
@@ -141,10 +142,25 @@ export async function POST(request: NextRequest) {
     // request would silently fall back to text-only prompting.
     // Railing and room enclosure renders pass no doorType, so this returns
     // [] for them: their look is carried entirely by the prompt text.
-    const referenceImages = await loadReferenceImagesFor({
+    const bundledReferenceImages = await loadReferenceImagesFor({
       enclosureType: validatedData.doorType,
       pivotDirection: validatedData.pivotDirection,
     });
+    // Room enclosure: when the consumer drew where the glass wall goes, the
+    // client sends a copy of input_1 with the line burned in. It rides along
+    // as a reference image (placement only, never the canvas) with the
+    // description from lib/room-enclosure/rules.ts.
+    const placementReferenceImages: ReferenceImage[] =
+      validatedData.product === 'room_enclosure' && validatedData.placementImage
+        ? [
+            {
+              image: validatedData.placementImage,
+              label: 'placement-line',
+              description: PLACEMENT_REFERENCE_DESCRIPTION,
+            },
+          ]
+        : [];
+    const referenceImages = [...bundledReferenceImages, ...placementReferenceImages];
     console.log(
       `[generate-visualization] product=${validatedData.product ?? 'shower'}` +
         ` doorType=${validatedData.doorType ?? 'unknown'}` +
