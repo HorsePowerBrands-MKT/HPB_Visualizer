@@ -15,16 +15,29 @@ import {
   roomEnclosureFinishes,
   ROOM_ENCLOSURE_CATALOG_VERSION,
 } from './catalog';
-import { assertRoomEnclosureSelectionsRenderable } from './rules';
+import { assertRoomEnclosureSelectionsRenderable, requiresPlacementPath } from './rules';
+import { isPlacementPathComplete } from './placementImage';
+
+/**
+ * True once the photo side of the form is settled: the room type is known
+ * and, when the photo has nothing to anchor the glass to, the consumer has
+ * drawn a complete placement path. A half-drawn path (one corner tapped)
+ * never counts, whether or not the path is required.
+ */
+export const isRoomEnclosurePlacementReady = (form: RoomEnclosureForm): boolean => {
+  if (form.application === null) return false;
+  if (form.placement_path !== null) return isPlacementPathComplete(form.placement_path);
+  return !requiresPlacementPath(form.existing_condition);
+};
 
 /**
  * True once every consumer selection the current mode needs has been made.
- * Design Your Own needs the room type, style and finish; Match Inspiration
- * only needs the room type (the inspiration photo supplies style and finish
- * unless the consumer explicitly overrides them).
+ * Design Your Own needs the room type, placement, style and finish; Match
+ * Inspiration only needs the room type and placement (the inspiration photo
+ * supplies style and finish unless the consumer explicitly overrides them).
  */
 export const isRoomEnclosureFormComplete = (form: RoomEnclosureForm): boolean => {
-  if (form.application === null) return false;
+  if (!isRoomEnclosurePlacementReady(form)) return false;
   if (form.mode === 'inspiration') return true;
   return form.style !== null && form.finish !== null;
 };
@@ -42,6 +55,7 @@ export const buildRoomEnclosurePayload = (
     style: form.style,
     finish: form.finish,
     existing_condition: form.existing_condition ?? 'none',
+    placement: isPlacementPathComplete(form.placement_path) ? 'drawn' : 'inferred',
     session_id: sessionId,
     catalog_version: ROOM_ENCLOSURE_CATALOG_VERSION,
   };
@@ -73,6 +87,7 @@ export const buildRoomEnclosurePromptInput = (
     session_id: payload.session_id,
     mode: payload.mode,
     existing_condition: payload.existing_condition,
+    placement: payload.placement,
     application: {
       id: payload.application,
       name: application.name,

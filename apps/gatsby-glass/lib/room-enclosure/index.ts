@@ -4,6 +4,9 @@ export type {
   RoomEnclosureStyle,
   RoomEnclosureFinish,
   RoomEnclosureExistingCondition,
+  RoomEnclosurePlacementPoint,
+  RoomEnclosurePlacementPath,
+  RoomEnclosurePlacement,
   RoomEnclosureForm,
   RoomEnclosurePayload,
   RoomEnclosurePromptSelection,
@@ -28,10 +31,23 @@ export {
 export { ROOM_ENCLOSURE_STYLE_OPTION_ICONS } from './optionIcons';
 
 export {
+  isRoomEnclosurePlacementReady,
   isRoomEnclosureFormComplete,
   buildRoomEnclosurePayload,
   buildRoomEnclosurePromptInput,
 } from './promptInput';
+
+export {
+  renderPlacementReferenceImage,
+  drawPlacementPath,
+  isPlacementPathComplete,
+  placementWallCount,
+  pointDistance,
+  clampUnit,
+  MIN_SEGMENT_LENGTH,
+  PLACEMENT_LINE_COLOR,
+  PLACEMENT_LINE_OUTLINE,
+} from './placementImage';
 
 export {
   buildRoomEnclosurePrompt,
@@ -46,6 +62,9 @@ export {
   APPROVED_ROOM_ENCLOSURE_APPLICATIONS,
   APPROVED_ROOM_ENCLOSURE_FINISHES,
   UNSUPPORTED_ENCLOSURE_TYPES,
+  PLACEMENT_PATH_RULES,
+  PLACEMENT_REFERENCE_DESCRIPTION,
+  requiresPlacementPath,
   validateRoomEnclosureSelections,
   assertRoomEnclosureSelectionsRenderable,
   RoomEnclosureRuleViolationError,

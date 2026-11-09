@@ -20,6 +20,7 @@ Marvel", plus cigar rooms and home offices as named uses.
 | Room type | Wine Room, Under-Stair Nook, Home Office, Other Room | Auto-detected from the photo; correctable under the upload and on the result page |
 | Enclosure style | Frameless, Framed | Step 3 (Design Your Own) or taken from the inspiration photo |
 | Finish | Matte Black, Brushed Stainless, Polished Stainless, Polished Brass, Satin Brass | Step 3 or from the inspiration photo |
+| Placement path | Tap the corners of the glass walls on the photo (two taps = one wall, three = an L); drag for a single wall | Required when the validator finds nothing to anchor to (`open_floor` / `none`); optional otherwise, and then it overrides the inferred opening |
 
 The finish catalog is **shared with the Glass Railing module**:
 `apps/gatsby-glass/lib/metal-finishes.ts` holds the ids, consumer copy,
@@ -72,7 +73,49 @@ Detected by the validator and hidden from the consumer:
 | `open_opening` | Add the enclosure across the opening using its own edges as the anchor |
 | `existing_partition` | Remove only that partition/door and fill the same opening |
 | `existing_glass` | Replace the existing glass along the same line |
-| `none` | Infer the single most logical opening and treat it as open |
+| `open_floor` | Nothing frames the area (racks, a desk or a corner in open floor): create the room with a new glass wall on every segment of the customer placement path |
+| `none` | Use the placement path if present, otherwise infer the single most logical opening and treat it as open |
+
+A plain room is always a valid upload: the validator is told never to
+reject an interior photo for lacking a staircase, edge, nook or opening,
+because an enclosure usually *creates* a room rather than replacing
+something.
+
+## Placement path (where the glass goes when nothing anchors it)
+
+Showers and railings replace something already in the photo; an enclosure
+often has nothing to replace and usually needs more than one wall (an L or
+a U of glass against existing walls). The consumer shows us the footprint
+by tapping the corners on their photo.
+
+- **UI** — `PlacementLineOverlay` sits over the upload preview. Each tap
+  adds a corner: two taps are one wall, three an L-shaped room, four a U.
+  A drag is a shortcut for a single wall. Points are stored in image
+  coordinates (0..1 of the uploaded photo, so display size and compression
+  don't matter). The banner says whether the path is required
+  (`requiresPlacementPath`: `open_floor`, `none`, or no validation yet) or
+  optional, and a half-drawn path (one corner) never counts
+  (`isPlacementPathComplete`). Segments shorter than 3% of the image are
+  ignored; "Undo corner" and "Clear" edit it; a new photo resets it.
+- **Transport** — at generate time `renderPlacementReferenceImage` burns the
+  path in bright magenta (white outline, a dot at every corner) onto a copy
+  of the photo downscaled to 1280px and sends it as `placementImage`. The
+  API route attaches it as a reference image after input_1 and any
+  inspiration photo with `PLACEMENT_REFERENCE_DESCRIPTION` ("placement
+  only, never reproduce the path"). The path itself is never stored on
+  leads or visualizations.
+- **Prompt** — `PLACEMENT_PATH_RULES` render only when a path was drawn:
+  each segment is one full-height glass wall standing exactly on it, walls
+  meet at a glass corner where segments meet, the area between the path and
+  the existing walls becomes the new room, the path overrides any inferred
+  opening with no walls added or dropped, ends within a foot of a wall
+  close the gap, the door sits on one of the segments, and the magenta path
+  must not appear in the output (self-check item 8).
+
+**Limitation.** This is still a whole-photo edit with no mask, so the model
+can drift off the path on busy scenes. Reference-image placement is the
+strongest signal available on the current Gemini path; if QA shows drift,
+the next step is region-controlled editing.
 
 ## Finish
 
@@ -131,7 +174,7 @@ consumer's explicit selections always win over the inspiration photo.
    `assertRoomEnclosureSelectionsRenderable` and throws
    `RoomEnclosureRuleViolationError`.
 4. **Prompt text** — the hard-lock sections, the NOT APPROVED list and the
-   self-check (items 3, 4, 6, 7) tell the model what a failed render is.
+   self-check (items 3, 4, 6, 7, 8) tell the model what a failed render is.
 
 ## Data and integrations
 

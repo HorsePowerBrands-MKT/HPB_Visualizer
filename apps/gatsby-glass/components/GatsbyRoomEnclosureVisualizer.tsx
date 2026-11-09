@@ -20,6 +20,10 @@ import {
   ROOM_ENCLOSURE_CATALOG_VERSION,
   buildRoomEnclosurePrompt,
   formatRoomEnclosureSummary,
+  requiresPlacementPath,
+  renderPlacementReferenceImage,
+  isPlacementPathComplete,
+  placementWallCount,
 } from '../lib/room-enclosure';
 import {
   useRoomEnclosureVisualizerState,
@@ -43,6 +47,7 @@ import {
   RoomEnclosureStyleStep,
   RoomEnclosureFinishSwatch,
 } from './wizard/room-enclosure/RoomEnclosureStyleStep';
+import { PlacementLineOverlay } from './wizard/room-enclosure/PlacementLineOverlay';
 
 interface GatsbyRoomEnclosureVisualizerProps {
   /** Return to the product chooser. */
@@ -82,6 +87,8 @@ const FROM_PHOTO = '__from_photo__';
 
 const SPACE_PHOTO_HINT =
   'Take a clear photo of the wine room, under-stair space, office, or room you want to enclose';
+
+const PLACEMENT_HINT = 'Tap the corners where the glass walls go (or drag for a single wall)';
 
 /**
  * Room Enclosure Module wizard. Collects a design mode, the space photo
@@ -206,6 +213,8 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
       setResultUrl(null);
       setResultStorageUrl(null);
       setShowResult(false);
+      // A placement path belongs to one photo; a new photo starts clean.
+      updateFormField('placement_path', null);
       // Hidden image interpretation that feeds the backend placement rules.
       // Never shown to the consumer; the Room Type selection still wins.
       updateFormField(
@@ -228,6 +237,15 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     }
 
     setValidating(null);
+  };
+
+  const removeSpacePhoto = () => {
+    setImageFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setUploadConsent(false);
+    setMarketingConsent(false);
+    updateFormField('placement_path', null);
   };
 
   // --- Generate -----------------------------------------------------------
@@ -256,6 +274,14 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
       const nextGenIndex = generationIndex + 1;
       const currentPayload = payload;
 
+      // The drawn floor path travels as a marked-up copy of the photo, so
+      // the model sees where each glass wall stands without the mark ever
+      // touching the canvas it edits.
+      const placementImage =
+        form.placement_path && isPlacementPathComplete(form.placement_path)
+          ? await renderPlacementReferenceImage(imageFile, form.placement_path)
+          : undefined;
+
       await runGenerationPipeline({
         product: 'room_enclosure',
         imageFile,
@@ -267,6 +293,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
         marketingConsent,
         submissionId,
         teamUtm,
+        generateExtras: placementImage ? { placementImage } : undefined,
         onSubmissionCreated: setSubmissionId,
         submissionMetadata: {
           product: 'room_enclosure',
@@ -334,6 +361,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     imageFile,
     inspirationFile,
     form.mode,
+    form.placement_path,
     payload,
     promptInput,
     generationIndex,
@@ -426,7 +454,28 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
     </div>
   );
 
-  // Shown under the uploaded photo: what we detected, with a way to change it.
+  // Draw-on-photo layer: tapped corners mark the floor path the glass walls stand on.
+  const placementOverlay = previewUrl ? (
+    <PlacementLineOverlay
+      previewUrl={previewUrl}
+      path={form.placement_path}
+      onChange={(path) => updateFormField('placement_path', path)}
+      hint={PLACEMENT_HINT}
+    />
+  ) : null;
+
+  // Shown under the uploaded photo: what we detected, whether a placement
+  // path is needed, and a way to change the room type.
+  const needsPlacementPath = requiresPlacementPath(form.existing_condition);
+  const pathComplete = isPlacementPathComplete(form.placement_path);
+  const wallCount = placementWallCount(form.placement_path);
+  const placementText = pathComplete
+    ? `The glass will stand along the ${wallCount === 1 ? 'wall' : `${wallCount} walls`} you drew. Tap to add another corner, or clear it to start over.`
+    : form.placement_path
+      ? 'Tap the next corner on your photo to finish the first glass wall.'
+      : needsPlacementPath
+        ? "We couldn't find a natural opening to fill, so tap the corners on your photo where the glass walls should stand (two taps for one wall, three for an L-shaped room)."
+        : 'Want the glass somewhere specific? Tap the corners on your photo where the glass walls should stand.';
   const applicationBanner =
     previewUrl && form.application ? (
       <div className="mt-4 p-4 bg-brand-gold/10 border border-brand-gold/30 space-y-3 animate-in fade-in">
@@ -434,9 +483,9 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <span>
             {form.application_detected
-              ? `We detected a ${roomEnclosureApplications[form.application].name.toLowerCase()} in your photo and will place the enclosure accordingly.`
+              ? `We detected a ${roomEnclosureApplications[form.application].name.toLowerCase()} in your photo.`
               : `We couldn't tell exactly what this space is for, so we'll treat it as a general room.`}{' '}
-            Not right? Pick a different room type below.
+            {placementText} Not the right room type? Pick a different one below.
           </span>
         </div>
         <PillRow
@@ -513,19 +562,14 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
               previewUrl={previewUrl}
               validating={validating === 'target'}
               onFileChange={(e) => handleFileChange(e, 'target')}
-              onRemove={() => {
-                setImageFile(null);
-                setPreviewUrl(null);
-                setError(null);
-                setUploadConsent(false);
-                setMarketingConsent(false);
-              }}
+              onRemove={removeSpacePhoto}
               error={error}
               uploadConsent={uploadConsent}
               marketingConsent={marketingConsent}
               onUploadConsentChange={setUploadConsent}
               onMarketingConsentChange={setMarketingConsent}
               footer={applicationBanner}
+              previewOverlay={placementOverlay}
             />
           );
         }
@@ -542,13 +586,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
             previewUrl={previewUrl}
             validating={validating === 'target'}
             onFileChange={(e) => handleFileChange(e, 'target')}
-            onRemove={() => {
-              setImageFile(null);
-              setPreviewUrl(null);
-              setError(null);
-              setUploadConsent(false);
-              setMarketingConsent(false);
-            }}
+            onRemove={removeSpacePhoto}
             inspirationFile={inspirationFile}
             inspirationPreviewUrl={inspirationPreviewUrl}
             inspirationValidating={validating === 'inspiration'}
@@ -564,6 +602,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
             onUploadConsentChange={setUploadConsent}
             onMarketingConsentChange={setMarketingConsent}
             footer={applicationBanner}
+            previewOverlay={placementOverlay}
           />
         );
 

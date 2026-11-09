@@ -48,7 +48,29 @@ export type RoomEnclosureExistingCondition =
   | 'open_opening'
   | 'existing_partition'
   | 'existing_glass'
+  | 'open_floor'
   | 'none';
+
+/** A point on the uploaded photo, normalized to 0..1 of its width / height. */
+export interface RoomEnclosurePlacementPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Where the consumer drew the glass walls on their photo: a floor path of
+ * connected straight segments (two points = one wall, three = an L, four =
+ * a U). Coordinates are normalized to 0..1 of the uploaded image so they
+ * are independent of display size. Burned onto a reference copy of the
+ * photo at generate time; never stored with leads. A single point is an
+ * in-progress path (the consumer has tapped their first corner).
+ */
+export interface RoomEnclosurePlacementPath {
+  points: RoomEnclosurePlacementPoint[];
+}
+
+/** How the enclosure location reaches the model. */
+export type RoomEnclosurePlacement = 'drawn' | 'inferred';
 
 /** In-progress wizard form. Every selection starts null until the user picks it. */
 export interface RoomEnclosureForm {
@@ -62,6 +84,11 @@ export interface RoomEnclosureForm {
   existing_condition: RoomEnclosureExistingCondition | null;
   /** True when the validator identified the room type (vs. the generic fallback). */
   application_detected: boolean;
+  /**
+   * Floor path the consumer drew on the photo. Required when the validator
+   * found no opening to anchor to (`open_floor` / `none`); optional otherwise.
+   */
+  placement_path: RoomEnclosurePlacementPath | null;
 }
 
 /** A fully completed set of consumer selections. */
@@ -73,6 +100,8 @@ export interface RoomEnclosurePayload {
   style: RoomEnclosureStyle | null;
   finish: RoomEnclosureFinish | null;
   existing_condition: RoomEnclosureExistingCondition;
+  /** 'drawn' when a placement path travels with the request as a reference image. */
+  placement: RoomEnclosurePlacement;
   session_id: string;
   catalog_version: string;
 }
@@ -95,6 +124,7 @@ export interface RoomEnclosurePromptInput {
   session_id: string;
   mode: RoomEnclosureMode;
   existing_condition: RoomEnclosureExistingCondition;
+  placement: RoomEnclosurePlacement;
   application: RoomEnclosurePromptSelection<RoomEnclosureApplication>;
   style: RoomEnclosurePromptSelection<RoomEnclosureStyle> | null;
   finish: RoomEnclosurePromptSelection<RoomEnclosureFinish> | null;

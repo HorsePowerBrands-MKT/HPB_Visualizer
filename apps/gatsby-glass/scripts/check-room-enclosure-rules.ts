@@ -13,8 +13,13 @@ import {
   buildRoomEnclosureSystemPrompt,
   getRoomEnclosureValidationPrompt,
   validateRoomEnclosureSelections,
+  isRoomEnclosureFormComplete,
+  isPlacementPathComplete,
+  placementWallCount,
+  requiresPlacementPath,
   RoomEnclosureRuleViolationError,
   UNSUPPORTED_ENCLOSURE_TYPES,
+  PLACEMENT_REFERENCE_DESCRIPTION,
   ROOM_ENCLOSURE_FINISH_ORDER,
   roomEnclosureFinishes,
   roomEnclosureFinishSwatches,
@@ -37,7 +42,10 @@ const base: RoomEnclosureForm = {
   finish: 'matte_black',
   existing_condition: 'open_opening',
   application_detected: true,
+  placement_path: null,
 };
+/** An L-shaped room: two glass walls meeting at a corner. */
+const LINE = { points: [{ x: 0.1, y: 0.8 }, { x: 0.6, y: 0.78 }, { x: 0.6, y: 0.4 }] };
 const prompt = (form: RoomEnclosureForm) =>
   buildRoomEnclosurePrompt(buildRoomEnclosurePromptInput(buildRoomEnclosurePayload(form, 'check')!));
 
@@ -118,8 +126,10 @@ check('existing partition: remove only the partition, same line', part.includes(
 check('existing partition: open-opening rule not rendered', !part.includes('The space is OPEN'));
 const glass = prompt({ ...base, existing_condition: 'existing_glass' });
 check('existing glass: replace along the same line', glass.includes('An existing glass enclosure or glass door is present'));
-const unknown = prompt({ ...base, existing_condition: 'none' });
-check('unknown condition: infer the most logical opening', unknown.includes('Identify the single most logical opening'));
+// 'none' requires a drawn line (see requiresPlacementLine), so the prompt is
+// only ever assembled with one; the rule still names the no-line fallback.
+const unknown = prompt({ ...base, existing_condition: 'none', placement_path: LINE });
+check('unknown condition: placement path decides, else infer the opening', unknown.includes('If a customer placement path is provided below, it decides the location') && unknown.includes('identify the single most logical opening') && unknown.includes('CUSTOMER PLACEMENT PATH'));
 
 // --- Preservation / target only ----------------------------------------------
 check('preservation: racks, bottles, furniture untouched', fl.includes('Do not add, remove, move or restyle wine racks, bottles, shelving, furniture'));
@@ -158,7 +168,7 @@ check('configure: no inspiration rules rendered', !fl.includes('INSPIRATION RULE
 // --- Validation blocks unsupported selections --------------------------------
 const bad = {
   product: 'room_enclosure', mode: 'configure', application: 'wine_room', style: 'french_doors',
-  finish: 'matte_black', existing_condition: 'none', session_id: 'x', catalog_version: '2026.11',
+  finish: 'matte_black', existing_condition: 'none', placement: 'inferred', session_id: 'x', catalog_version: '2026.11',
 } as unknown as RoomEnclosurePayload;
 check('validation: unsupported style rejected', validateRoomEnclosureSelections(bad).some((i) => i.field === 'style'));
 check('validation: unsupported finish rejected', validateRoomEnclosureSelections({ ...bad, style: 'framed', finish: 'chrome' } as unknown as RoomEnclosurePayload).some((i) => i.field === 'finish'));
@@ -180,10 +190,46 @@ check('validation prompt: detects existing condition + room type', val.includes(
 check('validation prompt: rejects bathrooms and outdoor-only scenes', val.includes('A bathroom, shower, or tub') && val.includes('Purely an outdoor scene'));
 check('summary: configure', formatRoomEnclosureSummary(base) === 'Wine Room • Frameless • Matte Black');
 check('summary: inspiration without overrides', formatRoomEnclosureSummary({ mode: 'inspiration', application: 'under_stair' }) === 'Under-Stair Nook • Inspiration');
-check('template: visualization version 1.0.0', roomEnclosureVisualizationTemplate.version === '1.0.0');
+check('template: visualization version 1.1.0', roomEnclosureVisualizationTemplate.version === '1.1.0');
+
+// --- Customer placement path ---------------------------------------------------
+const drawn = prompt({ ...base, placement_path: LINE });
+check('placement: drawn path renders the placement section', drawn.includes('CUSTOMER PLACEMENT PATH (authoritative for location):') && drawn.includes('BRIGHT MAGENTA PATH'));
+check('placement: one glass wall per segment, corners where segments meet', drawn.includes('Each segment is ONE straight full-height glass wall') && drawn.includes('the glass walls meet at a corner'));
+check('placement: path overrides the inferred opening, no walls added or dropped', drawn.includes('The path overrides any opening you would otherwise infer') && drawn.includes('do not add walls the path does not show'));
+check('placement: magenta path never rendered', drawn.includes('It must NOT appear in the output in any form'));
+check('placement: spec names the drawn path', drawn.includes('placement: customer-drawn floor path, one glass wall per segment'));
+check('placement: no path → no placement section', !fl.includes('CUSTOMER PLACEMENT PATH') && fl.includes('placement: inferred from the opening in input_1'));
+check('self-check: placement item', drawn.includes('8. If a customer placement path was provided') && drawn.includes('no walls added or dropped'));
+const openFloor = prompt({ ...base, existing_condition: 'open_floor', placement_path: LINE });
+check('open floor: create the room, a wall on every segment', openFloor.includes('The area is OPEN FLOOR') && openFloor.includes('CREATE the room') && openFloor.includes('EVERY segment of the customer placement path'));
+check('open floor: open-opening rule not rendered', !openFloor.includes('The space is OPEN (no wall'));
+check('open floor: placement section rendered', openFloor.includes('CUSTOMER PLACEMENT PATH'));
+check(
+  'placement: required for open floor / unknown, optional otherwise',
+  requiresPlacementPath('open_floor') &&
+    requiresPlacementPath('none') &&
+    requiresPlacementPath(null) &&
+    !requiresPlacementPath('open_opening') &&
+    !requiresPlacementPath('existing_partition') &&
+    !requiresPlacementPath('existing_glass')
+);
+check('path: two corners = one wall, three = two walls', placementWallCount({ points: LINE.points.slice(0, 2) }) === 1 && placementWallCount(LINE) === 2 && placementWallCount(null) === 0);
+check('path: a single tapped corner is incomplete', !isPlacementPathComplete({ points: [LINE.points[0]] }));
+check('path: a segment shorter than the minimum is incomplete', !isPlacementPathComplete({ points: [{ x: 0.5, y: 0.5 }, { x: 0.51, y: 0.5 }] }));
+check('path: the L-shaped fixture is complete', isPlacementPathComplete(LINE));
+check('form: open floor without a path is incomplete', !isRoomEnclosureFormComplete({ ...base, existing_condition: 'open_floor' }));
+check('form: open floor with a path is complete', isRoomEnclosureFormComplete({ ...base, existing_condition: 'open_floor', placement_path: LINE }));
+check('form: unknown condition without a path is incomplete', !isRoomEnclosureFormComplete({ ...base, existing_condition: 'none' }));
+check('form: bounded opening needs no path', isRoomEnclosureFormComplete(base));
+check('form: a half-drawn path blocks even when optional', !isRoomEnclosureFormComplete({ ...base, placement_path: { points: [LINE.points[0]] } }));
+check('form: inspiration mode still needs the path on open floor', !isRoomEnclosureFormComplete({ ...base, mode: 'inspiration', style: null, finish: null, existing_condition: 'open_floor' }));
+check('reference description: placement only, path never reproduced', PLACEMENT_REFERENCE_DESCRIPTION.includes('Do NOT reproduce the magenta path'));
+check('validation prompt: detects open floor', val.includes("'open_floor'") && val.includes("use 'open_floor' only when nothing frames it"));
+check('validation prompt: a plain room is valid', val.includes('Any ordinary interior room') && val.includes('Never reject an interior photo for lacking a staircase, balcony, edge, nook or opening'));
 
 // --- No unresolved placeholders ---------------------------------------------
-for (const [n, p] of [['frameless', fl], ['framed', fr], ['insp', insp], ['under_stair', us]] as const) {
+for (const [n, p] of [['frameless', fl], ['framed', fr], ['insp', insp], ['under_stair', us], ['drawn', drawn], ['open_floor', openFloor]] as const) {
   check(`no leftover placeholders (${n})`, !/\{\{\w+\}\}/.test(p));
 }
 
