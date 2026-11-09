@@ -15,6 +15,7 @@ import {
   fileToBase64Data,
   isHeic,
   isSupportedImageType,
+  sniffImageMime,
   convertHeicToJpeg,
   compressImage,
 } from '@repo/visualizer-core';
@@ -129,20 +130,39 @@ export async function validateUploadedPhoto(
 
   let working = file;
 
+  // Trust the bytes over the label. Some phones hand us a JPEG or HEIC with
+  // an empty or generic MIME type, and the odd file is a JPEG wearing a
+  // .heic name; sniffing the header sorts both out before we decide
+  // whether to convert.
+  if (!isSupportedImageType(working) || isHeic(working)) {
+    try {
+      const sniffed = await sniffImageMime(working);
+      if (sniffed && sniffed !== working.type) {
+        console.log('[FILE UPLOAD] Content sniffed as', sniffed, '(reported:', working.type || 'none', ')');
+        working = new File([working], working.name, { type: sniffed, lastModified: working.lastModified });
+      }
+    } catch (sniffErr) {
+      console.warn('[FILE UPLOAD] Could not sniff file header:', sniffErr);
+    }
+  }
+
   // Convert HEIC/HEIF (common on iPhones) to JPEG before processing
   if (isHeic(working)) {
     onBusy?.();
     try {
       console.log('[FILE UPLOAD] Converting HEIC to JPEG...');
-      working = await convertHeicToJpeg(working);
-      console.log('[FILE UPLOAD] HEIC conversion complete:', working.name, working.type);
+      working = await convertHeicToJpeg(working, (decoder, outcome, detail) =>
+        console.log(`[FILE UPLOAD] HEIC decoder ${decoder}: ${outcome}${detail ? ` (${detail})` : ''}`)
+      );
+      console.log('[FILE UPLOAD] HEIC conversion complete:', working.name, working.type, working.size);
     } catch (err) {
       console.error('[FILE UPLOAD] HEIC conversion failed:', err);
       return {
         ok: false,
         message:
-          'Your photo is in HEIC format, which is hard to convert on a phone. ' +
-          'Open the photo in your gallery, tap Share → Save as JPEG (or screenshot it), then upload the JPEG version.',
+          "We couldn't open this photo in your browser (it's an Apple HEIC file). " +
+          'Try choosing it again from your phone’s Photos app, which converts it automatically, or pick a different photo. ' +
+          'On iPhone, Settings → Camera → Formats → Most Compatible saves future photos as JPEG.',
       };
     }
   }

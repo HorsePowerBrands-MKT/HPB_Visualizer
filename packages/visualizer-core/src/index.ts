@@ -21,5 +21,7 @@ export {
 export {
   isHeic,
   isSupportedImageType,
-  convertHeicToJpeg
+  sniffImageMime,
+  convertHeicToJpeg,
+  HeicConversionError,
 } from './utils/heicConvert';
