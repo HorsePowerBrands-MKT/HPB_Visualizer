@@ -12,9 +12,16 @@ import {
   placementWallCount,
   isPlacementPathComplete,
   MIN_SEGMENT_LENGTH,
-  PLACEMENT_LINE_COLOR,
-  PLACEMENT_LINE_OUTLINE,
 } from '../../../lib/room-enclosure';
+
+// On-screen path the customer draws: brand light gold (`brand-gold` #e4bf6e),
+// not `brand-primary`. A dark halo keeps it readable on light floors and tile.
+// This is display-only: the copy burned into the reference image sent to the
+// model stays magenta (PLACEMENT_LINE_COLOR in placementImage.ts), because the
+// prompts describe a magenta path and gold would read as a brass/gold finish.
+const DISPLAY_LINE_COLOR = '#e4bf6e';
+const DISPLAY_LINE_HALO = '#0a0a0a';
+const DISPLAY_LINE_HALO_OPACITY = 0.55;
 
 interface PlacementLineOverlayProps {
   /** The preview shown underneath (used only to learn the image's natural size). */
@@ -192,7 +199,8 @@ export const PlacementLineOverlay: React.FC<PlacementLineOverlayProps> = ({
               <polyline
                 points={shownPoints.map((p) => `${p.x * rect.width},${p.y * rect.height}`).join(' ')}
                 fill="none"
-                stroke={PLACEMENT_LINE_OUTLINE}
+                stroke={DISPLAY_LINE_HALO}
+                strokeOpacity={DISPLAY_LINE_HALO_OPACITY}
                 strokeWidth={8}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -200,7 +208,7 @@ export const PlacementLineOverlay: React.FC<PlacementLineOverlayProps> = ({
               <polyline
                 points={shownPoints.map((p) => `${p.x * rect.width},${p.y * rect.height}`).join(' ')}
                 fill="none"
-                stroke={PLACEMENT_LINE_COLOR}
+                stroke={DISPLAY_LINE_COLOR}
                 strokeWidth={4}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -214,8 +222,9 @@ export const PlacementLineOverlay: React.FC<PlacementLineOverlayProps> = ({
               cx={p.x * rect.width}
               cy={p.y * rect.height}
               r={7}
-              fill={PLACEMENT_LINE_COLOR}
-              stroke={PLACEMENT_LINE_OUTLINE}
+              fill={DISPLAY_LINE_COLOR}
+              stroke={DISPLAY_LINE_HALO}
+              strokeOpacity={DISPLAY_LINE_HALO_OPACITY}
               strokeWidth={2}
               data-testid="placement-point"
             />
@@ -228,7 +237,7 @@ export const PlacementLineOverlay: React.FC<PlacementLineOverlayProps> = ({
           <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/75 border border-brand-gold/60 text-brand-gold text-xs md:text-sm font-medium text-center">
             <span
               className="inline-block w-5 h-0.5 rounded-full"
-              style={{ background: PLACEMENT_LINE_COLOR, boxShadow: `0 0 0 1px ${PLACEMENT_LINE_OUTLINE}` }}
+              style={{ background: DISPLAY_LINE_COLOR }}
               aria-hidden="true"
             />
             {hintText}

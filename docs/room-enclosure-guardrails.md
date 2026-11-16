@@ -97,6 +97,8 @@ by tapping the corners on their photo.
   optional, and a half-drawn path (one corner) never counts
   (`isPlacementPathComplete`). Segments shorter than 3% of the image are
   ignored; "Undo corner" and "Clear" edit it; a new photo resets it.
+  On screen the path is brand light gold (`#e4bf6e`, dark halo); that color
+  is display-only and never reaches the model.
 - **Transport** — at generate time `renderPlacementReferenceImage` burns the
   path in bright magenta (white outline, a dot at every corner) onto a copy
   of the photo downscaled to 1280px and sends it as `placementImage`. The
