@@ -37,14 +37,15 @@ import {
 } from 'lucide-react';
 
 // Custom Icons (using HubSpot CDN)
-const GOLD_FILTER = "invert(53%) sepia(28%) saturate(1171%) hue-rotate(7deg) brightness(94%) contrast(92%)";
+import { BRAND_LINE_ART_GOLD_FILTER } from '../lib/brandLineArt';
+import { formatShowerSummary } from '../lib/formatShowerSummary';
 
 const IconHinged = ({ className }: { className?: string }) => (
   <img 
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Hinged.svg" 
     alt="Hinged" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -53,7 +54,7 @@ const IconPivot = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Pivot.svg" 
     alt="Pivot" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -62,7 +63,7 @@ const IconSliding = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Sliding.svg" 
     alt="Sliding" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -71,7 +72,7 @@ const IconHandleLadder = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Ladder.svg" 
     alt="Ladder Pull" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -80,7 +81,7 @@ const IconHandleSquare = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Square.svg" 
     alt="Square Pull" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -89,7 +90,7 @@ const IconHandleCrescent = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Crescent.svg" 
     alt="Crescent Pull" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -98,7 +99,7 @@ const IconHandleKnob = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Knob.svg" 
     alt="Knob" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -652,6 +653,16 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
     (form.mode === 'configure' && currentStep === 5) ||
     (form.mode === 'inspiration' && currentStep === 3);
 
+  const showerLeadSelections = {
+    mode: form.mode,
+    enclosure_type: form.enclosure_type,
+    track_preference: form.track_preference,
+    hardware_finish: form.hardware_finish,
+    handle_style: form.handle_style,
+    shower_shape: form.shower_shape,
+  };
+  const showerProductSummary = formatShowerSummary(showerLeadSelections);
+
   return (
     <div className="mx-auto">
       {/* Full-screen generation loading overlay */}
@@ -725,7 +736,11 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
                   // against the saved history (the data URL never matches).
                   resultUrl: resultStorageUrl || resultUrl || '',
                   uploadedImage: previewUrl || '',
-                  configs: form
+                  configs: {
+                    ...form,
+                    product: 'shower' as const,
+                    productSummary: showerProductSummary,
+                  },
                 }
           }
           mode={contactModalMode}
@@ -739,6 +754,9 @@ export const GatsbyGlassVisualizer: React.FC<GatsbyGlassVisualizerProps> = ({
       <LeadCapturePopup
         isOpen={leadPopupOpen}
         defaultProduct="shower"
+        productSummary={showerProductSummary}
+        showerSelections={showerLeadSelections}
+        sessionId={form.session_id || undefined}
         userFingerprint={userFingerprint ?? undefined}
         onSubmitted={() => {
           setLeadPopupOpen(false);
