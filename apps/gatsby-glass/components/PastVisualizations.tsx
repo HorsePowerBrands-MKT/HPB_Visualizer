@@ -2,7 +2,17 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Clock, ChevronDown, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
-import type { LeadProduct, LeadProductConfig, Payload } from '@repo/types';
+import type {
+  EnclosureType,
+  HandleStyle,
+  HardwareFinish,
+  LeadProduct,
+  LeadProductConfig,
+  Payload,
+  ShowerShape,
+  TrackPreference,
+} from '@repo/types';
+import { formatShowerSummary } from '../lib/formatShowerSummary';
 import {
   formatRailingSummary,
   railingApplications,
@@ -115,14 +125,29 @@ export function pastItemToLeadConfigs(
       mode: (cfg.mode === 'inspiration' ? 'inspiration' : 'configure') as Payload['mode'],
     };
   }
+  const showerSelections = {
+    mode: (item.mode === 'inspiration' ? 'inspiration' : 'configure') as Payload['mode'],
+    enclosure_type: (item.enclosure_type as EnclosureType | null) ?? undefined,
+    track_preference: (item.framing_style as TrackPreference | null) ?? undefined,
+    hardware_finish: (item.hardware_finish as HardwareFinish | null) ?? undefined,
+    handle_style: (item.handle_style as HandleStyle | null) ?? undefined,
+    shower_shape: (item.shower_shape as ShowerShape | null) ?? undefined,
+  };
+
   return {
+    product: 'shower',
+    productSummary: formatShowerSummary(showerSelections),
     mode: item.mode ?? undefined,
     enclosure_type: item.enclosure_type ?? undefined,
     glass_style: item.framing_style ?? undefined,
     hardware_finish: item.hardware_finish ?? undefined,
     handle_style: item.handle_style ?? undefined,
     shower_shape: item.shower_shape ?? undefined,
-  } as Partial<Payload>;
+    track_preference: item.framing_style ?? undefined,
+  } as Partial<Payload> & {
+    product?: 'shower';
+    productSummary?: string;
+  };
 }
 
 interface PastVisualizationsProps {

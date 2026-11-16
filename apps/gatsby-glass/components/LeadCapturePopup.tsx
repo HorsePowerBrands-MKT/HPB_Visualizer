@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Loader2, Check, AlertCircle } from 'lucide-react';
 import type { LeadProductConfig } from '@repo/types';
+import type { ShowerLeadSelection } from '../lib/formatShowerSummary';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
@@ -33,9 +34,12 @@ interface LeadCapturePopupProps {
    * the lead's product, source and the CRM lead type (POP vs POP-R, ...).
    */
   defaultProduct: PopupProduct;
-  /** Non-shower context forwarded when the consumer keeps the module's product. */
+  /** Human-readable selections for the active product module. */
   productSummary?: string;
+  /** Railing-only structured context when the consumer keeps "Glass Railing". */
   productConfig?: LeadProductConfig;
+  /** Shower / room-enclosure selections when the consumer keeps "Shower Door". */
+  showerSelections?: ShowerLeadSelection;
   sessionId?: string;
 }
 
@@ -66,6 +70,7 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
   defaultProduct,
   productSummary,
   productConfig,
+  showerSelections,
   sessionId,
 }) => {
   const { openPrivacyPolicy } = useLegalModal();
@@ -141,10 +146,22 @@ export const LeadCapturePopup: React.FC<LeadCapturePopupProps> = ({
           zipCode: formData.zipCode.replace(/[^\d-]/g, ''),
           product,
           source: LEAD_SOURCE_BY_PRODUCT[product],
-          // Railing / enclosure selections only travel when the consumer
-          // keeps the product the popup fired in; switching products drops them.
+          // Module-specific selections only travel when the consumer keeps the
+          // product the popup fired in; switching products drops them.
           ...(product !== 'shower' && product === defaultProduct
             ? { productSummary, productConfig, sessionId }
+            : {}),
+          ...(product === 'shower' && product === defaultProduct
+            ? {
+                productSummary,
+                sessionId,
+                mode: showerSelections?.mode,
+                doorType: showerSelections?.enclosure_type,
+                trackPreference: showerSelections?.track_preference,
+                hardware: showerSelections?.hardware_finish,
+                handleStyle: showerSelections?.handle_style,
+                showerShape: showerSelections?.shower_shape,
+              }
             : {}),
           leadType: 'POP',
           tcpaConsent: tcpaRequired ? tcpaConsent : undefined,

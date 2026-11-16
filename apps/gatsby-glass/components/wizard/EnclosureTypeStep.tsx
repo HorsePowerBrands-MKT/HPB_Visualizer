@@ -3,15 +3,14 @@
 import React from 'react';
 import { Info } from 'lucide-react';
 import type { EnclosureType, HingedConfig, PivotConfig, SlidingConfig, DoorDirection, SlidingDirection, SlidingConfiguration } from '@repo/types';
-
-const GOLD_FILTER = "invert(53%) sepia(28%) saturate(1171%) hue-rotate(7deg) brightness(94%) contrast(92%)";
+import { BRAND_LINE_ART_GOLD_FILTER } from '../../lib/brandLineArt';
 
 const IconHinged = ({ className }: { className?: string }) => (
   <img 
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Hinged.svg" 
     alt="Hinged" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -20,7 +19,7 @@ const IconPivot = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Pivot.svg" 
     alt="Pivot" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
@@ -29,7 +28,7 @@ const IconSliding = ({ className }: { className?: string }) => (
     src="https://22404821.fs1.hubspotusercontent-na1.net/hubfs/22404821/06-%20Gatsby%20Glass/App%20Icons/Sliding.svg" 
     alt="Sliding" 
     className={`${className} object-contain`} 
-    style={{ filter: GOLD_FILTER }}
+    style={{ filter: BRAND_LINE_ART_GOLD_FILTER }}
   />
 );
 
