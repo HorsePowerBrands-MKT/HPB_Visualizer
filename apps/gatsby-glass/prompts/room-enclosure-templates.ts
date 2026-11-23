@@ -39,7 +39,7 @@ export const ROOM_ENCLOSURE_VALIDATION_TEMPLATE_ID = 'room-enclosure-validation-
 
 const META = {
   createdAt: '2026-11-06T00:00:00.000Z',
-  updatedAt: '2026-11-06T00:00:00.000Z',
+  updatedAt: '2026-11-23T00:00:00.000Z',
   author: 'Gatsby Glass Team',
 };
 
@@ -49,7 +49,7 @@ const META = {
 
 export const roomEnclosureVisualizationTemplate: PromptTemplate = {
   id: ROOM_ENCLOSURE_VISUALIZATION_TEMPLATE_ID,
-  version: '1.1.0',
+  version: '1.3.0',
   name: 'Glass Room Enclosure Visualization Prompt',
   type: 'visualization',
   description:
@@ -193,6 +193,12 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
           content: [...APPLICATION_RULES.home_office],
         },
         {
+          id: 'dining_room',
+          type: 'instructions',
+          condition: { variable: 'application', operator: 'equals', value: 'dining_room' },
+          content: [...APPLICATION_RULES.dining_room],
+        },
+        {
           id: 'other_room',
           type: 'instructions',
           condition: { variable: 'application', operator: 'equals', value: 'other_room' },
@@ -211,6 +217,23 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
       type: 'instructions',
       condition: { variable: 'placement', operator: 'equals', value: 'drawn' },
       content: ['CUSTOMER PLACEMENT PATH (authoritative for location):', ...PLACEMENT_PATH_RULES, ''],
+    },
+    {
+      id: 'placement_corners',
+      type: 'instructions',
+      condition: {
+        operator: 'and',
+        conditions: [
+          { variable: 'placement', operator: 'equals', value: 'drawn' },
+          { variable: 'placement_corners', operator: 'exists' },
+        ],
+      },
+      content: [
+        'PLACEMENT PATH IN WORDS (the same path as the reference image, measured on input_1):',
+        '- {{placement_corners}}',
+        '- Place each glass bottom edge so it touches the floor at these positions in the output.',
+        '',
+      ],
     },
 
     // -----------------------------------------------------------------
@@ -244,6 +267,17 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
           ],
         },
         {
+          id: 'style_grid',
+          type: 'hardware_detail',
+          condition: { variable: 'style', operator: 'equals', value: 'grid' },
+          content: [
+            '- GRID (hard style lock): install {{style_descriptor}}.',
+            ...STYLE_RULES.grid.must,
+            ...STYLE_RULES.grid.forbidden,
+            ...STYLE_RULES.grid.proportions,
+          ],
+        },
+        {
           id: 'style_from_inspiration',
           type: 'hardware_detail',
           condition: {
@@ -255,7 +289,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
           },
           content: [
             ...INSPIRATION_STYLE_MAPPING,
-            '- Whichever style you choose, obey its proportions: frameless hardware is a slim channel about 1 inch tall at floor and ceiling; framed profiles are slim flat bars about 1 to 1.5 inches wide with mullions only at panel joints.',
+            '- Whichever style you choose, obey its proportions: frameless glass is held only by small square clamps about 2 inches across (never a channel); framed profiles are slim flat bars about 1 to 1.5 inches wide with a mullion at every panel joint and a fully framed door; grid uses the same slim frame plus flat bars dividing every panel and the door into the same regular grid of tall rectangular panes, with the horizontal bars level across the whole enclosure.',
           ],
         },
         { id: 'style_end', type: 'custom', content: [''] },
@@ -283,11 +317,17 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
           content: [...STYLE_RULES.framed.door],
         },
         {
+          id: 'door_grid',
+          type: 'hardware_detail',
+          condition: { variable: 'style', operator: 'equals', value: 'grid' },
+          content: [...STYLE_RULES.grid.door],
+        },
+        {
           id: 'door_from_inspiration',
           type: 'hardware_detail',
           condition: { variable: 'style', operator: 'not_exists' },
           content: [
-            '- Build the door to match the style you chose from input_2: a frameless glass door on compact pivot / wall-mount hinges with a tall pull handle, or a slim-framed glass door on hinges with a lever or pull handle. Hardware in the selected finish.',
+            '- Build the door to match the style you chose from input_2: a frameless glass door on compact pivot / wall-mount hinges with a tall pull handle, a slim-framed glass door on hinges with a lever or pull handle, or (grid) a framed door carrying the same grid as the panels. Hinges on one edge, handle on the other. Hardware in the selected finish.',
           ],
         },
         { id: 'door_end', type: 'custom', content: [''] },
@@ -343,14 +383,15 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
       content: [
         'REAL GATSBY GLASS INSTALL LOOK (modeled on actual glass partition installs):',
         '- Glass: full-height clear low-iron-look panels with polished edges, WIDE panels (about 3 to 5 feet) with as few vertical joints as the opening allows, uniform height, no tint or frost, the room behind fully visible.',
-        '- Frameless hardware: a slim channel about 1 inch tall at the floor and ceiling in the selected finish; hairline glass-to-glass joints; compact pivot / wall-mount hinges and a tall pull on the door.',
-        '- Framed hardware: slim flat metal profiles about 1 to 1.5 inches wide around every panel and the door, mullions only at panel joints, never a grid.',
-        '- Scale check: hardware is a small fraction of the glass height. Glass ~8 ft; channel ~1 in; frame profile ~1 to 1.5 in; handle ~12 to 24 in. The glass dominates the view; all hardware reads as fine detail.',
+        '- Frameless hardware: small square clamps (about 2 inches) in the selected finish, a few per edge at the floor, ceiling and walls — no channel or track on any edge; hairline glass-to-glass joints; two compact hinges or a pivot pair on one edge of the door and a tall pull on the other.',
+        '- Framed hardware: slim flat metal profiles about 1 to 1.5 inches wide around every panel and the door, a mullion at every panel joint, never a grid.',
+        '- Grid hardware: the same slim framed system plus flat grid bars of the same width dividing every panel and the door into tall rectangular panes about 1.5 to 2.5 feet wide, with every horizontal bar level across the whole enclosure.',
+        '- Scale check: hardware is a small fraction of the glass height. Glass ~8 ft; clamp ~2 in; frame profile and grid bar ~1 to 1.5 in; door ~36 in wide; handle ~12 to 24 in. The glass dominates the view; all hardware reads as fine detail.',
         '',
         ...UNSUPPORTED_TYPE_RULES,
         '',
         'RENDER QUALITY:',
-        '- Keep glass panels, joints, channels or frames, hinges and the handle visually consistent, evenly organized and realistic for the available geometry. Avoid random panel widths, unnecessary joints or mixed styles.',
+        '- Keep glass panels, joints, clamps or frames, hinges and the handle visually consistent, evenly organized and realistic for the available geometry. Avoid random panel widths, unnecessary joints or mixed styles.',
         '- Glass must be clearly VISIBLE: render edge highlights, subtle reflections, the hardware in the selected finish and the door. A render where the glass cannot be seen is a FAILED render.',
         "- Match input_1's lighting direction, color temperature, shadows, perspective and lens. The result must look like a professional installation photo of the SAME space.",
         '- This is a design visualization, not an engineered drawing. Keep heights, panel widths and door size plausible; exact engineering is confirmed later by the local Gatsby Glass team.',
@@ -358,14 +399,17 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
         'SELF-CHECK BEFORE OUTPUT:',
         '1. Is the output the same space as input_1 with the same viewpoint, crop and surroundings?',
         '2. Is the new glass enclosure clearly visible across the correct opening — full height, full width, tight to the floor, walls and ceiling — and nowhere else?',
-        '3. Is exactly ONE style used (slim FRAMED or FRAMELESS) on every panel and the door, with ONE finish on all hardware?',
+        '3. Is exactly ONE style used (slim FRAMED, FRAMELESS or GRID) on every panel and the door, with ONE finish on all hardware?',
         '4. Is there exactly one obvious swinging glass door with visible hinges and a handle at the natural entry (a pair only for a very wide opening)? No sliding, barn or folding door?',
+        '4b. Are ALL of the door hinges (or its pivots) on ONE vertical edge and the handle on the OPPOSITE edge, with no hinge, clamp or fitting on the handle edge? Is the door a full walk-through size (about 36 inches wide)? If not, redo.',
         '5. Did anything unrelated change (racks, bottles, furniture, flooring, stairs, lighting, walls)? If yes, redo.',
         '5b. Is every window, glass door, mirror, railing or piece of metalwork OTHER than the target enclosure identical to input_1? If any was recolored, reframed or removed, redo.',
         '5c. Under-stair: does the top edge of the glass follow the underside of the stair, with the stair itself untouched and no glass on the treads? If not, redo.',
-        '6. SCALE: is the hardware slim next to the glass — a channel about 1 inch tall, or frame profiles about 1 to 1.5 inches wide? If the hardware is thicker than two fingers, redo with slimmer hardware.',
-        '7. Does the render contain any NOT APPROVED element (divided-lite grid, heavy storefront, wood frame, barn-door track, tinted or frosted glass, half-height glass)? If yes, redo.',
-        '8. If a customer placement path was provided: does every segment have a full-height glass wall standing exactly on it, with the walls meeting at a glass corner where segments meet, no walls added or dropped, and is the magenta path itself completely absent from the output? If not, redo.',
+        '6. SCALE: is the hardware slim next to the glass — small clamps about 2 inches across (frameless), or frame profiles and grid bars about 1 to 1.5 inches wide (framed, grid)? If the hardware is thicker than two fingers, redo with slimmer hardware.',
+        '6b. Frameless: is there ANY continuous channel, track or metal strip along the floor, ceiling, walls or stair? If yes, remove it and hold the glass with clamps only. Is every transom above the door clamped too? Framed: is there a mullion at every panel joint and a frame around the door? Grid: does every panel AND the door carry the same grid, with the horizontal bars level across the whole enclosure and the room still visible through the panes? If not, redo.',
+        '7. Does the render contain any NOT APPROVED element (a grid on a Framed or Frameless enclosure, decorative or wood grilles, heavy storefront, wood frame, barn-door track, tinted or frosted glass, half-height glass)? If yes, redo.',
+        '8. If a customer placement path was provided: does every floor segment have a full-height glass wall standing exactly on it — touching the floor at the corner dots, not set back toward a window or wall — with the walls meeting at a glass corner where segments meet and no walls added or dropped? If not, redo.',
+        '9. Is there any magenta, pink or purple line, dot or outline anywhere in the output (on the floor, along the glass edges or along the stair)? If yes, remove it: the output must look like an untouched photo with only the glass enclosure added.',
       ],
     },
   ],
@@ -374,6 +418,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
     { name: 'existing_condition', type: 'string', required: true, default: 'none', description: 'From image validation' },
     { name: 'placement', type: 'string', required: true, default: 'inferred', description: 'drawn | inferred' },
     { name: 'placement_name', type: 'string', required: false, default: 'inferred from the opening in input_1' },
+    { name: 'placement_corners', type: 'string', required: false, description: 'Drawn corners in words (drawn only)' },
     { name: 'application', type: 'string', required: true },
     { name: 'application_name', type: 'string', required: true },
     { name: 'application_descriptor', type: 'string', required: true },
@@ -388,7 +433,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
     ...META,
     tags: ['room-enclosure', 'visualization', 'photorealistic'],
     notes:
-      'v1.1.0 — Customer placement path (magenta reference copy, one glass wall per segment) + open-floor condition. v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
+      'v1.3.0 — Grid style (slim frame + regular rectangular divided-lite grid, level across the enclosure) and Dining Room room type, per Gatsby leadership after QA round 1. Half-height partitions stay banned. v1.2.0 — QA round 1 (2026-11): frameless is clamp-mounted (no channel, transoms clamped), framed needs a mullion at every joint and a framed door, hinges on one door edge only, walk-through door size, exact drawn-corner placement (also sent as text), traced-outline paths, no magenta in the output. v1.1.0 — Customer placement path (magenta reference copy, one glass wall per segment) + open-floor condition. v1.0.0 — Initial room enclosure prompt (framed / frameless, shared metal finishes, wine room / under-stair / office / other placement).',
   },
 };
 
@@ -398,7 +443,7 @@ export const roomEnclosureVisualizationTemplate: PromptTemplate = {
 
 export const roomEnclosureSystemTemplate: PromptTemplate = {
   id: ROOM_ENCLOSURE_SYSTEM_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'System Prompt for Gemini (glass room enclosure)',
   type: 'system',
   description: 'System-level instructions for glass room enclosure renders.',
@@ -433,8 +478,8 @@ export const roomEnclosureSystemTemplate: PromptTemplate = {
         '',
         'D. NEW INSTALL — installing the enclosure is the entire purpose',
         '   1. The output MUST visibly contain the new glass enclosure and its door. Returning the input unchanged, or an image where no glass, door or hardware can be seen, is a FAILURE.',
-        '   2. Use exactly ONE approved style for all panels and the door (slim FRAMED or FRAMELESS) and ONE hardware finish.',
-        '   3. Glass is clear, full height and evenly organized with consistent panel widths. No divided-lite grids, heavy storefront framing, wood frames, barn-door tracks, tinted or frosted glass, or half-height partitions.',
+        '   2. Use exactly ONE approved style for all panels and the door (slim FRAMED, FRAMELESS or GRID) and ONE hardware finish.',
+        '   3. Glass is clear, full height and evenly organized with consistent panel widths. A grid of panes appears ONLY when the specification selects the GRID style. No heavy storefront framing, wood frames or grilles, barn-door tracks, tinted or frosted glass, or half-height partitions.',
         '   4. Every render includes one swinging glass door (hinged or pivot) with visible hinges and a handle.',
         '',
         'E. PHOTOREALISM',
@@ -447,7 +492,7 @@ export const roomEnclosureSystemTemplate: PromptTemplate = {
     },
   ],
   variables: [],
-  metadata: { ...META, tags: ['room-enclosure', 'system', 'gemini'], notes: 'v1.0.0 — Initial room enclosure system prompt.' },
+  metadata: { ...META, tags: ['room-enclosure', 'system', 'gemini'], notes: 'v1.1.0 — Grid is an approved style. v1.0.0 — Initial room enclosure system prompt.' },
 };
 
 // ---------------------------------------------------------------------------
@@ -456,7 +501,7 @@ export const roomEnclosureSystemTemplate: PromptTemplate = {
 
 export const roomEnclosureValidationTemplate: PromptTemplate = {
   id: ROOM_ENCLOSURE_VALIDATION_TEMPLATE_ID,
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'Room Enclosure Image Validation Prompt',
   type: 'validation',
   description:
@@ -480,6 +525,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         '- A wine room, wine cellar, wine wall, wine display or tasting area (with or without an existing door or glass)',
         '- The open space beneath a staircase (a nook, cavity or closet under the stairs)',
         '- A home office, study, den, library or reading nook, open to or separated from an adjoining room',
+        '- A dining room or dining area, open to or separated from an adjoining room',
         '- Any interior room, alcove, lounge, gym, pantry, closet, display space or doorway where a glass wall and door could be installed',
         '- Any ordinary interior room (living room, great room, basement, dining area, bedroom) where part of the space could be partitioned off with new glass walls to create a wine room, office or display room — there does NOT need to be an existing opening, nook, door or glass to replace',
         '- A wine rack, desk, bar or display area sitting in open floor space with no walls around it (the customer will draw where the glass goes)',
@@ -511,6 +557,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
         "- 'wine_room': wine racks, bottles, a wine cellar or wine display are the main subject",
         "- 'under_stair': the space beneath a staircase is the main subject",
         "- 'home_office': a desk, workstation, study or library is the main subject",
+        "- 'dining_room': a dining table with chairs (a dining room or dining area) is the main subject",
         "- 'other_room': another interior room, alcove, lounge, gym, pantry, closet or display space",
         "- 'unknown': cannot tell",
         'If the photo shows wine racks under a staircase, prefer under_stair.',
@@ -529,7 +576,7 @@ export const roomEnclosureValidationTemplate: PromptTemplate = {
     },
   ],
   variables: [],
-  metadata: { ...META, tags: ['room-enclosure', 'validation', 'image-analysis'], notes: 'v1.0.0 — Initial room enclosure validation prompt.' },
+  metadata: { ...META, tags: ['room-enclosure', 'validation', 'image-analysis'], notes: 'v1.1.0 — Detects dining rooms. v1.0.0 — Initial room enclosure validation prompt.' },
 };
 
 // ---------------------------------------------------------------------------

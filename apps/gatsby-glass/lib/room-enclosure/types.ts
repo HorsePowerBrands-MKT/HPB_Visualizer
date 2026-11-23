@@ -5,8 +5,8 @@
  * rooms, under-stair wine displays, home offices, cigar lounges and other
  * interior glass rooms). The wizard collects a design mode, the room type
  * (auto-detected from the photo and correctable), the enclosure style
- * (framed or frameless) and the hardware finish. Door hardware, glass
- * thickness, channel sizing and other installation details are NOT part of
+ * (framed, frameless or grid) and the hardware finish. Door hardware, glass
+ * thickness, clamp spacing and other installation details are NOT part of
  * this payload; they belong to the hidden backend prompt logic.
  */
 
@@ -24,17 +24,19 @@ export type RoomEnclosureApplication =
   | 'wine_room'
   | 'under_stair'
   | 'home_office'
+  | 'dining_room'
   | 'other_room';
 
 /**
- * The two enclosure families Gatsby Glass offers: a classic framed system
- * or a frameless glass wall and door.
+ * The three enclosure families Gatsby Glass offers: a classic framed system,
+ * a frameless glass wall and door, or a grid (divided-lite, steel-window
+ * look) framed system.
  */
-export type RoomEnclosureStyle = 'framed' | 'frameless';
+export type RoomEnclosureStyle = 'framed' | 'frameless' | 'grid';
 
 /**
- * Metal finish for the frame (framed) or the channels, clamps and hinges
- * (frameless), plus the door handle. Shared with the Glass Railing module
+ * Metal finish for the frame (framed), the frame and grid bars (grid) or the
+ * clamps and hinges (frameless), plus the door handle. Shared with the Glass Railing module
  * (see `lib/metal-finishes.ts`).
  */
 export type RoomEnclosureFinish = MetalFinish;
@@ -125,6 +127,11 @@ export interface RoomEnclosurePromptInput {
   mode: RoomEnclosureMode;
   existing_condition: RoomEnclosureExistingCondition;
   placement: RoomEnclosurePlacement;
+  /**
+   * The drawn corners in words (see `describePlacementCorners`). Set only
+   * when `placement` is 'drawn'; the reference image carries the same path.
+   */
+  placement_corners?: string;
   application: RoomEnclosurePromptSelection<RoomEnclosureApplication>;
   style: RoomEnclosurePromptSelection<RoomEnclosureStyle> | null;
   finish: RoomEnclosurePromptSelection<RoomEnclosureFinish> | null;

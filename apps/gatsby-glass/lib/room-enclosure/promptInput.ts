@@ -8,6 +8,7 @@ import type {
   RoomEnclosurePayload,
   RoomEnclosurePromptInput,
   RoomEnclosurePromptSelection,
+  RoomEnclosurePlacementPath,
 } from './types';
 import {
   roomEnclosureApplications,
@@ -15,7 +16,11 @@ import {
   roomEnclosureFinishes,
   ROOM_ENCLOSURE_CATALOG_VERSION,
 } from './catalog';
-import { assertRoomEnclosureSelectionsRenderable, requiresPlacementPath } from './rules';
+import {
+  assertRoomEnclosureSelectionsRenderable,
+  requiresPlacementPath,
+  describePlacementCorners,
+} from './rules';
 import { isPlacementPathComplete } from './placementImage';
 
 /**
@@ -76,10 +81,15 @@ const select = <T extends string>(
  * blocked before prompt assembly.
  */
 export const buildRoomEnclosurePromptInput = (
-  payload: RoomEnclosurePayload
+  payload: RoomEnclosurePayload,
+  placementPath: RoomEnclosurePlacementPath | null = null
 ): RoomEnclosurePromptInput => {
   assertRoomEnclosureSelectionsRenderable(payload);
   const application = roomEnclosureApplications[payload.application];
+  const placementCorners =
+    payload.placement === 'drawn' && isPlacementPathComplete(placementPath)
+      ? describePlacementCorners(placementPath?.points)
+      : '';
 
   return {
     product: 'room_enclosure',
@@ -88,6 +98,7 @@ export const buildRoomEnclosurePromptInput = (
     mode: payload.mode,
     existing_condition: payload.existing_condition,
     placement: payload.placement,
+    ...(placementCorners ? { placement_corners: placementCorners } : {}),
     application: {
       id: payload.application,
       name: application.name,

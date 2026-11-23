@@ -52,6 +52,7 @@ export type RoomEnclosureDetectedApplication =
   | 'wine_room'
   | 'under_stair'
   | 'home_office'
+  | 'dining_room'
   | 'other_room'
   | 'unknown';
 

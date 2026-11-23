@@ -87,7 +87,7 @@ export const RoomEnclosureStyleStep: React.FC<RoomEnclosureStyleStepProps> = ({
       <div className="text-center space-y-2">
         <h2 className="text-2xl md:text-3xl font-bold text-brand-gold">Enclosure Style &amp; Finish</h2>
         <p className="text-gray-400 text-base md:text-lg">
-          Choose a framed or frameless enclosure and your hardware finish
+          Choose a framed, frameless or grid enclosure and your hardware finish
         </p>
       </div>
 

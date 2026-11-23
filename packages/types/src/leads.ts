@@ -23,7 +23,7 @@ export interface LeadProductConfig {
   application?: string | null;
   railing_system?: string | null;
   handrail?: string | null;
-  /** Room enclosure: 'framed' | 'frameless'. */
+  /** Room enclosure: 'framed' | 'frameless' | 'grid'. */
   style?: string | null;
   finish?: string | null;
   existing_condition?: string | null;

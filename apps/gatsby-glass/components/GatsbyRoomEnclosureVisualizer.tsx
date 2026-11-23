@@ -88,7 +88,16 @@ const FROM_PHOTO = '__from_photo__';
 const SPACE_PHOTO_HINT =
   'Take a clear photo of the wine room, under-stair space, office, or room you want to enclose';
 
-const PLACEMENT_HINT = 'Tap the corners where the glass walls go (or drag for a single wall)';
+const PLACEMENT_HINT = 'Tap the corners on the floor where the glass walls go (or drag for a single wall)';
+
+/** "We detected ___ in your photo." Spelled out per room type so the article reads right. */
+const DETECTED_ROOM_PHRASE: Record<RoomEnclosureApplication, string> = {
+  wine_room: 'a wine room',
+  under_stair: 'an under-stair nook',
+  home_office: 'a home office',
+  dining_room: 'a dining room',
+  other_room: 'a room you can enclose',
+};
 
 /**
  * Room Enclosure Module wizard. Collects a design mode, the space photo
@@ -313,6 +322,8 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
             style: currentPayload.style,
             finish: currentPayload.finish,
             existing_condition: currentPayload.existing_condition,
+            // 'drawn' | 'inferred' only; the corner coordinates are never stored.
+            placement: currentPayload.placement,
             catalog_version: currentPayload.catalog_version,
           },
         },
@@ -470,12 +481,12 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
   const pathComplete = isPlacementPathComplete(form.placement_path);
   const wallCount = placementWallCount(form.placement_path);
   const placementText = pathComplete
-    ? `The glass will stand along the ${wallCount === 1 ? 'wall' : `${wallCount} walls`} you drew. Tap to add another corner, or clear it to start over.`
+    ? `The glass will stand along the ${wallCount === 1 ? 'wall' : `${wallCount} walls`} you drew. Tap to add another corner, use Undo corner to take back the last one, or Clear to start over.`
     : form.placement_path
       ? 'Tap the next corner on your photo to finish the first glass wall.'
       : needsPlacementPath
-        ? "We couldn't find a natural opening to fill, so tap the corners on your photo where the glass walls should stand (two taps for one wall, three for an L-shaped room)."
-        : 'Want the glass somewhere specific? Tap the corners on your photo where the glass walls should stand.';
+        ? "We couldn't find a natural opening to fill, so tap the corners on the floor in your photo where the glass walls should stand (two taps for one wall, three for an L-shaped room)."
+        : 'Want the glass somewhere specific? Tap the corners on the floor in your photo where the glass walls should stand.';
   const applicationBanner =
     previewUrl && form.application ? (
       <div className="mt-4 p-4 bg-brand-gold/10 border border-brand-gold/30 space-y-3 animate-in fade-in">
@@ -483,7 +494,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <span>
             {form.application_detected
-              ? `We detected a ${roomEnclosureApplications[form.application].name.toLowerCase()} in your photo.`
+              ? `We detected ${DETECTED_ROOM_PHRASE[form.application]} in your photo.`
               : `We couldn't tell exactly what this space is for, so we'll treat it as a general room.`}{' '}
             {placementText} Not the right room type? Pick a different one below.
           </span>
@@ -547,7 +558,7 @@ export const GatsbyRoomEnclosureVisualizer: React.FC<GatsbyRoomEnclosureVisualiz
             onModeSelect={(mode: RoomEnclosureMode) => updateFormField('mode', mode)}
             onNext={goToNextStep}
             subtitle="How would you like to design your glass room enclosure?"
-            configureDescription="Pick a framed or frameless enclosure and your hardware finish"
+            configureDescription="Pick a framed, frameless or grid enclosure and your hardware finish"
             inspirationDescription="Upload a photo of a glass room or wine enclosure you love and we'll match the style to your space"
           />
         );

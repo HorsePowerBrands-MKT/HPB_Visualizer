@@ -20,6 +20,7 @@ import {
   RoomEnclosureRuleViolationError,
   UNSUPPORTED_ENCLOSURE_TYPES,
   PLACEMENT_REFERENCE_DESCRIPTION,
+  describePlacementCorners,
   ROOM_ENCLOSURE_FINISH_ORDER,
   roomEnclosureFinishes,
   roomEnclosureFinishSwatches,
@@ -47,6 +48,11 @@ const base: RoomEnclosureForm = {
 /** An L-shaped room: two glass walls meeting at a corner. */
 const LINE = { points: [{ x: 0.1, y: 0.8 }, { x: 0.6, y: 0.78 }, { x: 0.6, y: 0.4 }] };
 const prompt = (form: RoomEnclosureForm) =>
+  buildRoomEnclosurePrompt(
+    buildRoomEnclosurePromptInput(buildRoomEnclosurePayload(form, 'check')!, form.placement_path)
+  );
+/** Same, without passing the drawn path through (older callers). */
+const prompt2 = (form: RoomEnclosureForm) =>
   buildRoomEnclosurePrompt(buildRoomEnclosurePromptInput(buildRoomEnclosurePayload(form, 'check')!));
 
 // --- Finishes are the railing finishes ---------------------------------------
@@ -68,9 +74,12 @@ check('finishes: five approved finishes', ROOM_ENCLOSURE_FINISH_ORDER.length ===
 // --- Frameless behavior -------------------------------------------------------
 const fl = prompt(base);
 check('frameless: hard style lock rendered', fl.includes('FRAMELESS (hard style lock)'));
-check('frameless: held only by a slim channel', fl.includes('held ONLY by a slim low-profile channel'));
+check('frameless: held only by small square clamps', fl.includes('held ONLY by small square clamps (clips)'));
+check('frameless: no channel on any edge (hard lock)', fl.includes('HARD LOCK: NO channel') && fl.includes('6b. Frameless: is there ANY continuous channel'));
+check('frameless: transom above the door is clamped', fl.includes('TRANSOM: where a fixed glass panel sits above the door') && fl.includes('A transom is never left floating'));
+check('frameless: no slim-channel wording left', !fl.includes('U-channel') && !fl.includes('slim channel'));
 check('frameless: posts / mullions / frames forbidden', fl.includes('if ANY vertical post, mullion, frame profile'));
-check('frameless: channel proportions (~1 in)', fl.includes('CHANNEL: a slim U-channel about 1 inch tall'));
+check('frameless: clamp proportions (~2 in)', fl.includes('CLAMPS: compact square clamps about 2 inches across'));
 check('frameless: no framed section rendered', !fl.includes('FRAMED (hard style lock)'));
 check('frameless: frameless door hardware', fl.includes('DOOR (frameless)') && fl.includes('tall vertical pull handle'));
 check('frameless: no framed door section', !fl.includes('DOOR (framed)'));
@@ -80,16 +89,52 @@ const fr = prompt({ ...base, style: 'framed' });
 check('framed: hard style lock rendered', fr.includes('FRAMED (hard style lock)'));
 check('framed: perimeter frame + mullions', fr.includes('one continuous perimeter frame') && fr.includes('thin vertical mullions'));
 check('framed: missing frame / storefront / grid forbidden', fr.includes('if a glass edge is left without its frame'));
+check('framed: mullion at every joint, framed door', fr.includes('A vertical mullion stands at EVERY joint') && fr.includes('frame on all four sides'));
+check('framed: outline-only / glass-to-glass reads as frameless and fails', fr.includes('the render reads as frameless and FAILS'));
+check('framed: transom gets a head member', fr.includes('a horizontal frame member runs across the head of the door'));
 check('framed: profile proportions (1–1.5 in)', fr.includes('about 1 to 1.5 inches wide'));
 check('framed: mullions only at panel joints, never a grid', fr.includes('MULLIONS: ONLY at panel joints') && fr.includes('Never a grid of small panes'));
 check('framed: no frameless section rendered', !fr.includes('FRAMELESS (hard style lock)'));
 check('framed: framed door hardware', fr.includes('DOOR (framed)') && !fr.includes('DOOR (frameless)'));
+
+// --- Grid behavior -------------------------------------------------------------
+const gr = prompt({ ...base, style: 'grid' });
+check('grid: hard style lock rendered', gr.includes('GRID (hard style lock)') && gr.includes('steel-window / divided-lite look'));
+check('grid: one grid, bars level across panels and door', gr.includes('ONE GRID across the whole enclosure') && gr.includes('each horizontal grid line runs straight and level'));
+check('grid: missing / mismatched grid fails', gr.includes('if any panel or the door is missing its grid'));
+check('grid: rectangles only, no decorative / wood grilles', gr.includes('Diamond, arched, curved or colonial patterns'));
+check('grid: bar and pane proportions', gr.includes('about 1 to 1.5 inches wide, uniform everywhere (perimeter, mullions and grid bars)') && gr.includes('PANES: each pane about 1.5 to 2.5 feet wide'));
+check('grid: grid door, hinges one stile, handle the other', gr.includes('DOOR (grid)') && gr.includes('carrying the same grid as the fixed panels'));
+check('grid: no framed / frameless sections rendered', !gr.includes('FRAMED (hard style lock)') && !gr.includes('FRAMELESS (hard style lock)') && !gr.includes('DOOR (framed)') && !gr.includes('DOOR (frameless)'));
+check('grid: not on the unsupported list for this style', !gr.includes('divided-lite or grid-style glass: French doors'));
+check('grid: self-check covers the grid', gr.includes('Grid: does every panel AND the door carry the same grid'));
+check('grid: spec + summary name the style', gr.includes('enclosure_style: Grid') && formatRoomEnclosureSummary({ ...base, style: 'grid' }) === 'Wine Room • Grid • Matte Black');
+check('framed / frameless: a grid only when Grid is selected', fl.includes('a grid of panes on a Framed or Frameless enclosure') && fr.includes('(that is the separate Grid style)'));
+const sysGrid = buildRoomEnclosureSystemPrompt();
+check('system prompt: grid approved, only when selected', sysGrid.includes('slim FRAMED, FRAMELESS or GRID') && sysGrid.includes('A grid of panes appears ONLY when the specification selects the GRID style'));
+check('validation: grid accepted', validateRoomEnclosureSelections({ ...buildRoomEnclosurePayload({ ...base, style: 'grid' }, 'g')! }).length === 0);
+
+// --- Dining room ----------------------------------------------------------------
+const dr = prompt({ ...base, application: 'dining_room' });
+check('dining room: placement rule rendered', dr.includes('DINING ROOM:') && dr.includes('The table, chairs, sideboard, rug and light fixture stay inside'));
+check('dining room: glass never through the furniture', dr.includes('The glass never runs through or in front of the table, chairs or sideboard'));
+check('dining room: spec names the room', dr.includes('room_type: Dining Room'));
+check('dining room: other room types not rendered', !dr.includes('WINE ROOM:') && !dr.includes('ROOM / ALCOVE:'));
+check('validation: dining room accepted', validateRoomEnclosureSelections({ ...buildRoomEnclosurePayload({ ...base, application: 'dining_room' }, 'd')! }).length === 0);
+check('validation prompt: detects dining rooms', getRoomEnclosureValidationPrompt().includes("'dining_room': a dining table with chairs"));
+
+// --- Half-height stays banned ---------------------------------------------------
+check('half-height: still on the unsupported list for every style', [fl, fr, gr].every((p) => p.includes('half-height, pony-wall or counter-height glass partitions')));
+check('half-height: full height required', gr.includes('HEIGHT: full height') && gr.includes('Never a half-height'));
 
 // --- Door on every render -----------------------------------------------------
 const DOOR = 'Include EXACTLY ONE operable glass door';
 check('door: mandatory section', fl.includes('DOOR (mandatory for every render)') && fl.includes(DOOR));
 check('door: swinging only, never sliding / barn', fl.includes('Never a sliding, bypass, barn, pocket, folding or accordion door'));
 check('self-check: door item', fl.includes('4. Is there exactly one obvious swinging glass door'));
+check('door: hinges on one edge, handle on the other', fl.includes('HINGE SIDE vs HANDLE SIDE') && fl.includes('Nothing else is on the latch edge') && fr.includes('HINGE SIDE vs HANDLE SIDE'));
+check('door: walk-through size, ~36 in', fl.includes('DOOR SIZE: a real walk-through door about 36 inches wide'));
+check('self-check: hinge side + door size item', fl.includes('4b. Are ALL of the door hinges'));
 
 // --- Glass: full height, full width -------------------------------------------
 check('glass: clear, no tint / frost', fl.includes('No tint, smoke, frost, reeding, pattern or mirror'));
@@ -151,7 +196,9 @@ for (const t of UNSUPPORTED_ENCLOSURE_TYPES) {
 const insp = prompt({ ...base, mode: 'inspiration', style: null, finish: null });
 check('inspiration: style donor only', insp.includes('input_2 controls STYLE only'));
 check('inspiration: style mapped to framed / frameless', insp.includes('Read the enclosure in input_2 and map it to exactly ONE approved style'));
-check('inspiration: grid / French door maps to slim framed, no grid', insp.includes('FRAMED with slim profiles and NO grid of small panes'));
+check('inspiration: grid / steel-window / French-door look maps to Grid', insp.includes('steel-window or French-door look (bars dividing each panel into several panes) → GRID'));
+check('inspiration: storefront still maps to slim framed, no grid', insp.includes('heavy commercial storefront look → FRAMED with slim profiles and NO grid of small panes'));
+check('inspiration: unsupported types map to the grid style by name', insp.includes('render as the Grid style'));
 check('inspiration: unsupported types mapped', insp.includes('Never copy an unsupported enclosure type from input_2') && insp.includes('render as'));
 check('inspiration: unsupported list still present', insp.includes('NOT APPROVED (never render these'));
 check('inspiration: silver / nickel maps to brushed stainless', insp.includes('silver, grey, nickel, chrome, satin, brushed') && insp.includes('BRUSHED (satin) STAINLESS STEEL'));
@@ -190,14 +237,20 @@ check('validation prompt: detects existing condition + room type', val.includes(
 check('validation prompt: rejects bathrooms and outdoor-only scenes', val.includes('A bathroom, shower, or tub') && val.includes('Purely an outdoor scene'));
 check('summary: configure', formatRoomEnclosureSummary(base) === 'Wine Room • Frameless • Matte Black');
 check('summary: inspiration without overrides', formatRoomEnclosureSummary({ mode: 'inspiration', application: 'under_stair' }) === 'Under-Stair Nook • Inspiration');
-check('template: visualization version 1.1.0', roomEnclosureVisualizationTemplate.version === '1.1.0');
+check('template: visualization version 1.3.0', roomEnclosureVisualizationTemplate.version === '1.3.0');
 
 // --- Customer placement path ---------------------------------------------------
 const drawn = prompt({ ...base, placement_path: LINE });
 check('placement: drawn path renders the placement section', drawn.includes('CUSTOMER PLACEMENT PATH (authoritative for location):') && drawn.includes('BRIGHT MAGENTA PATH'));
 check('placement: one glass wall per segment, corners where segments meet', drawn.includes('Each segment is ONE straight full-height glass wall') && drawn.includes('the glass walls meet at a corner'));
 check('placement: path overrides the inferred opening, no walls added or dropped', drawn.includes('The path overrides any opening you would otherwise infer') && drawn.includes('do not add walls the path does not show'));
-check('placement: magenta path never rendered', drawn.includes('It must NOT appear in the output in any form'));
+check('placement: magenta path never rendered', drawn.includes('The output contains NO magenta, pink or purple line') && drawn.includes('9. Is there any magenta, pink or purple line'));
+check('placement: glass touches the floor at the dots, never set back', drawn.includes('EXACT POSITION: each corner dot is the exact point') && drawn.includes('the glass stands in front of it, on the path'));
+check('placement: traced outlines are edges, not walls', drawn.includes('TRACED OUTLINES:') && drawn.includes('A traced segment never becomes an extra glass wall'));
+check('placement: corners in words rendered', drawn.includes('PLACEMENT PATH IN WORDS') && drawn.includes('2 segments through 3 corners') && drawn.includes('corner 1 at 10% from the left edge and 80% down'));
+check('placement: no corners section without a path', !fl.includes('PLACEMENT PATH IN WORDS'));
+check('placement: corners text empty for no / one-point path', describePlacementCorners(null) === '' && describePlacementCorners([LINE.points[0]]) === '');
+check('placement: no corners without the path arg', !prompt2({ ...base, placement_path: LINE }).includes('PLACEMENT PATH IN WORDS'));
 check('placement: spec names the drawn path', drawn.includes('placement: customer-drawn floor path, one glass wall per segment'));
 check('placement: no path → no placement section', !fl.includes('CUSTOMER PLACEMENT PATH') && fl.includes('placement: inferred from the opening in input_1'));
 check('self-check: placement item', drawn.includes('8. If a customer placement path was provided') && drawn.includes('no walls added or dropped'));
@@ -225,11 +278,12 @@ check('form: bounded opening needs no path', isRoomEnclosureFormComplete(base));
 check('form: a half-drawn path blocks even when optional', !isRoomEnclosureFormComplete({ ...base, placement_path: { points: [LINE.points[0]] } }));
 check('form: inspiration mode still needs the path on open floor', !isRoomEnclosureFormComplete({ ...base, mode: 'inspiration', style: null, finish: null, existing_condition: 'open_floor' }));
 check('reference description: placement only, path never reproduced', PLACEMENT_REFERENCE_DESCRIPTION.includes('Do NOT reproduce the magenta path'));
+check('reference description: black-and-white copy, not a canvas', PLACEMENT_REFERENCE_DESCRIPTION.includes('NOT A CANVAS') && PLACEMENT_REFERENCE_DESCRIPTION.includes('black-and-white copy of input_1'));
 check('validation prompt: detects open floor', val.includes("'open_floor'") && val.includes("use 'open_floor' only when nothing frames it"));
 check('validation prompt: a plain room is valid', val.includes('Any ordinary interior room') && val.includes('Never reject an interior photo for lacking a staircase, balcony, edge, nook or opening'));
 
 // --- No unresolved placeholders ---------------------------------------------
-for (const [n, p] of [['frameless', fl], ['framed', fr], ['insp', insp], ['under_stair', us], ['drawn', drawn], ['open_floor', openFloor]] as const) {
+for (const [n, p] of [['frameless', fl], ['framed', fr], ['insp', insp], ['under_stair', us], ['drawn', drawn], ['open_floor', openFloor], ['grid', gr], ['dining_room', dr]] as const) {
   check(`no leftover placeholders (${n})`, !/\{\{\w+\}\}/.test(p));
 }
 
