@@ -638,7 +638,7 @@ export async function validateRoomEnclosureImage(
           },
           detectedApplication: {
             type: Type.STRING,
-            enum: ['wine_room', 'under_stair', 'home_office', 'other_room', 'unknown'],
+            enum: ['wine_room', 'under_stair', 'home_office', 'dining_room', 'other_room', 'unknown'],
           },
         },
         required: ['isValid', 'contentFlag', 'existingCondition', 'detectedApplication'],

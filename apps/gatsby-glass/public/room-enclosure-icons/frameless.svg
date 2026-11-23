@@ -1,17 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" fill="none" stroke="#e4bf6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Frameless: full-height glass sheets held only by a slim floor / ceiling channel, hairline joints, pivot door with a tall pull -->
-  <rect x="10" y="18" width="76" height="60" fill="#e4bf6e" fill-opacity="0.08" stroke="none"/>
-  <!-- slim ceiling and floor channels -->
-  <rect x="8" y="15" width="80" height="3" fill="#e4bf6e" stroke="none"/>
-  <rect x="8" y="78" width="80" height="3" fill="#e4bf6e" stroke="none"/>
+  <!-- Frameless: full-height glass sheets held only by small square clamps (no channel), hairline joints, door hinged on one edge with a tall pull on the other -->
+  <rect x="10" y="17" width="76" height="62" fill="#e4bf6e" fill-opacity="0.08" stroke="none"/>
+  <!-- bare glass edges -->
+  <rect x="10" y="17" width="76" height="62" stroke-width="1.5" stroke-opacity="0.55"/>
   <!-- hairline glass joints -->
-  <line x1="34" y1="18" x2="34" y2="78" stroke-width="1" stroke-opacity="0.6"/>
-  <line x1="60" y1="18" x2="60" y2="78" stroke-width="1" stroke-opacity="0.6"/>
+  <line x1="34" y1="17" x2="34" y2="79" stroke-width="1" stroke-opacity="0.6"/>
+  <line x1="60" y1="17" x2="60" y2="79" stroke-width="1" stroke-opacity="0.6"/>
   <!-- glass highlights -->
-  <line x1="16" y1="26" x2="26" y2="36" stroke-opacity="0.45"/>
-  <line x1="66" y1="26" x2="80" y2="40" stroke-opacity="0.45"/>
-  <!-- pivot door (right panel): pivot pins + tall pull handle -->
-  <circle cx="62" cy="18" r="2" fill="#e4bf6e" stroke="none"/>
-  <circle cx="62" cy="78" r="2" fill="#e4bf6e" stroke="none"/>
-  <line x1="80" y1="38" x2="80" y2="60" stroke-width="3"/>
+  <line x1="16" y1="30" x2="26" y2="40" stroke-opacity="0.45"/>
+  <line x1="40" y1="30" x2="52" y2="42" stroke-opacity="0.45"/>
+  <!-- small square clamps on the glass at floor and ceiling, one per fixed panel edge -->
+  <rect x="19" y="17" width="6" height="6" fill="#e4bf6e" stroke="none"/>
+  <rect x="44" y="17" width="6" height="6" fill="#e4bf6e" stroke="none"/>
+  <rect x="19" y="73" width="6" height="6" fill="#e4bf6e" stroke="none"/>
+  <rect x="44" y="73" width="6" height="6" fill="#e4bf6e" stroke="none"/>
+  <!-- door (right panel): two hinges on the left edge, tall pull on the right -->
+  <rect x="61" y="27" width="5" height="8" fill="#e4bf6e" stroke="none"/>
+  <rect x="61" y="61" width="5" height="8" fill="#e4bf6e" stroke="none"/>
+  <line x1="80" y1="38" x2="80" y2="58" stroke-width="3"/>
 </svg>

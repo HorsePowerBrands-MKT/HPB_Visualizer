@@ -250,8 +250,8 @@ export function useRoomEnclosureVisualizerState(): RoomEnclosureVisualizerState 
 
   const payload = useMemo(() => buildRoomEnclosurePayload(form, sessionId), [form, sessionId]);
   const promptInput = useMemo(
-    () => (payload ? buildRoomEnclosurePromptInput(payload) : null),
-    [payload]
+    () => (payload ? buildRoomEnclosurePromptInput(payload, form.placement_path) : null),
+    [payload, form.placement_path]
   );
 
   return {

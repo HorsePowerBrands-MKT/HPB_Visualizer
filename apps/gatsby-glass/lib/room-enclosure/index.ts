@@ -64,6 +64,7 @@ export {
   UNSUPPORTED_ENCLOSURE_TYPES,
   PLACEMENT_PATH_RULES,
   PLACEMENT_REFERENCE_DESCRIPTION,
+  describePlacementCorners,
   requiresPlacementPath,
   validateRoomEnclosureSelections,
   assertRoomEnclosureSelectionsRenderable,

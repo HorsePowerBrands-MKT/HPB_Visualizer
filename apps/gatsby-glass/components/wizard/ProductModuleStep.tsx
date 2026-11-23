@@ -40,7 +40,7 @@ export const ProductModuleStep: React.FC<ProductModuleStepProps> = ({ value, onS
       value: 'room_enclosure',
       label: 'Room Enclosure',
       description:
-        'Enclose a wine room, under-stair space, or home office with framed or frameless glass',
+        'Enclose a wine room, under-stair space, office, or dining room with framed, frameless, or grid glass',
       corner: { className: 'bottom-[-1px] right-[-1px]', style: { transform: 'scaleY(-1)' } },
     },
   ];

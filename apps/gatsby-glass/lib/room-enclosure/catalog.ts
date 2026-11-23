@@ -29,7 +29,7 @@ export interface RoomEnclosureCatalogEntry {
   image?: string;
 }
 
-export const ROOM_ENCLOSURE_CATALOG_VERSION = '2026.11';
+export const ROOM_ENCLOSURE_CATALOG_VERSION = '2026.11.1';
 
 export const roomEnclosureApplications: Record<RoomEnclosureApplication, RoomEnclosureCatalogEntry> =
   {
@@ -57,6 +57,14 @@ export const roomEnclosureApplications: Record<RoomEnclosureApplication, RoomEnc
       promptDescriptor:
         'a home office / study: the glass enclosure partitions the workspace from the adjoining room with a full-height glass wall and a glass door',
     },
+    dining_room: {
+      name: 'Dining Room',
+      description: 'Formal dining room or dining nook',
+      details:
+        'Glass walls and a glass door close off your dining room for quiet dinners and entertaining, while keeping it bright and open to the rest of the home.',
+      promptDescriptor:
+        'a dining room: the glass enclosure closes the open side or doorway of the dining room with a full-height glass wall and a glass door, so the table, chairs, sideboard and light fixture stay fully visible through clear glass',
+    },
     other_room: {
       name: 'Other Room',
       description: 'Cigar lounge, gym, pantry, or display',
@@ -72,9 +80,9 @@ export const roomEnclosureStyles: Record<RoomEnclosureStyle, RoomEnclosureCatalo
     name: 'Frameless',
     description: 'Uninterrupted glass with minimal hardware',
     details:
-      'Full-height clear glass panels with no frame around them, held by slim channels and small clamps so the glass itself is the focal point. The cleanest, most modern look that keeps the view completely open.',
+      'Full-height clear glass panels with no frame around them, held by small clamps so the glass itself is the focal point. The cleanest, most modern look that keeps the view completely open.',
     promptDescriptor:
-      'a FRAMELESS glass enclosure: full-height clear tempered-look glass panels with polished exposed edges and NO frame around the glass; the panels are held only by a slim low-profile U-channel (about 1 inch) at the floor and ceiling in the selected finish, with glass-to-glass joints at corners and between panels (no vertical posts or mullions); the glass door is a frameless panel on compact pivot or wall-mount hinges with a tall pull handle in the selected finish',
+      'a FRAMELESS glass enclosure: full-height clear tempered-look glass panels with polished exposed edges and NO frame around the glass; the panels are held only by small square clamps (about 2 inches) in the selected finish at the floor, the ceiling and the walls, with NO channel or track on any edge, and glass-to-glass joints at corners and between panels (no vertical posts or mullions); the glass door is a frameless panel on two compact hinges (or a pivot pair) on one edge with a tall pull handle on the other edge, in the selected finish',
   },
   framed: {
     name: 'Framed',
@@ -82,7 +90,15 @@ export const roomEnclosureStyles: Record<RoomEnclosureStyle, RoomEnclosureCatalo
     details:
       'Glass panels set in a slim, crisp metal frame in your chosen finish, with a matching framed glass door. A classic, structured look that pairs well with traditional and transitional interiors.',
     promptDescriptor:
-      'a FRAMED glass enclosure: full-height clear glass panels set in a slim, crisp metal frame in the selected finish — a continuous perimeter frame along the floor, head and side jambs, thin vertical mullions (about 1 to 1.5 inches wide) between panels, and a matching framed glass door with a lever or pull handle in the selected finish; the frame profiles are slim and modern (never a chunky storefront, wood frame or decorative grid)',
+      'a FRAMED glass enclosure: full-height clear glass panels set in a slim, crisp metal frame in the selected finish — a continuous perimeter frame along the floor, head and side jambs, a thin vertical mullion (about 1 to 1.5 inches wide) at every joint between panels, and a matching glass door framed on all four sides, hinged on one stile with a lever or pull handle on the other, in the selected finish; the frame profiles are slim and modern (never a chunky storefront, wood frame or decorative grid)',
+  },
+  grid: {
+    name: 'Grid',
+    description: 'A slim metal frame divided into panes',
+    details:
+      'Glass panels set in a slim metal frame and divided into a grid of panes, for a steel-window look in your chosen finish. A bold, architectural style that suits modern, industrial and transitional homes.',
+    promptDescriptor:
+      'a GRID glass enclosure (steel-window / divided-lite look): full-height clear glass panels in a slim, crisp metal frame in the selected finish, with thin flat metal grid bars (about 1 to 1.5 inches wide) dividing every panel into a regular grid of tall rectangular panes; the horizontal bars sit at the same heights on every panel and the door so the grid lines run straight across the whole enclosure; the door is a matching framed glass door with the same grid, hinged on one stile with a lever or pull handle on the other, in the selected finish',
   },
 };
 
@@ -101,9 +117,10 @@ export const ROOM_ENCLOSURE_APPLICATION_ORDER: RoomEnclosureApplication[] = [
   'wine_room',
   'under_stair',
   'home_office',
+  'dining_room',
   'other_room',
 ];
-export const ROOM_ENCLOSURE_STYLE_ORDER: RoomEnclosureStyle[] = ['frameless', 'framed'];
+export const ROOM_ENCLOSURE_STYLE_ORDER: RoomEnclosureStyle[] = ['frameless', 'framed', 'grid'];
 export const ROOM_ENCLOSURE_FINISH_ORDER: RoomEnclosureFinish[] = [...METAL_FINISH_ORDER];
 
 export const ROOM_ENCLOSURE_CATALOG = {

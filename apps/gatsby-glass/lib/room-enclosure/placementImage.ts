@@ -86,6 +86,22 @@ export function drawPlacementPath(
   ctx.restore();
 }
 
+/**
+ * Converts the canvas to grayscale in place (Rec. 601 luma). Done by hand
+ * rather than with `ctx.filter`, which older Safari ignores.
+ */
+export function desaturate(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  const frame = ctx.getImageData(0, 0, width, height);
+  const px = frame.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const y = Math.round(px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114);
+    px[i] = y;
+    px[i + 1] = y;
+    px[i + 2] = y;
+  }
+  ctx.putImageData(frame, 0, 0);
+}
+
 function loadImageElement(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -103,7 +119,7 @@ function loadImageElement(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Builds the marked-up reference copy of the uploaded photo as base64 JPEG,
+ * Builds the marked-up, black-and-white reference copy of the uploaded photo as base64 JPEG,
  * downscaled so it adds well under half a megabyte to the generate request.
  */
 export async function renderPlacementReferenceImage(
@@ -123,6 +139,9 @@ export async function renderPlacementReferenceImage(
   if (!ctx) throw new Error('Canvas is not available for the placement reference');
 
   ctx.drawImage(img, 0, 0, width, height);
+  // Black-and-white under a colored path: the model can't mistake this copy
+  // for the canvas, and the magenta is the only color left to read.
+  desaturate(ctx, width, height);
   drawPlacementPath(ctx, width, height, path);
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.85);

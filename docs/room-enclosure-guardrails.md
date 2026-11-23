@@ -11,14 +11,16 @@ Run the acceptance checks: `pnpm --filter gatsby-glass check:room-enclosure-rule
 
 Product source: Gatsby's [Glass Wine Rooms & Enclosures](https://www.gatsbyglass.com/glass-services/glass-wine-rooms-enclosures/)
 page — "Frameless Elegance", "Classic Framed Designs" and the "Under-Stair
-Marvel", plus cigar rooms and home offices as named uses.
+Marvel", plus cigar rooms and home offices as named uses. The **Grid** style
+and the **Dining Room** room type were added in November 2026 at the request
+of Gatsby's brand president and brand marketing manager after QA round 1.
 
 ## What the consumer picks
 
 | Dimension | Approved values | How it is collected |
 |---|---|---|
-| Room type | Wine Room, Under-Stair Nook, Home Office, Other Room | Auto-detected from the photo; correctable under the upload and on the result page |
-| Enclosure style | Frameless, Framed | Step 3 (Design Your Own) or taken from the inspiration photo |
+| Room type | Wine Room, Under-Stair Nook, Home Office, Dining Room, Other Room | Auto-detected from the photo; correctable under the upload and on the result page |
+| Enclosure style | Frameless, Framed, Grid | Step 3 (Design Your Own) or taken from the inspiration photo |
 | Finish | Matte Black, Brushed Stainless, Polished Stainless, Polished Brass, Satin Brass | Step 3 or from the inspiration photo |
 | Placement path | Tap the corners of the glass walls on the photo (two taps = one wall, three = an L); drag for a single wall | Required when the validator finds nothing to anchor to (`open_floor` / `none`); optional otherwise, and then it overrides the inferred opening |
 
@@ -32,16 +34,37 @@ backend logic on every render and is never a consumer choice.
 
 ## Style behavior
 
-**Frameless** — full-height clear glass sheets held only by a slim U-channel
-(~1 in) at the floor and ceiling (or stair underside) and compact clamps at
-the walls; hairline glass-to-glass joints; a frameless door on pivot or
-wall-mount hinges with a tall pull. Hard lock: any post, mullion, frame
-profile or divided-lite grid is a failed render.
+**Frameless** — full-height clear glass sheets held only by small square
+clamps (~2 in) in the selected finish, two or three per edge at the floor,
+the ceiling (or stair underside) and the walls. **No channel on any edge**:
+a continuous channel, track or edge strip is a failed render, because a
+metal outline around the glass reads as framed. A fixed transom above the
+door is clamped like every other panel. Hairline glass-to-glass joints; a
+frameless door on two compact hinges or a pivot pair with a tall pull. Hard
+lock: any channel, post, mullion, frame profile or divided-lite grid is a
+failed render.
 
 **Framed** — every panel in a slim flat metal frame (~1 to 1.5 in profiles):
-one perimeter frame plus thin vertical mullions only at panel joints, and a
-matching framed door with a lever or pull. Hard lock: a bare glass edge,
-heavy storefront framing, wood, or a grid of small panes is a failed render.
+one perimeter frame plus a vertical mullion at every panel joint and corner
+(glass never meets glass), a door framed on all four sides, and a head
+member over the door when there is a transom. Hard lock: a bare glass edge,
+glass-to-glass joints, an outline-only frame, heavy storefront framing,
+wood, or a grid of small panes is a failed render (a grid is the separate
+Grid style).
+
+**Grid** — the framed system (slim perimeter frame, a mullion at every
+joint, a door framed on all four sides) plus flat metal grid bars of the
+same ~1 to 1.5 in width dividing every panel **and the door** into one
+regular grid of tall rectangular panes (~1.5 to 2.5 ft wide, ~2 to 3 ft
+tall, so three or four rows on a full-height panel). The horizontal bars sit
+at the same heights everywhere so each grid line runs level across the
+whole enclosure; a transom over the door carries the grid too. Hard lock: a
+panel or door without the grid, mismatched or misaligned grids, diamond /
+arched / colonial / wood / white or snap-in grilles, storefront or wood
+framing, or obscured glass is a failed render.
+
+All three style descriptors in `catalog.ts` (`promptDescriptor`) say the same
+thing; the rule check fails if the frameless prompt mentions a U-channel.
 
 ## Glass and door
 
@@ -49,9 +72,13 @@ heavy storefront framing, wood, or a grid of small panes is a failed render.
   with no gap at the floor or ceiling; closes the entire open side(s) of the
   space tight to the walls.
 - `DOOR_RULES` — exactly one operable swinging glass door (a pair only for
-  openings wider than ~8 ft), 30–36 in wide, same style and finish; never a
-  sliding, bypass, barn, pocket or folding door. `STYLE_RULES[style].door`
-  adds the style-specific hardware.
+  openings wider than ~8 ft), same style and finish; never a sliding,
+  bypass, barn, pocket or folding door. **Hinge side vs handle side:** all
+  hinges (or the pivot pair) on one vertical edge, the handle on the other,
+  nothing else on the handle edge (self-check 4b). **Size:** a walk-through
+  door about 36 in wide (never under ~30 in), full height, or 7–8 ft with a
+  transom under a tall or sloped ceiling. `STYLE_RULES[style].door` adds the
+  style-specific hardware.
 
 ## Room-type placement
 
@@ -62,6 +89,11 @@ heavy storefront framing, wood, or a grid of small panes is a failed render.
   on the treads. Self-check item 5c restates this.
 - **Home office** — full-height glass wall across the open side, door at the
   natural entry, desk and equipment unchanged.
+- **Dining room** — full-height glass wall across the open side or doorway,
+  door at the entry from the adjoining room; table, chairs, sideboard, rug
+  and light fixture stay inside and visible. The glass never runs through or
+  in front of the furniture. The validator detects `dining_room` when a
+  dining table with chairs is the main subject.
 - **Other room** — generic full-height wall and door across the opening.
 
 ## Existing condition (automatic from the photo)
@@ -100,19 +132,28 @@ by tapping the corners on their photo.
   On screen the path is brand light gold (`#e4bf6e`, dark halo); that color
   is display-only and never reaches the model.
 - **Transport** — at generate time `renderPlacementReferenceImage` burns the
-  path in bright magenta (white outline, a dot at every corner) onto a copy
-  of the photo downscaled to 1280px and sends it as `placementImage`. The
+  path in bright magenta (white outline, a dot at every corner) onto a
+  black-and-white copy of the photo downscaled to 1280px and sends it as
+  `placementImage`. The copy is desaturated so the model cannot mistake it
+  for the canvas (QA saw the magenta path copied into an under-stair
+  render). The corners are also written into the prompt text
+  (`describePlacementCorners` → `placement_corners`, as percentages of the
+  photo), so placement doesn't rest on the image alone. The
   API route attaches it as a reference image after input_1 and any
   inspiration photo with `PLACEMENT_REFERENCE_DESCRIPTION` ("placement
-  only, never reproduce the path"). The path itself is never stored on
-  leads or visualizations.
+  only, never reproduce the path"). The corner coordinates are never stored
+  on leads or visualizations; `product_config.placement` records only
+  whether a path was drawn (`drawn` | `inferred`).
 - **Prompt** — `PLACEMENT_PATH_RULES` render only when a path was drawn:
   each segment is one full-height glass wall standing exactly on it, walls
   meet at a glass corner where segments meet, the area between the path and
   the existing walls becomes the new room, the path overrides any inferred
   opening with no walls added or dropped, ends within a foot of a wall
-  close the gap, the door sits on one of the segments, and the magenta path
-  must not appear in the output (self-check item 8).
+  close the gap, and the door sits on one of the segments. The glass
+  touches the floor exactly at the corner dots, in front of any window on
+  the wall beyond, never set back (self-check 8). Segments traced up a wall
+  or along a stair underside are the edge of the glass, not extra walls.
+  No magenta, pink or purple mark may appear in the output (self-check 9).
 
 **Limitation.** This is still a whole-photo edit with no mask, so the model
 can drift off the path on busy scenes. Reference-image placement is the
@@ -122,7 +163,7 @@ the next step is region-controlled editing.
 ## Finish
 
 The selected finish is applied to every visible piece of hardware: frame and
-mullions (framed) or channels and clamps (frameless), hinges or pivots, and
+mullions (framed) or clamps (frameless), hinges or pivots, and
 the handle. One finish only. An explicit selection overrides any finish in an
 inspiration photo.
 
@@ -143,22 +184,27 @@ description or a mask-based edit, not more prompt text.
 
 ## Unsupported enclosure types (never rendered)
 
-Divided-lite / French-door / steel-window grids; heavy commercial storefront
-framing; wood, painted or vinyl frames; barn-door tracks, bypass sliders,
-folding doors; tinted, frosted, reeded or patterned glass; half-height
-partitions; mixing framed and frameless panels.
+Decorative or traditional grilles (diamond, arched, colonial, wood or white,
+snap-in); a grid on a Framed or Frameless enclosure (a grid appears only
+with the Grid style); heavy commercial storefront framing; wood, painted or
+vinyl frames; barn-door tracks, bypass sliders, folding doors; tinted,
+frosted, reeded or patterned glass; **half-height partitions** (still banned:
+every enclosure is full height and there is no height option); mixing styles
+in one enclosure.
 
 On the Match Inspiration path an inspiration photo of any of these is mapped
-to an approved style (`UNSUPPORTED_ENCLOSURE_TYPES[].mapsTo`): grids,
-storefront and wood frames → slim framed; everything else → frameless. The
+to an approved style (`UNSUPPORTED_ENCLOSURE_TYPES[].mapsTo`): decorative
+grilles → Grid; an unselected grid, storefront and wood frames → slim
+framed; everything else → frameless. The
 consumer's explicit selections always win over the inspiration photo.
 
 ## Match Inspiration fallbacks (no explicit selection)
 
 - **Style** (`INSPIRATION_STYLE_MAPPING`) — visible frame profiles and
-  mullions → Framed; bare glass edges with channels/clamps → Frameless; any
-  grid, French-door or storefront look → Framed with slim profiles and no
-  grid.
+  mullions → Framed; bare glass edges with clamps or a channel → Frameless
+  (rendered with clamps only); a divided-lite, grid, steel-window or
+  French-door look → Grid; a storefront look → Framed with slim profiles
+  and no grid.
 - **Finish** (`METAL_FINISH_INSPIRATION_MAPPING`, shared with railing) —
   silver / nickel / chrome / satin → Brushed Stainless; mirror silver →
   Polished Stainless; shiny gold → Polished Brass; brushed gold / champagne →
@@ -183,7 +229,7 @@ consumer's explicit selections always win over the inspiration photo.
 - `visualizations.product` / `leads.product` store `'room_enclosure'`; the
   columns are free text (migrations 024/025), so no schema change is needed.
   `product_config` carries `{ mode, application, style, finish,
-  existing_condition, catalog_version }`.
+  existing_condition, placement, catalog_version }`.
 - Lead `source` is "Gatsby Glass Enclosure Visualizer"; emails swap in
   "glass room enclosure" copy and list Room Type / Enclosure Style / Finish.
 - Constant Contact: enclosure leads use the bare SAS / RAQ / POP picklist
