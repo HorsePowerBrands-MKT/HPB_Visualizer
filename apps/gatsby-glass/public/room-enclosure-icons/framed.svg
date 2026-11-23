@@ -1,10 +1,4 @@
-<svg width="6179" height="3969" viewBox="0 0 6179 3969" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M50 50V3919H2076V50H50Z" stroke-width="100" stroke-linecap="round" stroke-linejoin="round" stroke="#FFD476"/>
-<path d="M2076.5 50V3919H4102.5V50H2076.5Z" stroke-width="100" stroke-linecap="round" stroke-linejoin="round" stroke="#FFD476"/>
-<path d="M4102.5 50V3919H6128.5V50H4102.5Z" stroke-width="100" stroke-linecap="round" stroke-linejoin="round" stroke="#FFD476"/>
-<rect x="863.5" y="50" width="400" height="177.844" rx="20" fill="#FFD476" stroke-width="100" stroke-linejoin="round" stroke="#FFD476"/>
-<rect x="2889.5" y="50" width="400" height="177.844" rx="20" fill="#FFD476" stroke-width="100" stroke-linejoin="round" stroke="#FFD476"/>
-<rect x="863.5" y="3741.16" width="400" height="177.844" rx="20" fill="#FFD476" stroke-width="100" stroke-linejoin="round" stroke="#FFD476"/>
-<rect x="2889.5" y="3741.16" width="400" height="177.844" rx="20" fill="#FFD476" stroke-width="100" stroke-linejoin="round" stroke="#FFD476"/>
-<rect x="5628.5" y="1437.18" width="200" height="1095.52" rx="20" fill="#FFD476"/>
+<svg width="4168" height="4168" viewBox="0 0 4168 4168" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="75" y="75" width="2009" height="4018" stroke-width="150" stroke-linejoin="round" stroke="#FFD476"/>
+<rect x="2084" y="75" width="2009" height="4018" stroke-width="150" stroke-linejoin="round" stroke="#FFD476"/>
 </svg>
